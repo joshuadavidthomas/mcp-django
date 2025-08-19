@@ -56,15 +56,15 @@ class DjangoShell:
 
         with redirect_stdout(stdout), redirect_stderr(stderr):
             try:
-                exec_code, setup_lines, result_type = self.parse_code(code)
+                code, setup, code_type = self.parse_code(code)
 
-                # Execute setup lines if any
-                if setup_lines:
-                    exec("\n".join(setup_lines), self.globals)
+                # Execute setup, if any (only applicable to expressions)
+                if setup:
+                    exec("\n".join(setup), self.globals)
 
-                match result_type:
+                match code_type:
                     case "expression":
-                        value = eval(exec_code, self.globals)
+                        value = eval(code, self.globals)
                         return self.save_result(
                             ExpressionResult(
                                 code=code,
@@ -74,7 +74,7 @@ class DjangoShell:
                             )
                         )
                     case "statement":
-                        exec(exec_code, self.globals)
+                        exec(code, self.globals)
                         return self.save_result(
                             StatementResult(
                                 code=code,
@@ -99,7 +99,7 @@ class DjangoShell:
         """Determine how code should be executed.
 
         Returns:
-            (code_to_exec, setup_lines, result_type)
+            (main_code, setup_code, code_type)
         """
 
         def can_eval(code: str) -> bool:

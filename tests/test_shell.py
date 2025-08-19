@@ -20,48 +20,46 @@ def shell():
 
 class TestCodeParsing:
     def test_parse_single_expression(self, shell):
-        exec_code, setup_lines, result_type = shell.parse_code("2 + 2")
+        code, setup, code_type = shell.parse_code("2 + 2")
 
-        assert exec_code == "2 + 2"
-        assert setup_lines == []
-        assert result_type == "expression"
+        assert code == "2 + 2"
+        assert setup == []
+        assert code_type == "expression"
 
     def test_parse_single_statement(self, shell):
-        exec_code, setup_lines, result_type = shell.parse_code("x = 5")
+        code, setup, code_type = shell.parse_code("x = 5")
 
-        assert exec_code == "x = 5"
-        assert setup_lines == []
-        assert result_type == "statement"
+        assert code == "x = 5"
+        assert setup == []
+        assert code_type == "statement"
 
     def test_parse_multiline_with_expression_basic(self, shell):
-        exec_code, setup_lines, result_type = shell.parse_code("x = 5\ny = 10\nx + y")
+        code, setup, code_type = shell.parse_code("x = 5\ny = 10\nx + y")
 
-        assert exec_code == "x + y"
-        assert setup_lines == ["x = 5", "y = 10"]
-        assert result_type == "expression"
+        assert code == "x + y"
+        assert setup == ["x = 5", "y = 10"]
+        assert code_type == "expression"
 
     def test_parse_multiline_statement_only(self, shell):
-        exec_code, setup_lines, result_type = shell.parse_code(
-            "x = 5\ny = 10\nz = x + y"
-        )
+        code, setup, code_type = shell.parse_code("x = 5\ny = 10\nz = x + y")
 
-        assert exec_code == "x = 5\ny = 10\nz = x + y"
-        assert setup_lines == []
-        assert result_type == "statement"
+        assert code == "x = 5\ny = 10\nz = x + y"
+        assert setup == []
+        assert code_type == "statement"
 
     def test_parse_empty_code(self, shell):
-        exec_code, setup_lines, result_type = shell.parse_code("")
+        code, setup, code_type = shell.parse_code("")
 
-        assert exec_code == ""
-        assert setup_lines == []
-        assert result_type == "statement"
+        assert code == ""
+        assert setup == []
+        assert code_type == "statement"
 
     def test_parse_whitespace_only(self, shell):
-        exec_code, setup_lines, result_type = shell.parse_code("   \n  \t  ")
+        code, setup, code_type = shell.parse_code("   \n  \t  ")
 
-        assert exec_code == "   \n  \t  "
-        assert setup_lines == []
-        assert result_type == "statement"
+        assert code == "   \n  \t  "
+        assert setup == []
+        assert code_type == "statement"
 
     def test_parse_trailing_newlines_expression(self, shell):
         code = """
@@ -71,42 +69,42 @@ class TestCodeParsing:
 
 
     """
-        exec_code, setup_lines, result_type = shell.parse_code(code)
+        code, setup, code_type = shell.parse_code(code)
 
-        assert exec_code == "x + y"
+        assert code == "x + y"
         # strip() removes leading/trailing empty lines
-        assert setup_lines == ["x = 5", "y = 10"]
-        assert result_type == "expression"
+        assert setup == ["x = 5", "y = 10"]
+        assert code_type == "expression"
 
     def test_parse_trailing_whitespace_expression(self, shell):
-        exec_code, setup_lines, result_type = shell.parse_code("2 + 2    \n\n   ")
+        code, setup, code_type = shell.parse_code("2 + 2    \n\n   ")
 
         # strip() removes trailing whitespace
-        assert exec_code == "2 + 2"
-        assert setup_lines == []
-        assert result_type == "expression"
+        assert code == "2 + 2"
+        assert setup == []
+        assert code_type == "expression"
 
     def test_parse_leading_newlines_expression(self, shell):
-        exec_code, setup_lines, result_type = shell.parse_code("\n\n\n2 + 2")
+        code, setup, code_type = shell.parse_code("\n\n\n2 + 2")
 
         # Single expressions are returned as-is, not stripped
-        assert exec_code == "\n\n\n2 + 2"
-        assert setup_lines == []
-        assert result_type == "expression"
+        assert code == "\n\n\n2 + 2"
+        assert setup == []
+        assert code_type == "expression"
 
     def test_parse_multiline_trailing_newlines(self, shell):
-        exec_code, setup_lines, result_type = shell.parse_code("x = 5\nx + 10\n\n")
+        code, setup, code_type = shell.parse_code("x = 5\nx + 10\n\n")
 
-        assert exec_code == "x + 10"
-        assert setup_lines == ["x = 5"]
-        assert result_type == "expression"
+        assert code == "x + 10"
+        assert setup == ["x = 5"]
+        assert code_type == "expression"
 
     def test_parse_empty_list(self, shell):
-        exec_code, setup_lines, result_type = shell.parse_code("[]")
+        code, setup, code_type = shell.parse_code("[]")
 
-        assert exec_code == "[]"
-        assert setup_lines == []
-        assert result_type == "expression"
+        assert code == "[]"
+        assert setup == []
+        assert code_type == "expression"
 
 
 class TestCodeExecution:
