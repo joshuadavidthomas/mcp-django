@@ -130,24 +130,24 @@ class ExpressionResult:
 
         if (
             self.value is not None
-            and not isinstance(self.value, Exception)
             and hasattr(self.value, "__iter__")
             and not isinstance(self.value, str | dict)
         ):
-            # Format querysets and lists nicely
+            # Format querysets and lists nicely, overwriting `value` if successful
             try:
                 items = list(self.value)
-                if len(items) == 0:
-                    value = "Empty queryset/list"
-                elif len(items) > 10:
-                    formatted = "\n".join(repr(item) for item in items[:10])
-                    value = f"{formatted}\n... and {len(items) - 10} more items"
-                else:
-                    value = "\n".join(repr(item) for item in items)
-            except Exception:
-                pass
+                match len(items):
+                    case 0:
+                        value = "Empty queryset/list"
+                    case n if n > 10:
+                        formatted = "\n".join(repr(item) for item in items[:10])
+                        value = f"{formatted}\n... and {n - 10} more items"
+                    case _:
+                        value = "\n".join(repr(item) for item in items)
+            except (TypeError, AttributeError):
+                pass  # Keep original repr if can't iterate
 
-        return self.stdout + value if self.stdout else value
+        return self.stdout + value or value
 
 
 @dataclass
@@ -159,7 +159,7 @@ class StatementResult:
 
     @property
     def output(self) -> str:
-        return self.stdout if self.stdout else "OK"
+        return self.stdout or "OK"
 
 
 @dataclass
@@ -172,16 +172,22 @@ class ErrorResult:
 
     @property
     def output(self) -> str:
-        error_type = type(self.exception).__name__
-        tb = traceback.format_exc()
+        error_type = self.exception.__class__.__name__
 
-        # Try to extract just the relevant part of traceback
-        tb_lines = tb.split("\n")
+        # Format the stored exception's traceback
+        tb_str = "".join(
+            traceback.format_exception(
+                type(self.exception), self.exception, self.exception.__traceback__
+            )
+        )
+
+        # Filter out framework lines
+        tb_lines = tb_str.splitlines()
         relevant_tb = "\n".join(
             line for line in tb_lines if "mcp_django_shell" not in line
         )
 
-        return f"{error_type}: {str(self.exception)}\n\nTraceback:\n{relevant_tb}"
+        return f"{error_type}: {self.exception}\n\nTraceback:\n{relevant_tb}"
 
 
 Result = ExpressionResult | StatementResult | ErrorResult
