@@ -8,6 +8,7 @@ from dataclasses import field
 from datetime import datetime
 from io import StringIO
 from typing import Any
+from typing import Literal
 
 from asgiref.sync import sync_to_async
 
@@ -50,56 +51,37 @@ class DjangoShell:
         Note: This synchronous method contains the actual execution logic.
         Use `execute()` for async contexts or `_execute()` for sync/testing.
         """
-
-        def can_eval(code: str) -> bool:
-            try:
-                compile(code, "<stdin>", "eval")
-                return True
-            except SyntaxError:
-                return False
-
         stdout = StringIO()
         stderr = StringIO()
 
         with redirect_stdout(stdout), redirect_stderr(stderr):
             try:
-                # Try as single expression
-                if can_eval(code):
-                    payload = eval(code, self.globals)
-                    return self.save_result(
-                        ExpressionResult(
-                            code=code,
-                            value=payload,
-                            stdout=stdout.getvalue(),
-                            stderr=stderr.getvalue(),
+                code, setup, code_type = parse_code(code)
+
+                # Execute setup, if any (only applicable to expressions)
+                if setup:
+                    exec(setup, self.globals)
+
+                match code_type:
+                    case "expression":
+                        value = eval(code, self.globals)
+                        return self.save_result(
+                            ExpressionResult(
+                                code=code,
+                                value=value,
+                                stdout=stdout.getvalue(),
+                                stderr=stderr.getvalue(),
+                            )
                         )
-                    )
-
-                # Check for multi-line with final expression
-                lines = code.strip().splitlines()
-                last_line = lines[-1] if lines else ""
-
-                if can_eval(last_line):
-                    # Execute setup lines, eval last line
-                    if len(lines) > 1:
-                        exec("\n".join(lines[:-1]), self.globals)
-                    payload = eval(last_line, self.globals)
-                    return self.save_result(
-                        ExpressionResult(
-                            code=code,
-                            value=payload,
-                            stdout=stdout.getvalue(),
-                            stderr=stderr.getvalue(),
+                    case "statement":
+                        exec(code, self.globals)
+                        return self.save_result(
+                            StatementResult(
+                                code=code,
+                                stdout=stdout.getvalue(),
+                                stderr=stderr.getvalue(),
+                            )
                         )
-                    )
-
-                # Execute as pure statements
-                exec(code, self.globals)
-                return self.save_result(
-                    StatementResult(
-                        code=code, stdout=stdout.getvalue(), stderr=stderr.getvalue()
-                    )
-                )
 
             except Exception as e:
                 return self.save_result(
@@ -114,6 +96,36 @@ class DjangoShell:
     def save_result(self, result: Result) -> Result:
         self.history.append(result)
         return result
+
+
+def parse_code(code: str) -> tuple[str, str, Literal["expression", "statement"]]:
+    """Determine how code should be executed.
+
+    Returns:
+        A tuple (main_code, setup_code, code_type), where:
+        - main_code: The code to evaluate (expression) or execute (statement)
+        - setup_code: Lines to execute before evaluating expressions (empty for statements)
+        - code_type: "expression" or "statement"
+    """
+
+    def can_eval(code: str) -> bool:
+        try:
+            compile(code, "<stdin>", "eval")
+            return True
+        except SyntaxError:
+            return False
+
+    if can_eval(code):
+        return code, "", "expression"
+
+    lines = code.strip().splitlines()
+    last_line = lines[-1] if lines else ""
+
+    if can_eval(last_line):
+        setup_code = "\n".join(lines[:-1])
+        return last_line, setup_code, "expression"
+
+    return code, "", "statement"
 
 
 @dataclass
