@@ -1,0 +1,91 @@
+name: test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+
+concurrency:
+  group: test-${{ github.head_ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+  FORCE_COLOR: "1"
+
+jobs:
+  generate-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - id: set-matrix
+        run: |
+          uv run nox --session "gha_matrix"
+
+  test:
+    name: Python ${{ matrix.python-version }}, Django ${{ matrix.django-version }}
+    runs-on: ubuntu-latest
+    needs: generate-matrix
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.generate-matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Run tests
+        run: |
+          uv run nox --session "tests(python='${{ matrix.python-version }}', django='${{ matrix.django-version }}')"
+
+  tests:
+    runs-on: ubuntu-latest
+    needs: test
+    if: always()
+    steps:
+      - name: OK
+        if: ${{ !(contains(needs.*.result, 'failure')) }}
+        run: exit 0
+      - name: Fail
+        if: ${{ contains(needs.*.result, 'failure') }}
+        run: exit 1
+
+  types:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Run type checks
+        run: |
+          uv run nox --session "types"
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Generate code coverage
+        run: |
+          uv run nox --session "coverage"

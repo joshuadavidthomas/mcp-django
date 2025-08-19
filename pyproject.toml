@@ -1,0 +1,235 @@
+[build-system]
+requires = ["uv_build>=0.7.21,<0.8"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+  "coverage[toml]>=7.6.4",
+  "django-coverage-plugin>=3.1.0",
+  "nox[uv]>=2024.10.9",
+  "pytest>=8.4.1",
+  "pytest-asyncio>=1.1.0",
+  "pytest-cov>=6.2.1",
+  "pytest-django>=4.10.0",
+  "pytest-randomly>=3.16.0",
+  "pytest-xdist>=3.8.0",
+  "ruff>=0.12.9",
+]
+types = [
+  "django-stubs>=5.1.1",
+  "django-stubs-ext>=5.1.1",
+  "mypy>=1.13.0",
+]
+
+[project]
+authors = [
+    { name = "Josh", email = "josh@joshthomas.dev" }
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Framework :: Django",
+  # [[[cog
+  # import subprocess
+  # import cog
+  #
+  # from noxfile import DJ_VERSIONS
+  #
+  # for version in DJ_VERSIONS:
+  #     if version == "main":
+  #         continue
+  #     cog.outl(f'  "Framework :: Django :: {version}",')
+  # ]]] -->
+  "Framework :: Django :: 4.2",
+  "Framework :: Django :: 5.1",
+  "Framework :: Django :: 5.2",
+  # [[[end]]]
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  # [[[cog
+  # import subprocess
+  # import cog
+  #
+  # from noxfile import PY_VERSIONS
+  #
+  # for version in PY_VERSIONS:
+  #     cog.outl(f'  "Programming Language :: Python :: {version}",')
+  # ]]] -->
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  # [[[end]]]
+  "Programming Language :: Python :: Implementation :: CPython"
+]
+dependencies = [
+  "django>4.2",
+  "fastmcp>=2.11.3",
+]
+description = "MCP server providing a stateful Django shell for AI assistants."
+name = "mcp-django-shell"
+readme = "README.md"
+version = "0.1.0"
+requires-python = ">=3.10"
+
+[project.urls]
+Documentation = "https://github.com/joshuadavidthomas/mcp-django-shell#README"
+Issues = "https://github.com/joshuadavidthomas/mcp-django-shell/issues"
+Source = "https://github.com/joshuadavidthomas/mcp-django-shell"
+
+[tool.bumpver]
+commit = true
+commit_message = ":bookmark: bump version {old_version} -> {new_version}"
+current_version = "0.1.0"
+push = false  # set to false for CI
+tag = false
+version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+  'version = "{version}"'
+]
+
+[tool.coverage.paths]
+source = ["src"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "if DEBUG:",
+  "if not DEBUG:",
+  "if settings.DEBUG:",
+  "if TYPE_CHECKING:",
+  'def __str__\(self\)\s?\-?\>?\s?\w*\:'
+]
+fail_under = 100
+
+[tool.coverage.run]
+omit = [
+  "src/mcp_django_shell/migrations/*",
+  "tests/*"
+]
+source = ["src/mcp_django_shell"]
+
+[tool.django-stubs]
+django_settings_module = "tests.settings"
+strict_settings = false
+
+[tool.mypy]
+check_untyped_defs = true
+exclude = [
+  ".venv",
+  "docs",
+  "migrations",
+  "tests",
+  "venv"
+]
+mypy_path = "src/"
+no_implicit_optional = true
+plugins = [
+  "mypy_django_plugin.main"
+]
+warn_redundant_casts = true
+warn_unused_configs = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+ignore_errors = true
+ignore_missing_imports = true
+module = [
+  "*.migrations.*",
+  "docs.*",
+  "tests.*"
+]
+
+[tool.mypy_django_plugin]
+ignore_missing_model_attributes = true
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+addopts = "--create-db -n auto --dist loadfile --doctest-modules"
+asyncio_default_fixture_loop_scope = "function"
+norecursedirs = ".* bin build dist *.egg htmlcov logs node_modules templates venv"
+python_files = "tests.py test_*.py *_tests.py"
+pythonpath = ["src", "."]
+testpaths = ["tests"]
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".github",
+  ".hg",
+  ".mypy_cache",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  "__pypackages__",
+  "_build",
+  "build",
+  "dist",
+  "migrations",
+  "node_modules",
+  "venv"
+]
+extend-include = ["*.pyi?"]
+indent-width = 4
+# Same as Black.
+line-length = 88
+# [[[cog
+# import subprocess
+# import cog
+#
+# from noxfile import PY_DEFAULT
+#
+# cog.outl(f"# Assume Python >{PY_DEFAULT}")
+# cog.outl(f'target-version = "py{PY_DEFAULT.replace(".", "")}"')
+# ]]] -->
+# Assume Python >3.10
+target-version = "py310"
+# [[[end]]]
+
+[tool.ruff.format]
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+[tool.ruff.lint]
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["A", "B", "C", "D", "E", "F", "I"]
+ignore = ["E501", "E741"]  # temporary
+select = [
+  "B",  # flake8-bugbear
+  "E",  # Pycodestyle
+  "F",  # Pyflakes
+  "I",  # isort
+  "UP"  # pyupgrade
+]
+unfixable = []
+
+[tool.ruff.lint.isort]
+force-single-line = true
+known-first-party = ["mcp_django_shell", "tests"]
+required-imports = ["from __future__ import annotations"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests can use magic values, assertions, and relative imports
+"tests/**/*" = ["PLR2004", "S101", "TID252"]
+
+[tool.ruff.lint.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`.
+keep-runtime-typing = true
+
+[tool.uv]
+required-version = ">=0.7"
