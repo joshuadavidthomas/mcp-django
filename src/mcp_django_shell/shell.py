@@ -56,7 +56,7 @@ class DjangoShell:
 
         with redirect_stdout(stdout), redirect_stderr(stderr):
             try:
-                code, setup, code_type = self.parse_code(code)
+                code, setup, code_type = parse_code(code)
 
                 # Execute setup, if any (only applicable to expressions)
                 if setup:
@@ -93,36 +93,43 @@ class DjangoShell:
                     )
                 )
 
-    def parse_code(
-        self, code: str
-    ) -> tuple[str, list[str], Literal["expression", "statement"]]:
-        """Determine how code should be executed.
-
-        Returns:
-            (main_code, setup_code, code_type)
-        """
-
-        def can_eval(code: str) -> bool:
-            try:
-                compile(code, "<stdin>", "eval")
-                return True
-            except SyntaxError:
-                return False
-
-        if can_eval(code):
-            return code, [], "expression"
-
-        lines = code.strip().splitlines()
-        last_line = lines[-1] if lines else ""
-
-        if can_eval(last_line):
-            return last_line, lines[:-1], "expression"
-
-        return code, [], "statement"
-
     def save_result(self, result: Result) -> Result:
         self.history.append(result)
         return result
+
+
+MainCode = str
+SetupCode = list[str]
+CodeType = Literal["expression", "statement"]
+
+
+def parse_code(code: str) -> tuple[MainCode, SetupCode, CodeType]:
+    """Determine how code should be executed.
+
+    Returns:
+        A tuple (main_code, setup_code, code_type), where:
+        - main_code: The code to evaluate (expression) or execute (statement)
+        - setup_code: Lines to execute before evaluating expressions (empty for statements)
+        - code_type: "expression" or "statement"
+    """
+
+    def can_eval(code: str) -> bool:
+        try:
+            compile(code, "<stdin>", "eval")
+            return True
+        except SyntaxError:
+            return False
+
+    if can_eval(code):
+        return code, [], "expression"
+
+    lines = code.strip().splitlines()
+    last_line = lines[-1] if lines else ""
+
+    if can_eval(last_line):
+        return last_line, lines[:-1], "expression"
+
+    return code, [], "statement"
 
 
 @dataclass
