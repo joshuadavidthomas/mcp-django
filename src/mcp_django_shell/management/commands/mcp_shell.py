@@ -1,4 +1,3 @@
-# pragma: no cover
 from __future__ import annotations
 
 from typing import Any
@@ -10,4 +9,4 @@ from mcp_django_shell.server import mcp
 
 class Command(BaseCommand):
     def handle(self, *args: Any, **options: Any):
-        mcp.run()  # pragma: no cover
+        mcp.run()
