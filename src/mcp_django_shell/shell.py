@@ -58,10 +58,6 @@ class DjangoShell:
             except SyntaxError:
                 return False
 
-        def save_result(result: Result) -> Result:
-            self.history.append(result)
-            return result
-
         stdout = StringIO()
         stderr = StringIO()
 
@@ -70,7 +66,7 @@ class DjangoShell:
                 # Try as single expression
                 if can_eval(code):
                     payload = eval(code, self.globals)
-                    return save_result(
+                    return self.save_result(
                         ExpressionResult(
                             code=code,
                             value=payload,
@@ -88,7 +84,7 @@ class DjangoShell:
                     if len(lines) > 1:
                         exec("\n".join(lines[:-1]), self.globals)
                     payload = eval(last_line, self.globals)
-                    return save_result(
+                    return self.save_result(
                         ExpressionResult(
                             code=code,
                             value=payload,
@@ -99,14 +95,14 @@ class DjangoShell:
 
                 # Execute as pure statements
                 exec(code, self.globals)
-                return save_result(
+                return self.save_result(
                     StatementResult(
                         code=code, stdout=stdout.getvalue(), stderr=stderr.getvalue()
                     )
                 )
 
             except Exception as e:
-                return save_result(
+                return self.save_result(
                     ErrorResult(
                         code=code,
                         exception=e,
@@ -114,6 +110,10 @@ class DjangoShell:
                         stderr=stderr.getvalue(),
                     )
                 )
+
+    def save_result(self, result: Result) -> Result:
+        self.history.append(result)
+        return result
 
 
 @dataclass
@@ -144,8 +144,9 @@ class ExpressionResult:
                         value = f"{formatted}\n... and {n - 10} more items"
                     case _:
                         value = "\n".join(repr(item) for item in items)
-            except (TypeError, AttributeError):
-                pass  # Keep original repr if can't iterate
+            except Exception:
+                # If iteration fails for any reason, just use the repr
+                pass
 
         return self.stdout + value or value
 
