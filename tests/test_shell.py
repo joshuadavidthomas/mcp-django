@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from django.apps import apps
 
 from mcp_django_shell.shell import DjangoShell
 from mcp_django_shell.shell import ErrorResult
@@ -17,225 +18,262 @@ def shell():
     shell.reset()
 
 
-def test_single_expression(shell):
-    result = shell._execute("2 + 2")
+class TestCodeParsing:
+    def test_parse_single_expression(self, shell):
+        exec_code, setup_lines, result_type = shell.parse_code("2 + 2")
 
-    assert isinstance(result, ExpressionResult)
-    assert result.value == 4
-    assert "4" in result.output
+        assert exec_code == "2 + 2"
+        assert setup_lines == []
+        assert result_type == "expression"
 
+    def test_parse_single_statement(self, shell):
+        exec_code, setup_lines, result_type = shell.parse_code("x = 5")
 
-def test_single_statement(shell):
-    result = shell._execute("x = 5")
+        assert exec_code == "x = 5"
+        assert setup_lines == []
+        assert result_type == "statement"
 
-    assert isinstance(result, StatementResult)
-    assert result.output == "OK"
+    def test_parse_multiline_with_expression_basic(self, shell):
+        exec_code, setup_lines, result_type = shell.parse_code("x = 5\ny = 10\nx + y")
 
+        assert exec_code == "x + y"
+        assert setup_lines == ["x = 5", "y = 10"]
+        assert result_type == "expression"
 
-def test_multiline_with_expression(shell):
-    code = """
-x = 5
-y = 10
-x + y
-"""
-    result = shell._execute(code.strip())
+    def test_parse_multiline_statement_only(self, shell):
+        exec_code, setup_lines, result_type = shell.parse_code(
+            "x = 5\ny = 10\nz = x + y"
+        )
 
-    assert isinstance(result, ExpressionResult)
-    assert result.value == 15
-    assert "15" in result.output
+        assert exec_code == "x = 5\ny = 10\nz = x + y"
+        assert setup_lines == []
+        assert result_type == "statement"
 
+    def test_parse_empty_code(self, shell):
+        exec_code, setup_lines, result_type = shell.parse_code("")
 
-def test_multiline_statement_only(shell):
-    code = """
-x = 5
-y = 10
-z = x + y
-"""
-    result = shell._execute(code.strip())
+        assert exec_code == ""
+        assert setup_lines == []
+        assert result_type == "statement"
 
-    assert isinstance(result, StatementResult)
-    assert result.output == "OK"
+    def test_parse_whitespace_only(self, shell):
+        exec_code, setup_lines, result_type = shell.parse_code("   \n  \t  ")
 
+        assert exec_code == "   \n  \t  "
+        assert setup_lines == []
+        assert result_type == "statement"
 
-def test_print_output(shell):
-    result = shell._execute('print("Hello, World!")')
-
-    assert isinstance(result, ExpressionResult)
-    assert result.value is None
-    assert "Hello, World!" in result.output
-
-
-def test_error_handling(shell):
-    result = shell._execute("1 / 0")
-
-    assert isinstance(result, ErrorResult)
-    assert "ZeroDivisionError" in result.output
+    def test_parse_trailing_newlines_expression(self, shell):
+        code = """
+    x = 5
+    y = 10
+    x + y
 
 
-def test_django_initialized_on_creation():
-    from django.apps import apps
+    """
+        exec_code, setup_lines, result_type = shell.parse_code(code)
 
-    shell = DjangoShell()
+        assert exec_code == "x + y"
+        # strip() removes leading/trailing empty lines
+        assert setup_lines == ["x = 5", "y = 10"]
+        assert result_type == "expression"
 
-    assert apps.ready
-    assert shell.globals == {}
+    def test_parse_trailing_whitespace_expression(self, shell):
+        exec_code, setup_lines, result_type = shell.parse_code("2 + 2    \n\n   ")
+
+        # strip() removes trailing whitespace
+        assert exec_code == "2 + 2"
+        assert setup_lines == []
+        assert result_type == "expression"
+
+    def test_parse_leading_newlines_expression(self, shell):
+        exec_code, setup_lines, result_type = shell.parse_code("\n\n\n2 + 2")
+
+        # Single expressions are returned as-is, not stripped
+        assert exec_code == "\n\n\n2 + 2"
+        assert setup_lines == []
+        assert result_type == "expression"
+
+    def test_parse_multiline_trailing_newlines(self, shell):
+        exec_code, setup_lines, result_type = shell.parse_code("x = 5\nx + 10\n\n")
+
+        assert exec_code == "x + 10"
+        assert setup_lines == ["x = 5"]
+        assert result_type == "expression"
+
+    def test_parse_empty_list(self, shell):
+        exec_code, setup_lines, result_type = shell.parse_code("[]")
+
+        assert exec_code == "[]"
+        assert setup_lines == []
+        assert result_type == "expression"
 
 
-def test_globals_persist_between_executions(shell):
-    shell._execute("x = 42")
+class TestCodeExecution:
+    def test_execute_expression_returns_value(self, shell):
+        result = shell._execute("2 + 2")
 
-    assert "x" in shell.globals
+        assert isinstance(result, ExpressionResult)
+        assert result.value == 4
+        assert "4" in result.output
 
-    result = shell._execute("x + 8")
+    def test_execute_statement_returns_ok(self, shell):
+        result = shell._execute("x = 5")
 
-    assert result.value == 50
+        assert isinstance(result, StatementResult)
+        assert result.output == "OK"
 
+    def test_execute_multiline_expression_returns_last_value(self, shell):
+        code = """
+    x = 5
+    y = 10
+    x + y
+    """
+        result = shell._execute(code.strip())
 
-def test_reset_clears_state(shell):
-    shell._execute("x = 42")
+        assert isinstance(result, ExpressionResult)
+        assert result.value == 15
+        assert "15" in result.output
 
-    assert "x" in shell.globals
-    assert len(shell.history) == 1
+    def test_execute_multiline_statements_returns_ok(self, shell):
+        code = """
+    x = 5
+    y = 10
+    z = x + y
+    """
+        result = shell._execute(code.strip())
 
-    shell.reset()
+        assert isinstance(result, StatementResult)
+        assert result.output == "OK"
 
-    assert shell.globals == {}
-    assert len(shell.history) == 0
+    def test_execute_print_captures_stdout(self, shell):
+        result = shell._execute('print("Hello, World!")')
 
+        assert isinstance(result, ExpressionResult)
+        assert result.value is None
+        assert "Hello, World!" in result.output
 
-def test_empty_code(shell):
-    result = shell._execute("")
+    def test_execute_invalid_code_returns_error(self, shell):
+        result = shell._execute("1 / 0")
 
-    assert isinstance(result, StatementResult)
-    assert result.output == "OK"
+        assert isinstance(result, ErrorResult)
+        assert "ZeroDivisionError" in result.output
 
+    def test_execute_empty_string_returns_ok(self, shell):
+        result = shell._execute("")
 
-def test_whitespace_only_code(shell):
-    result = shell._execute("   \n  \t  ")
+        assert isinstance(result, StatementResult)
+        assert result.output == "OK"
 
-    assert isinstance(result, StatementResult)
+    def test_execute_whitespace_only_returns_ok(self, shell):
+        result = shell._execute("   \n  \t  ")
+
+        assert isinstance(result, StatementResult)
+
+    @pytest.mark.asyncio
+    async def test_async_execute_returns_result(self):
+        shell = DjangoShell()
+
+        result = await shell.execute("2 + 2")
+
+        assert isinstance(result, ExpressionResult)
+        assert result.value == 4
 
 
 @pytest.mark.django_db
-def test_large_queryset_formatting(shell):
-    for i in range(15):
-        AModel.objects.create(name=f"Item {i}", value=i)
+class TestResultOutput:
+    def test_format_large_queryset_truncates_at_10(self, shell):
+        for i in range(15):
+            AModel.objects.create(name=f"Item {i}", value=i)
 
-    shell._execute("from tests.models import AModel")
+        shell._execute("from tests.models import AModel")
 
-    result = shell._execute("AModel.objects.all()")
+        result = shell._execute("AModel.objects.all()")
 
-    assert isinstance(result, ExpressionResult)
-    assert "... and 5 more items" in result.output
-    assert "Item 0" in result.output
-    # Should show first 10, not the last 5
-    assert "Item 9" in result.output
-    assert "Item 14" not in result.output
+        assert isinstance(result, ExpressionResult)
+        assert "... and 5 more items" in result.output
+        assert "Item 0" in result.output
+        # Should show first 10, not the last 5
+        assert "Item 9" in result.output
+        assert "Item 14" not in result.output
 
+    def test_format_small_queryset_shows_all(self, shell):
+        for i in range(5):
+            AModel.objects.create(name=f"Item {i}", value=i)
 
-@pytest.mark.django_db
-def test_medium_queryset_formatting(shell):
-    for i in range(5):
-        AModel.objects.create(name=f"Item {i}", value=i)
+        shell._execute("from tests.models import AModel")
 
-    shell._execute("from tests.models import AModel")
+        result = shell._execute("AModel.objects.all()")
 
-    result = shell._execute("AModel.objects.all()")
+        assert isinstance(result, ExpressionResult)
+        # Should show all items, no truncation message for <10 items
+        assert "Item 0" in result.output
+        assert "Item 4" in result.output
+        assert "... and" not in result.output
 
-    assert isinstance(result, ExpressionResult)
-    # Should show all items, no truncation message for <10 items
-    assert "Item 0" in result.output
-    assert "Item 4" in result.output
-    assert "... and" not in result.output
+    def test_format_empty_queryset_shows_message(self, shell):
+        shell._execute("from tests.models import AModel")
 
+        result = shell._execute("AModel.objects.none()")
 
-@pytest.mark.django_db
-def test_empty_queryset_formatting(shell):
-    shell._execute("from tests.models import AModel")
+        assert isinstance(result, ExpressionResult)
+        assert "Empty queryset/list" in result.output
 
-    result = shell._execute("AModel.objects.none()")
+    def test_format_empty_list_shows_message(self, shell):
+        """Integration test for empty list formatting."""
+        result = shell._execute("[]")
 
-    assert isinstance(result, ExpressionResult)
-    assert "Empty queryset/list" in result.output
+        assert isinstance(result, ExpressionResult)
+        assert "Empty queryset/list" in result.output
 
+    def test_format_bad_iterable_uses_repr(self, shell):
+        result = shell._execute("""
+    class BadIterable:
+        def __iter__(self):
+            raise RuntimeError("Can't iterate")
+        def __repr__(self):
+            return "BadIterable()"
+    BadIterable()
+    """)
 
-def test_empty_iterable_formatting(shell):
-    result = shell._execute("[]")
-
-    assert isinstance(result, ExpressionResult)
-    assert "Empty queryset/list" in result.output
-
-
-def test_iterable_formatting_exception(shell):
-    result = shell._execute("""
-class BadIterable:
-    def __iter__(self):
-        raise RuntimeError("Can't iterate")
-    def __repr__(self):
-        return "BadIterable()"
-BadIterable()
-""")
-
-    assert isinstance(result, ExpressionResult)
-    assert "BadIterable()" in result.output
+        assert isinstance(result, ExpressionResult)
+        assert "BadIterable()" in result.output
 
 
-def test_history_tracking(shell):
-    shell._execute("x = 1")
-    shell._execute("y = 2")
-    shell._execute("x + y")
+class TestShellState:
+    def test_init_django_setup_completes(self):
+        shell = DjangoShell()
 
-    assert len(shell.history) == 3
-    assert shell.history[0].code == "x = 1"
-    assert shell.history[1].code == "y = 2"
-    assert shell.history[2].code == "x + y"
-    assert shell.history[2].value == 3
+        assert apps.ready
+        assert shell.globals == {}
 
+    def test_globals_persist_across_executions(self, shell):
+        shell._execute("x = 42")
 
-@pytest.mark.asyncio
-async def test_execute_async():
-    shell = DjangoShell()
+        assert "x" in shell.globals
 
-    result = await shell.execute("2 + 2")
+        result = shell._execute("x + 8")
 
-    assert isinstance(result, ExpressionResult)
-    assert result.value == 4
+        assert result.value == 50
 
+    def test_reset_clears_globals_and_history(self, shell):
+        shell._execute("x = 42")
 
-def test_trailing_newlines_with_expression(shell):
-    code = """
-x = 5
-y = 10
-x + y
+        assert "x" in shell.globals
+        assert len(shell.history) == 1
 
+        shell.reset()
 
-"""
-    result = shell._execute(code)
+        assert shell.globals == {}
+        assert len(shell.history) == 0
 
-    assert isinstance(result, ExpressionResult)
-    assert result.value == 15
-    assert "15" in result.output
+    def test_history_tracks_all_executions(self, shell):
+        shell._execute("x = 1")
+        shell._execute("y = 2")
+        shell._execute("x + y")
 
-
-def test_trailing_whitespace_with_expression(shell):
-    code = "2 + 2    \n\n   "
-    result = shell._execute(code)
-
-    assert isinstance(result, ExpressionResult)
-    assert result.value == 4
-
-
-def test_leading_newlines_with_expression(shell):
-    code = "\n\n\n2 + 2"
-    result = shell._execute(code)
-
-    assert isinstance(result, ExpressionResult)
-    assert result.value == 4
-
-
-def test_expression_with_trailing_newlines(shell):
-    code = "x = 5\nx + 10\n\n"
-    result = shell._execute(code)
-
-    assert isinstance(result, ExpressionResult)
-    assert result.value == 15
+        assert len(shell.history) == 3
+        assert shell.history[0].code == "x = 1"
+        assert shell.history[1].code == "y = 2"
+        assert shell.history[2].code == "x + y"
+        assert shell.history[2].value == 3
