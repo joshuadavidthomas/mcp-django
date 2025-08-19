@@ -20,6 +20,12 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [0.1.0]
 
+### Added
+
+- Django management command `mcp_shell` for MCP server integration
+- `django_shell` MCP tool for executing Python code in persistent Django shell
+- `django_reset` MCP tool for clearing session state
+
 ### New Contributors
 
 - Josh Thomas <josh@joshthomas.dev> (maintainer)
