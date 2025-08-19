@@ -18,6 +18,8 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+## [0.3.0]
+
 ### Changed
 
 - Removed custom formatting for QuerySets and iterables in shell output. QuerySets now display as `<QuerySet [...]>` and lists show their standard `repr()` instead of truncated displays with "... and X more items". This makes output consistent with standard Django/Python shell behavior and should hopefully not confused the robots.
@@ -52,6 +54,7 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 - Josh Thomas <josh@joshthomas.dev> (maintainer)
 
-[unreleased]: https://github.com/joshuadavidthomas/mcp-django-shell/compare/v0.2.0...HEAD
+[unreleased]: https://github.com/joshuadavidthomas/mcp-django-shell/compare/v0.3.0...HEAD
 [0.1.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.1.0
 [0.2.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.2.0
+[0.3.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.3.0
