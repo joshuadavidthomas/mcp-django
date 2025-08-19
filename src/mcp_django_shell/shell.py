@@ -43,7 +43,7 @@ class DjangoShell:
         self.globals = {}
         self.history = []
 
-    async def execute(self, code: str, timeout: int | None = None) -> Result:
+    async def execute(self, code: str) -> Result:
         """Execute Python code in the Django shell context (async wrapper).
 
         This async wrapper enables use from FastMCP and other async contexts.
@@ -55,9 +55,9 @@ class DjangoShell:
         errors.
         """
 
-        return await sync_to_async(self._execute)(code, timeout)
+        return await sync_to_async(self._execute)(code)
 
-    def _execute(self, code: str, timeout: int | None = None) -> Result:
+    def _execute(self, code: str) -> Result:
         """Execute Python code in the Django shell context (synchronous).
 
         Attempts to evaluate code as an expression first (returning a value),

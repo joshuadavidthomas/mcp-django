@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 @mcp.tool
-async def django_shell(code: str, ctx: Context, timeout: int | None = None) -> str:
+async def django_shell(code: str, ctx: Context) -> str:
     """Execute Python code in a stateful Django shell session.
 
     Django is pre-configured and ready to use with your project. You can import and use any Django
@@ -42,7 +42,7 @@ async def django_shell(code: str, ctx: Context, timeout: int | None = None) -> s
     )
 
     try:
-        result = await shell.execute(code, timeout=timeout)
+        result = await shell.execute(code)
 
         logger.debug(
             "django_shell execution completed - request_id: %s, result type: %s",
