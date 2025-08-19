@@ -202,33 +202,11 @@ class ExpressionResult:
 
     @property
     def output(self) -> str:
-        parts = []
-
         if self.stdout:
-            parts.append(self.stdout.strip())
-
-        if self.value is not None:
-            if hasattr(self.value, "__iter__") and not isinstance(
-                self.value, str | dict
-            ):
-                # Format querysets and lists nicely
-                try:
-                    items = list(self.value)
-                    match len(items):
-                        case 0:
-                            parts.append("Empty queryset/list")
-                        case n if n > 10:
-                            parts.extend(repr(item) for item in items[:10])
-                            parts.append(f"... and {n - 10} more items")
-                        case _:
-                            parts.extend(repr(item) for item in items)
-                except Exception:
-                    # If iteration fails, fall back to repr
-                    parts.append(repr(self.value))
-            else:
-                parts.append(repr(self.value))
-
-        return "\n".join(parts)
+            return self.stdout.rstrip()
+        elif self.value is not None:
+            return repr(self.value)
+        return ""
 
 
 @dataclass
@@ -294,7 +272,12 @@ class ErrorResult:
             line for line in tb_lines if "mcp_django_shell" not in line
         )
 
-        return f"{error_type}: {self.exception}\n\nTraceback:\n{relevant_tb}"
+        error_output = f"{error_type}: {self.exception}\n\nTraceback:\n{relevant_tb}"
+
+        if self.stdout:
+            return f"{self.stdout.rstrip()}\n{error_output}"
+
+        return error_output
 
 
 Result = ExpressionResult | StatementResult | ErrorResult

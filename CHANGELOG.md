@@ -18,6 +18,14 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Changed
+
+- Removed custom formatting for QuerySets and iterables in shell output. QuerySets now display as `<QuerySet [...]>` and lists show their standard `repr()` instead of truncated displays with "... and X more items". This makes output consistent with standard Django/Python shell behavior and should hopefully not confused the robots.
+
+### Fixed
+
+- Django shell no longer shows `None` after print statements. Expression values are now only displayed when code doesn't print output, matching Python script execution behavior.
+
 ## [0.2.0]
 
 ### Added
