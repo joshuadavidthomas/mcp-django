@@ -60,7 +60,7 @@ class DjangoShell:
 
                 # Execute setup, if any (only applicable to expressions)
                 if setup:
-                    exec("\n".join(setup), self.globals)
+                    exec(setup, self.globals)
 
                 match code_type:
                     case "expression":
@@ -98,12 +98,7 @@ class DjangoShell:
         return result
 
 
-MainCode = str
-SetupCode = list[str]
-CodeType = Literal["expression", "statement"]
-
-
-def parse_code(code: str) -> tuple[MainCode, SetupCode, CodeType]:
+def parse_code(code: str) -> tuple[str, str, Literal["expression", "statement"]]:
     """Determine how code should be executed.
 
     Returns:
@@ -121,15 +116,16 @@ def parse_code(code: str) -> tuple[MainCode, SetupCode, CodeType]:
             return False
 
     if can_eval(code):
-        return code, [], "expression"
+        return code, "", "expression"
 
     lines = code.strip().splitlines()
     last_line = lines[-1] if lines else ""
 
     if can_eval(last_line):
-        return last_line, lines[:-1], "expression"
+        setup_code = "\n".join(lines[:-1])
+        return last_line, setup_code, "expression"
 
-    return code, [], "statement"
+    return code, "", "statement"
 
 
 @dataclass
