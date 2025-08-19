@@ -154,6 +154,19 @@ z = x + y
         assert result.value is None
         assert "Hello, World!" in result.output
 
+    def test_multiline_ending_with_print_no_none(self, shell):
+        code = """
+x = 5
+y = 10
+print(f"Sum: {x + y}")
+"""
+        result = shell._execute(code.strip())
+
+        assert isinstance(result, ExpressionResult)
+        assert result.value is None
+        assert "Sum: 15" in result.output
+        assert result.output == "Sum: 15"
+
     def test_execute_invalid_code_returns_error(self, shell):
         result = shell._execute("1 / 0")
 
