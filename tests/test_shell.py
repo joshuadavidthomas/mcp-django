@@ -63,13 +63,13 @@ class TestCodeParsing:
         assert code_type == "statement"
 
     def test_parse_trailing_newlines_expression(self, shell):
-        code = """
-    x = 5
-    y = 10
-    x + y
+        code = """\
+x = 5
+y = 10
+x + y
 
 
-    """
+"""
         code, setup, code_type = parse_code(code)
 
         assert code == "x + y"
@@ -123,11 +123,11 @@ class TestCodeExecution:
         assert result.output == "OK"
 
     def test_execute_multiline_expression_returns_last_value(self, shell):
-        code = """
-    x = 5
-    y = 10
-    x + y
-    """
+        code = """\
+x = 5
+y = 10
+x + y
+"""
         result = shell._execute(code.strip())
 
         assert isinstance(result, ExpressionResult)
@@ -135,11 +135,11 @@ class TestCodeExecution:
         assert "15" in result.output
 
     def test_execute_multiline_statements_returns_ok(self, shell):
-        code = """
-    x = 5
-    y = 10
-    z = x + y
-    """
+        code = """\
+x = 5
+y = 10
+z = x + y
+"""
         result = shell._execute(code.strip())
 
         assert isinstance(result, StatementResult)
@@ -226,14 +226,14 @@ class TestResultOutput:
         assert "Empty queryset/list" in result.output
 
     def test_format_bad_iterable_uses_repr(self, shell):
-        result = shell._execute("""
-    class BadIterable:
-        def __iter__(self):
-            raise RuntimeError("Can't iterate")
-        def __repr__(self):
-            return "BadIterable()"
-    BadIterable()
-    """)
+        result = shell._execute("""\
+class BadIterable:
+    def __iter__(self):
+        raise RuntimeError("Can't iterate")
+    def __repr__(self):
+        return "BadIterable()"
+BadIterable()
+""")
 
         assert isinstance(result, ExpressionResult)
         assert "BadIterable()" in result.output
