@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import re
 import subprocess
-import sys
 from typing import Annotated
 
 import typer
@@ -38,7 +37,7 @@ def run(
     try:
         return subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT).strip()
     except subprocess.CalledProcessError as e:
-        console.print(f"[red]{cmd[0]} failed: {e.output}[/red]", file=sys.stderr)
+        console.print(f"[red]{cmd[0]} failed: {e.output}[/red]")
         raise typer.Exit(1) from e
 
 

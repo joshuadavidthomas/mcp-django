@@ -10,10 +10,10 @@ from __future__ import annotations
 
 import re
 import subprocess
-import sys
 from enum import Enum
 from pathlib import Path
 from typing import Annotated
+from typing import override
 
 import typer
 from rich.console import Console
@@ -22,13 +22,19 @@ cli = typer.Typer()
 console = Console()
 
 
-class Version(str, Enum):
+class StrEnum(str, Enum):
+    @override
+    def __format__(self, format_spec: str) -> str:
+        return str(self.value)
+
+
+class Version(StrEnum):
     MAJOR = "major"
     MINOR = "minor"
     PATCH = "patch"
 
 
-class Tag(str, Enum):
+class Tag(StrEnum):
     DEV = "dev"
     ALPHA = "alpha"
     BETA = "beta"
@@ -55,7 +61,7 @@ def run(
     try:
         return subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT).strip()
     except subprocess.CalledProcessError as e:
-        console.print(f"[red]{cmd[0]} failed: {e.output}[/red]", file=sys.stderr)
+        console.print(f"[red]{cmd[0]} failed: {e.output}[/red]")
         raise typer.Exit(1) from e
 
 
