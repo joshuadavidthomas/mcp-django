@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 import pytest
 from django.apps import apps
 
@@ -276,3 +278,50 @@ class TestShellState:
         assert shell.history[1].code == "y = 2"
         assert shell.history[2].code == "x + y"
         assert shell.history[2].value == 3
+
+
+class TestLoggingCoverage:
+    @pytest.fixture(autouse=True)
+    def debug_loglevel(self, caplog):
+        caplog.set_level(logging.DEBUG)
+        yield
+
+    def test_expression_result_with_stderr(self, shell, caplog):
+        result = shell._execute("""
+import sys
+sys.stderr.write("Warning message\\n")
+42
+""")
+
+        assert isinstance(result, ExpressionResult)
+        assert result.value == 42
+        assert result.stderr == "Warning message\n"
+        assert "ExpressionResult.stderr: Warning message" in caplog.text
+
+    def test_statement_result_with_stdout_and_stderr(self, shell, caplog):
+        result = shell._execute("""
+import sys
+sys.stdout.write("Output message\\n")
+sys.stderr.write("Error message\\n")
+x = 42
+""")
+
+        assert isinstance(result, StatementResult)
+        assert result.stdout == "Output message\n"
+        assert result.stderr == "Error message\n"
+        assert "StatementResult.stdout: Output message" in caplog.text
+        assert "StatementResult.stderr: Error message" in caplog.text
+
+    def test_error_result_with_stdout_and_stderr(self, shell, caplog):
+        result = shell._execute("""
+import sys
+sys.stdout.write("Before error\\n")
+sys.stderr.write("Warning before error\\n")
+1 / 0
+""")
+
+        assert isinstance(result, ErrorResult)
+        assert result.stdout == "Before error\n"
+        assert result.stderr == "Warning before error\n"
+        assert "ErrorResult.stdout: Before error" in caplog.text
+        assert "ErrorResult.stderr: Warning before error" in caplog.text
