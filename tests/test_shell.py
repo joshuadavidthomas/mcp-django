@@ -194,64 +194,100 @@ print(f"Sum: {x + y}")
         assert result.value == 4
 
 
-@pytest.mark.django_db
 class TestResultOutput:
-    def test_format_large_queryset_truncates_at_10(self, shell):
-        for i in range(15):
+    def test_expression_with_value_no_stdout(self, shell):
+        result = shell._execute("42")
+        assert isinstance(result, ExpressionResult)
+        assert result.output == "42"
+
+    def test_expression_with_none_no_stdout(self, shell):
+        result = shell._execute("None")
+        assert isinstance(result, ExpressionResult)
+        assert result.output == ""
+
+    def test_expression_with_stdout_and_value(self, shell):
+        code = """\
+print('hello')
+42
+"""
+        result = shell._execute(code.strip())
+        assert isinstance(result, ExpressionResult)
+        assert result.output == "hello"  # No "42" shown
+
+    def test_expression_with_stdout_and_none(self, shell):
+        result = shell._execute("print('hello')")
+        assert isinstance(result, ExpressionResult)
+        assert result.output == "hello"  # No "None" shown
+
+    def test_multiline_ending_with_print(self, shell):
+        code = """\
+x = 5
+y = 10
+print(f"Sum: {x + y}")
+"""
+        result = shell._execute(code.strip())
+        assert isinstance(result, ExpressionResult)
+        assert result.output == "Sum: 15"  # No "None" appended
+
+    def test_function_returning_none(self, shell):
+        code = """\
+def foo():
+    x = 2
+foo()
+"""
+        result = shell._execute(code.strip())
+        assert isinstance(result, ExpressionResult)
+        assert result.output == ""
+
+    @pytest.mark.django_db
+    def test_queryset_shows_standard_repr(self, shell):
+        for i in range(3):
             AModel.objects.create(name=f"Item {i}", value=i)
 
         shell._execute("from tests.models import AModel")
-
         result = shell._execute("AModel.objects.all()")
 
         assert isinstance(result, ExpressionResult)
-        assert "... and 5 more items" in result.output
+        assert result.output.startswith("<QuerySet [<AModel:")
         assert "Item 0" in result.output
-        # Should show first 10, not the last 5
-        assert "Item 9" in result.output
-        assert "Item 14" not in result.output
+        assert "Item 2" in result.output
 
-    def test_format_small_queryset_shows_all(self, shell):
-        for i in range(5):
-            AModel.objects.create(name=f"Item {i}", value=i)
+    def test_statement_with_stdout(self, shell):
+        result = shell._execute("x = 5; print(x)")
+        assert isinstance(result, StatementResult)
+        assert result.output == "5\n"  # print adds a newline
 
-        shell._execute("from tests.models import AModel")
+    def test_statement_no_stdout(self, shell):
+        result = shell._execute("x = 5")
+        assert isinstance(result, StatementResult)
+        assert result.output == "OK"
 
-        result = shell._execute("AModel.objects.all()")
+    def test_error_with_stdout(self, shell):
+        code = """\
+print("Starting...")
+print("Processing...")
+1 / 0
+"""
+        result = shell._execute(code.strip())
+        assert isinstance(result, ErrorResult)
+        assert "Starting..." in result.output
+        assert "Processing..." in result.output
+        assert "ZeroDivisionError" in result.output
+        # Stdout should come before the error
+        assert result.output.index("Starting...") < result.output.index(
+            "ZeroDivisionError"
+        )
 
-        assert isinstance(result, ExpressionResult)
-        # Should show all items, no truncation message for <10 items
-        assert "Item 0" in result.output
-        assert "Item 4" in result.output
-        assert "... and" not in result.output
+    def test_error_no_stdout(self, shell):
+        result = shell._execute("1 / 0")
+        assert isinstance(result, ErrorResult)
+        assert "ZeroDivisionError" in result.output
+        assert "Traceback:" in result.output
 
-    def test_format_empty_queryset_shows_message(self, shell):
-        shell._execute("from tests.models import AModel")
-
-        result = shell._execute("AModel.objects.none()")
-
-        assert isinstance(result, ExpressionResult)
-        assert "Empty queryset/list" in result.output
-
-    def test_format_empty_list_shows_message(self, shell):
-        """Integration test for empty list formatting."""
-        result = shell._execute("[]")
-
-        assert isinstance(result, ExpressionResult)
-        assert "Empty queryset/list" in result.output
-
-    def test_format_bad_iterable_uses_repr(self, shell):
-        result = shell._execute("""\
-class BadIterable:
-    def __iter__(self):
-        raise RuntimeError("Can't iterate")
-    def __repr__(self):
-        return "BadIterable()"
-BadIterable()
-""")
-
-        assert isinstance(result, ExpressionResult)
-        assert "BadIterable()" in result.output
+    def test_error_filters_framework_lines(self, shell):
+        result = shell._execute("1 / 0")
+        assert isinstance(result, ErrorResult)
+        assert "mcp_django_shell" not in result.output
 
 
 class TestShellState:
