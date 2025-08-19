@@ -18,6 +18,12 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Changed
+
+- **Internal**: Refactored results to use separate dataclasses and a tagged union
+- Changed to using `contextlib` and its stdout/stderr output redirection context managers when executing code
+- Swapped out a `.split("\n")` call for `.splitlines()` for better cross-platform line ending handling
+
 ## [0.1.0]
 
 ### Added
