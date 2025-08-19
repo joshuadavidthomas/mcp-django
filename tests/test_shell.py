@@ -3,7 +3,9 @@ from __future__ import annotations
 import pytest
 
 from mcp_django_shell.shell import DjangoShell
-from mcp_django_shell.shell import ExecutionType
+from mcp_django_shell.shell import ErrorResult
+from mcp_django_shell.shell import ExpressionResult
+from mcp_django_shell.shell import StatementResult
 
 from .models import AModel
 
@@ -18,15 +20,15 @@ def shell():
 def test_single_expression(shell):
     result = shell._execute("2 + 2")
 
-    assert result.type == ExecutionType.EXPRESSION
-    assert result.payload == 4
+    assert isinstance(result, ExpressionResult)
+    assert result.value == 4
     assert "4" in result.output
 
 
 def test_single_statement(shell):
     result = shell._execute("x = 5")
 
-    assert result.type == ExecutionType.STATEMENT
+    assert isinstance(result, StatementResult)
     assert result.output == "OK"
 
 
@@ -38,8 +40,8 @@ x + y
 """
     result = shell._execute(code.strip())
 
-    assert result.type == ExecutionType.EXPRESSION
-    assert result.payload == 15
+    assert isinstance(result, ExpressionResult)
+    assert result.value == 15
     assert "15" in result.output
 
 
@@ -51,22 +53,22 @@ z = x + y
 """
     result = shell._execute(code.strip())
 
-    assert result.type == ExecutionType.STATEMENT
+    assert isinstance(result, StatementResult)
     assert result.output == "OK"
 
 
 def test_print_output(shell):
     result = shell._execute('print("Hello, World!")')
 
-    assert result.type == ExecutionType.EXPRESSION
-    assert result.payload is None
+    assert isinstance(result, ExpressionResult)
+    assert result.value is None
     assert "Hello, World!" in result.output
 
 
 def test_error_handling(shell):
     result = shell._execute("1 / 0")
 
-    assert result.type == ExecutionType.ERROR
+    assert isinstance(result, ErrorResult)
     assert "ZeroDivisionError" in result.output
 
 
@@ -86,7 +88,7 @@ def test_globals_persist_between_executions(shell):
 
     result = shell._execute("x + 8")
 
-    assert result.payload == 50
+    assert result.value == 50
 
 
 def test_reset_clears_state(shell):
@@ -104,14 +106,14 @@ def test_reset_clears_state(shell):
 def test_empty_code(shell):
     result = shell._execute("")
 
-    assert result.type == ExecutionType.STATEMENT
+    assert isinstance(result, StatementResult)
     assert result.output == "OK"
 
 
 def test_whitespace_only_code(shell):
     result = shell._execute("   \n  \t  ")
 
-    assert result.type == ExecutionType.STATEMENT
+    assert isinstance(result, StatementResult)
 
 
 @pytest.mark.django_db
@@ -123,7 +125,7 @@ def test_large_queryset_formatting(shell):
 
     result = shell._execute("AModel.objects.all()")
 
-    assert result.type == ExecutionType.EXPRESSION
+    assert isinstance(result, ExpressionResult)
     assert "... and 5 more items" in result.output
     assert "Item 0" in result.output
     # Should show first 10, not the last 5
@@ -140,7 +142,7 @@ def test_medium_queryset_formatting(shell):
 
     result = shell._execute("AModel.objects.all()")
 
-    assert result.type == ExecutionType.EXPRESSION
+    assert isinstance(result, ExpressionResult)
     # Should show all items, no truncation message for <10 items
     assert "Item 0" in result.output
     assert "Item 4" in result.output
@@ -153,14 +155,14 @@ def test_empty_queryset_formatting(shell):
 
     result = shell._execute("AModel.objects.none()")
 
-    assert result.type == ExecutionType.EXPRESSION
+    assert isinstance(result, ExpressionResult)
     assert "Empty queryset/list" in result.output
 
 
 def test_empty_iterable_formatting(shell):
     result = shell._execute("[]")
 
-    assert result.type == ExecutionType.EXPRESSION
+    assert isinstance(result, ExpressionResult)
     assert "Empty queryset/list" in result.output
 
 
@@ -174,7 +176,7 @@ class BadIterable:
 BadIterable()
 """)
 
-    assert result.type == ExecutionType.EXPRESSION
+    assert isinstance(result, ExpressionResult)
     assert "BadIterable()" in result.output
 
 
@@ -187,7 +189,7 @@ def test_history_tracking(shell):
     assert shell.history[0].code == "x = 1"
     assert shell.history[1].code == "y = 2"
     assert shell.history[2].code == "x + y"
-    assert shell.history[2].payload == 3
+    assert shell.history[2].value == 3
 
 
 @pytest.mark.asyncio
@@ -196,5 +198,5 @@ async def test_execute_async():
 
     result = await shell.execute("2 + 2")
 
-    assert result.type == ExecutionType.EXPRESSION
-    assert result.payload == 4
+    assert isinstance(result, ExpressionResult)
+    assert result.value == 4
