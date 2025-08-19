@@ -22,7 +22,7 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 - **Internal**: Refactored results to use separate dataclasses and a tagged union
 - Changed to using `contextlib` and its stdout/stderr output redirection context managers when executing code
-- Swapped out a `.split("\n")` call for `.splitlines()` for better cross-platform line ending handling
+- Swapped out a `.split("\n")` call for `.splitlines()` for better cross-platform line ending handling (Thanks to [@jefftriplett] for the tip! 🎉)
 
 ## [0.1.0]
 
