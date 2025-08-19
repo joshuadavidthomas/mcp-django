@@ -18,11 +18,15 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Removed
+
+- Removed unused `timeout` parameter from django_shell tool, to prevent potential robot confusion.
+
 ## [0.3.0]
 
 ### Changed
 
-- Removed custom formatting for QuerySets and iterables in shell output. QuerySets now display as `<QuerySet [...]>` and lists show their standard `repr()` instead of truncated displays with "... and X more items". This makes output consistent with standard Django/Python shell behavior and should hopefully not confused the robots.
+- Removed custom formatting for QuerySets and iterables in shell output. QuerySets now display as `<QuerySet [...]>` and lists show their standard `repr()` instead of truncated displays with "... and X more items". This makes output consistent with standard Django/Python shell behavior and should hopefully not confuse the robots.
 
 ### Fixed
 
