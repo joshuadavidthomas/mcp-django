@@ -200,3 +200,42 @@ async def test_execute_async():
 
     assert isinstance(result, ExpressionResult)
     assert result.value == 4
+
+
+def test_trailing_newlines_with_expression(shell):
+    code = """
+x = 5
+y = 10
+x + y
+
+
+"""
+    result = shell._execute(code)
+
+    assert isinstance(result, ExpressionResult)
+    assert result.value == 15
+    assert "15" in result.output
+
+
+def test_trailing_whitespace_with_expression(shell):
+    code = "2 + 2    \n\n   "
+    result = shell._execute(code)
+
+    assert isinstance(result, ExpressionResult)
+    assert result.value == 4
+
+
+def test_leading_newlines_with_expression(shell):
+    code = "\n\n\n2 + 2"
+    result = shell._execute(code)
+
+    assert isinstance(result, ExpressionResult)
+    assert result.value == 4
+
+
+def test_expression_with_trailing_newlines(shell):
+    code = "x = 5\nx + 10\n\n"
+    result = shell._execute(code)
+
+    assert isinstance(result, ExpressionResult)
+    assert result.value == 15
