@@ -1,18 +1,23 @@
 from __future__ import annotations
 
+import logging
+
+from fastmcp import Context
 from fastmcp import FastMCP
 
 from .shell import DjangoShell
+from .shell import ErrorResult
 
 mcp = FastMCP(
     name="Django Shell",
     instructions="Provides a stateful Django shell environment for executing Python code, managing sessions, and exporting command history.",
 )
 shell = DjangoShell()
+logger = logging.getLogger(__name__)
 
 
 @mcp.tool
-async def django_shell(code: str, timeout: int | None = None) -> str:
+async def django_shell(code: str, ctx: Context, timeout: int | None = None) -> str:
     """Execute Python code in a stateful Django shell session.
 
     Django is pre-configured and ready to use with your project. You can import and use any Django
@@ -26,16 +31,63 @@ async def django_shell(code: str, timeout: int | None = None) -> str:
     **NOTE**: that only synchronous Django ORM operations are supported - use standard methods like
     `.filter()` and `.get()` rather than their async counterparts (`.afilter()`, `.aget()`).
     """
-    result = await shell.execute(code, timeout=timeout)
-    return result.output
+    logger.info(
+        "django_shell tool called - request_id: %s, client_id: %s, code: %s",
+        ctx.request_id,
+        ctx.client_id or "unknown",
+        (code[:100] + "..." if len(code) > 100 else code).replace("\n", "\\n"),
+    )
+    logger.debug(
+        "Full code for django_shell - request_id: %s: %s", ctx.request_id, code
+    )
+
+    try:
+        result = await shell.execute(code, timeout=timeout)
+
+        logger.debug(
+            "django_shell execution completed - request_id: %s, result type: %s",
+            ctx.request_id,
+            type(result).__name__,
+        )
+        if isinstance(result, ErrorResult):
+            await ctx.debug(
+                f"Execution failed: {type(result.exception).__name__}",
+                extra={
+                    "error_type": type(result.exception).__name__,
+                    "code_length": len(code),
+                },
+            )
+
+        return result.output
+
+    except Exception as e:
+        logger.error(
+            "Unexpected error in django_shell tool - request_id: %s: %s",
+            ctx.request_id,
+            e,
+            exc_info=True,
+        )
+        raise
 
 
 @mcp.tool
-def django_reset() -> str:
+async def django_reset(ctx: Context) -> str:
     """
     Reset the Django shell session, clearing all variables and history.
 
     Use this when you want to start fresh or if the session state becomes corrupted.
     """
+    logger.info(
+        "django_reset tool called - request_id: %s, client_id: %s",
+        ctx.request_id,
+        ctx.client_id or "unknown",
+    )
+    await ctx.debug("Django shell session reset")
+
     shell.reset()
+
+    logger.debug(
+        "Django shell session reset completed - request_id: %s", ctx.request_id
+    )
+
     return "Django shell session has been reset. All previously set variables and history cleared."

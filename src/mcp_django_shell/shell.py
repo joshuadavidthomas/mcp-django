@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import traceback
 from contextlib import redirect_stderr
 from contextlib import redirect_stdout
@@ -12,19 +13,33 @@ from typing import Literal
 
 from asgiref.sync import sync_to_async
 
+logger = logging.getLogger(__name__)
+
 
 class DjangoShell:
     def __init__(self):
+        logger.debug("Initializing %s", self.__class__.__name__)
+
         from django import setup
         from django.apps import apps
 
         if not apps.ready:  # pragma: no cover
+            logger.info("Django not initialized, running django.setup()")
+
             setup()
+
+            logger.debug("Django setup completed")
+        else:
+            logger.debug("Django already initialized, skipping setup")
 
         self.globals: dict[str, Any] = {}
         self.history: list[Result] = []
 
+        logger.info("Shell initialized successfully")
+
     def reset(self):
+        logger.info("Shell reset - clearing globals and history")
+
         self.globals = {}
         self.history = []
 
@@ -51,6 +66,11 @@ class DjangoShell:
         Note: This synchronous method contains the actual execution logic.
         Use `execute()` for async contexts or `_execute()` for sync/testing.
         """
+        code_preview = (code[:100] + "..." if len(code) > 100 else code).replace(
+            "\n", "\\n"
+        )
+        logger.info("Executing code: %s", code_preview)
+
         stdout = StringIO()
         stderr = StringIO()
 
@@ -58,13 +78,32 @@ class DjangoShell:
             try:
                 code, setup, code_type = parse_code(code)
 
+                logger.debug(
+                    "Execution type: %s, has setup: %s", code_type, bool(setup)
+                )
+                logger.debug(
+                    "Code to execute: %s",
+                    code[:200] + "..." if len(code) > 200 else code,
+                )
+
                 # Execute setup, if any (only applicable to expressions)
                 if setup:
+                    logger.debug(
+                        "Setup code: %s",
+                        setup[:200] + "..." if len(setup) > 200 else setup,
+                    )
+
                     exec(setup, self.globals)
 
                 match code_type:
                     case "expression":
                         value = eval(code, self.globals)
+
+                        logger.debug(
+                            "Expression executed successfully, result type: %s",
+                            type(value).__name__,
+                        )
+
                         return self.save_result(
                             ExpressionResult(
                                 code=code,
@@ -75,6 +114,9 @@ class DjangoShell:
                         )
                     case "statement":
                         exec(code, self.globals)
+
+                        logger.debug("Statement executed successfully")
+
                         return self.save_result(
                             StatementResult(
                                 code=code,
@@ -84,6 +126,13 @@ class DjangoShell:
                         )
 
             except Exception as e:
+                logger.error(
+                    "Exception during code execution: %s - Code: %s",
+                    f"{type(e).__name__}: {e}",
+                    code_preview,
+                )
+                logger.debug("Full traceback for error:", exc_info=True)
+
                 return self.save_result(
                     ErrorResult(
                         code=code,
@@ -136,6 +185,21 @@ class ExpressionResult:
     stderr: str
     timestamp: datetime = field(default_factory=datetime.now)
 
+    def __post_init__(self):
+        logger.debug(
+            "%s created - value type: %s",
+            self.__class__.__name__,
+            type(self.value).__name__,
+        )
+        logger.debug("%s.value: %s", self.__class__.__name__, repr(self.value)[:200])
+        if self.stdout:
+            logger.debug("%s.stdout: %s", self.__class__.__name__, self.stdout[:200])
+        if self.stderr:
+            logger.debug("%s.stderr: %s", self.__class__.__name__, self.stderr[:200])
+        logger.debug(
+            "%s output (for LLM): %s", self.__class__.__name__, self.output[:500]
+        )
+
     @property
     def output(self) -> str:
         value = repr(self.value)
@@ -170,6 +234,16 @@ class StatementResult:
     stderr: str
     timestamp: datetime = field(default_factory=datetime.now)
 
+    def __post_init__(self):
+        logger.debug("%s created", self.__class__.__name__)
+        if self.stdout:
+            logger.debug("%s.stdout: %s", self.__class__.__name__, self.stdout[:200])
+        if self.stderr:
+            logger.debug("%s.stderr: %s", self.__class__.__name__, self.stderr[:200])
+        logger.debug(
+            "%s output (for LLM): %s", self.__class__.__name__, self.output[:500]
+        )
+
     @property
     def output(self) -> str:
         return self.stdout or "OK"
@@ -183,11 +257,27 @@ class ErrorResult:
     stderr: str
     timestamp: datetime = field(default_factory=datetime.now)
 
+    def __post_init__(self):
+        logger.debug(
+            "%s created - exception type: %s",
+            self.__class__.__name__,
+            type(self.exception).__name__,
+        )
+        logger.debug("%s.message: %s", self.__class__.__name__, str(self.exception))
+        if self.stdout:
+            logger.debug("%s.stdout: %s", self.__class__.__name__, self.stdout[:200])
+        if self.stderr:
+            logger.debug("%s.stderr: %s", self.__class__.__name__, self.stderr[:200])
+        logger.debug(
+            "%s output (filtered for LLM): %s",
+            self.__class__.__name__,
+            self.output[:500],
+        )
+
     @property
     def output(self) -> str:
         error_type = self.exception.__class__.__name__
 
-        # Format the stored exception's traceback
         tb_str = "".join(
             traceback.format_exception(
                 type(self.exception), self.exception, self.exception.__traceback__
