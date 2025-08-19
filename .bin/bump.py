@@ -25,7 +25,7 @@ console = Console()
 class StrEnum(str, Enum):
     @override
     def __format__(self, format_spec: str) -> str:
-        return str(self.value)
+        return format(self.value, format_spec)
 
 
 class Version(StrEnum):
