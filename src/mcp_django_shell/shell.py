@@ -131,8 +131,11 @@ class Result:
             case ExecutionType.EXPRESSION:
                 value = repr(self.payload)
 
-                if hasattr(self.payload, "__iter__") and not isinstance(
-                    self.payload, str | dict
+                if (
+                    self.payload is not None
+                    and not isinstance(self.payload, Exception)
+                    and hasattr(self.payload, "__iter__")
+                    and not isinstance(self.payload, str | dict)
                 ):
                     # Format querysets and lists nicely
                     try:
