@@ -18,6 +18,12 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Added
+
+- Comprehensive logging for debugging MCP/LLM interactions
+- `--debug` flag for the `mcp_shell` management command to enable detailed logging
+- Request and client ID tracking in server logs
+
 ### Changed
 
 - **Internal**: Refactored results to use separate dataclasses and a tagged union

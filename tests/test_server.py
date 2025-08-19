@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+from unittest.mock import AsyncMock
+
 import pytest
 import pytest_asyncio
 from fastmcp import Client
+from fastmcp.exceptions import ToolError
 
 from mcp_django_shell.server import mcp
+from mcp_django_shell.server import shell
 
 pytestmark = pytest.mark.asyncio
 
@@ -43,6 +47,16 @@ async def test_django_shell_tool_orm():
             },
         )
         assert result.data is not None
+
+
+async def test_django_shell_tool_unexpected_error(monkeypatch):
+    monkeypatch.setattr(
+        shell, "execute", AsyncMock(side_effect=RuntimeError("Unexpected error"))
+    )
+
+    async with Client(mcp) as client:
+        with pytest.raises(ToolError, match="Unexpected error"):
+            await client.call_tool("django_shell", {"code": "2 + 2"})
 
 
 async def test_django_reset_session():
