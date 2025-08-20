@@ -18,6 +18,8 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+## [0.5.0]
+
 ### Added
 
 - Support for HTTP and SSE transport protocols via CLI arguments (`--transport`, `--host`, `--port`, `--path`)
@@ -74,9 +76,10 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 - Josh Thomas <josh@joshthomas.dev> (maintainer)
 
-[unreleased]: https://github.com/joshuadavidthomas/mcp-django-shell/compare/v0.4.0...HEAD
+[unreleased]: https://github.com/joshuadavidthomas/mcp-django-shell/compare/v0.5.0...HEAD
 [0.1.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.1.0
 [0.2.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.2.0
 [0.3.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.3.0
 [0.3.1]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.3.1
 [0.4.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.4.0
+[0.5.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.5.0
