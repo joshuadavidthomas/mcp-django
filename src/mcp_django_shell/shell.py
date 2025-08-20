@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import traceback
 from contextlib import redirect_stderr
 from contextlib import redirect_stdout
 from dataclasses import dataclass
@@ -196,17 +195,6 @@ class ExpressionResult:
             logger.debug("%s.stdout: %s", self.__class__.__name__, self.stdout[:200])
         if self.stderr:
             logger.debug("%s.stderr: %s", self.__class__.__name__, self.stderr[:200])
-        logger.debug(
-            "%s output (for LLM): %s", self.__class__.__name__, self.output[:500]
-        )
-
-    @property
-    def output(self) -> str:
-        if self.stdout:
-            return self.stdout.rstrip()
-        elif self.value is not None:
-            return repr(self.value)
-        return ""
 
 
 @dataclass
@@ -222,13 +210,6 @@ class StatementResult:
             logger.debug("%s.stdout: %s", self.__class__.__name__, self.stdout[:200])
         if self.stderr:
             logger.debug("%s.stderr: %s", self.__class__.__name__, self.stderr[:200])
-        logger.debug(
-            "%s output (for LLM): %s", self.__class__.__name__, self.output[:500]
-        )
-
-    @property
-    def output(self) -> str:
-        return self.stdout or "OK"
 
 
 @dataclass
@@ -250,34 +231,6 @@ class ErrorResult:
             logger.debug("%s.stdout: %s", self.__class__.__name__, self.stdout[:200])
         if self.stderr:
             logger.debug("%s.stderr: %s", self.__class__.__name__, self.stderr[:200])
-        logger.debug(
-            "%s output (filtered for LLM): %s",
-            self.__class__.__name__,
-            self.output[:500],
-        )
-
-    @property
-    def output(self) -> str:
-        error_type = self.exception.__class__.__name__
-
-        tb_str = "".join(
-            traceback.format_exception(
-                type(self.exception), self.exception, self.exception.__traceback__
-            )
-        )
-
-        # Filter out framework lines
-        tb_lines = tb_str.splitlines()
-        relevant_tb = "\n".join(
-            line for line in tb_lines if "mcp_django_shell" not in line
-        )
-
-        error_output = f"{error_type}: {self.exception}\n\nTraceback:\n{relevant_tb}"
-
-        if self.stdout:
-            return f"{self.stdout.rstrip()}\n{error_output}"
-
-        return error_output
 
 
 Result = ExpressionResult | StatementResult | ErrorResult
