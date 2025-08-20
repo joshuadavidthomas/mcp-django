@@ -18,11 +18,15 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Changed
+
+- The `code` argument to the `django_shell` MCP tool now has a helpful description.
+
 ## [0.5.0]
 
 ### Added
 
-- Support for HTTP and SSE transport protocols via CLI arguments (`--transport`, `--host`, `--port`, `--path`)
+- Support for HTTP and SSE transport protocols via CLI arguments (`--transport`, `--host`, `--port`, `--path`).
 
 ## [0.4.0]
 
