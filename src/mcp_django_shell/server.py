@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Annotated
 
 from fastmcp import Context
 from fastmcp import FastMCP
@@ -17,7 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 @mcp.tool
-async def django_shell(code: str, ctx: Context) -> str:
+async def django_shell(
+    code: Annotated[str, "Python code to be executed inside the Django shell session"],
+    ctx: Context,
+) -> str:
     """Execute Python code in a stateful Django shell session.
 
     Django is pre-configured and ready to use with your project. You can import and use any Django
