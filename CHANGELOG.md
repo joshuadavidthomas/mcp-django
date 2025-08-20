@@ -18,6 +18,14 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Added
+
+- Standalone CLI via `python -m mcp_django_shell`.
+
+### Deprecated
+
+- Soft-deprecation of the management command `manage.py mcp_shell`. It's now just a wrapper around the CLI, so there's no harm in keeping it, but the recommended usage will be the standalone CLI going forward.
+
 ## [0.3.1]
 
 ### Removed
