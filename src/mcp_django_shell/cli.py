@@ -26,11 +26,37 @@ def main(argv: Sequence[str] | None = None) -> int:
         action="store_true",
         help="Enable debug logging",
     )
+    parser.add_argument(
+        "--transport",
+        default="stdio",
+        choices=["stdio", "http", "sse"],
+        help="Transport protocol to use (default: stdio)",
+    )
+    parser.add_argument(
+        "--host",
+        default="127.0.0.1",
+        help="Host to bind to for HTTP/SSE transport (default: 127.0.0.1)",
+    )
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=8000,
+        help="Port to bind to for HTTP/SSE transport (default: 8000)",
+    )
+    parser.add_argument(
+        "--path",
+        default="/mcp",
+        help="Path for HTTP transport endpoint (default: /mcp)",
+    )
     args = parser.parse_args(argv)
 
     debug: bool = args.debug
     settings: str | None = args.settings
     pythonpath: str | None = args.pythonpath
+    transport: str = args.transport
+    host: str = args.host
+    port: int = args.port
+    path: str = args.path
 
     if debug:
         logging.basicConfig(
@@ -54,6 +80,14 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     logger.info("Starting MCP Django Shell server")
     logger.debug("Django settings module: %s", django_settings)
+    logger.debug("Transport: %s", transport)
+    if transport in ["http", "sse"]:
+        logger.info(
+            "Server will be available at %s:%s%s",
+            host,
+            port,
+            path if transport == "http" else "",
+        )
 
     def signal_handler(signum: int, _frame: Any):  # pragma: no cover
         logger.info("Received signal %s, shutting down MCP server", signum)
@@ -67,7 +101,18 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         from .server import mcp
 
-        mcp.run()
+        kwargs: dict[str, Any] = {"transport": transport}
+
+        if transport in ["http", "sse"]:
+            kwargs.update(
+                {
+                    "host": host,
+                    "port": port,
+                    "path": path,
+                }
+            )
+
+        mcp.run(**kwargs)
 
     except Exception as e:
         logger.error("MCP server crashed: %s", e, exc_info=True)

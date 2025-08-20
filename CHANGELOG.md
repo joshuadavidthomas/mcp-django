@@ -18,6 +18,10 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Added
+
+- Support for HTTP and SSE transport protocols via CLI arguments (`--transport`, `--host`, `--port`, `--path`)
+
 ## [0.4.0]
 
 ### Added

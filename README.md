@@ -92,6 +92,21 @@ There's also a Django management command if you prefer, but that requires adding
 python manage.py mcp_shell
 ```
 
+### Transport
+
+The server supports multiple transport protocols:
+
+```bash
+# Default: STDIO
+python -m mcp_django_shell
+
+# HTTP
+python -m mcp_django_shell --transport http --host 127.0.0.1 --port 8000
+
+# SSE
+python -m mcp_django_shell --transport sse --host 127.0.0.1 --port 8000
+```
+
 ### Client Configuration
 
 Configure your MCP client using one of the examples below. The command is the same for all clients, just expressed in annoyingly different JSON soup.
@@ -152,6 +167,7 @@ It wouldn't be an MCP server README without a gratuitous list of features punctu
 - 🚀 **Zero configuration** - No schemas, no settings, just Django
 - 🤖 **LLM-friendly** - Designed for AI assistants that already know Python
 - 📦 **Minimal dependencies** - Just FastMCP and Django (you already have Django)
+- 🌐 **Multiple transports** - STDIO, HTTP, SSE.. It has it all!
 - 🎯 **Does one thing well** - Runs code. That's it. That's the feature.
 
 Inspired by Armin Ronacher's [Your MCP Doesn't Need 30 Tools: It Needs Code](https://lucumr.pocoo.org/2025/8/18/code-mcps/).
