@@ -62,3 +62,40 @@ def test_cli_with_debug(monkeypatch):
     result = main(["--debug"])
 
     assert result == 0
+
+
+def test_cli_with_http_transport(monkeypatch):
+    monkeypatch.setenv("DJANGO_SETTINGS_MODULE", "tests.settings")
+
+    mock_mcp = Mock()
+    monkeypatch.setattr("mcp_django_shell.server.mcp", mock_mcp)
+
+    result = main(
+        [
+            "--transport",
+            "http",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8000",
+            "--path",
+            "/mcp",
+        ]
+    )
+
+    mock_mcp.run.assert_called_once_with(
+        transport="http", host="127.0.0.1", port=8000, path="/mcp"
+    )
+    assert result == 0
+
+
+def test_cli_with_sse_transport(monkeypatch):
+    monkeypatch.setenv("DJANGO_SETTINGS_MODULE", "tests.settings")
+
+    mock_mcp = Mock()
+    monkeypatch.setattr("mcp_django_shell.server.mcp", mock_mcp)
+
+    result = main(["--transport", "sse", "--host", "0.0.0.0", "--port", "9000"])
+
+    mock_mcp.run.assert_called_once_with(transport="sse", host="0.0.0.0", port=9000)
+    assert result == 0

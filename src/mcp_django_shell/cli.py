@@ -104,13 +104,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         kwargs: dict[str, Any] = {"transport": transport}
 
         if transport in ["http", "sse"]:
-            kwargs.update(
-                {
-                    "host": host,
-                    "port": port,
-                    "path": path,
-                }
-            )
+            kwargs["host"] = host
+            kwargs["port"] = port
+
+        if transport == "http":
+            kwargs["path"] = path
 
         mcp.run(**kwargs)
 
