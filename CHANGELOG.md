@@ -20,7 +20,7 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ### Added
 
-- Pydantic is now a declared dependency of the library. Previously, it was a transitive dependency via FastMCP.
+- Pydantic is now a explicit dependency of the library. Previously, it was a transitive dependency via FastMCP.
 
 ### Changed
 
