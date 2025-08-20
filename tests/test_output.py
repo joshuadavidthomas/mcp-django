@@ -117,7 +117,6 @@ def test_traceback_filtering():
             traceback=e.__traceback__,
         )
 
-        # the traceback should contain mcp_django_shell
         assert any(
             "mcp_django_shell_function" in line
             for line in traceback.format_tb(e.__traceback__)
@@ -125,7 +124,6 @@ def test_traceback_filtering():
 
         serialized = exc_output.model_dump(mode="json")
 
-        # The serialized traceback should NOT contain mcp_django_shell
         assert len(serialized["traceback"]) == 0 or not any(
             "mcp_django_shell" in line for line in serialized["traceback"]
         )
