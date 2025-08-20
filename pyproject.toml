@@ -110,6 +110,8 @@ fail_under = 100
 omit = [
   "src/mcp_django_shell/management/commands/mcp_shell.py",
   "src/mcp_django_shell/migrations/*",
+  "src/mcp_django_shell/__main__.py",
+  "src/mcp_django_shell/_typing.py",
   "tests/*"
 ]
 source = ["src/mcp_django_shell"]

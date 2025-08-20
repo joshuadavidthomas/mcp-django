@@ -55,7 +55,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     logger.info("Starting MCP Django Shell server")
     logger.debug("Django settings module: %s", django_settings)
 
-    def signal_handler(signum: int, _frame: Any):
+    def signal_handler(signum: int, _frame: Any):  # pragma: no cover
         logger.info("Received signal %s, shutting down MCP server", signum)
         sys.exit(0)
 
