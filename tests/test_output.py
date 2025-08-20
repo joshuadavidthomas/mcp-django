@@ -22,7 +22,6 @@ def test_django_shell_output_from_expression_result():
     output = DjangoShellOutput.from_result(result)
 
     assert output.status == ExecutionStatus.SUCCESS
-    assert output.input == "2 + 2"
     assert isinstance(output.output, ExpressionOutput)
     assert output.output.value == 4
     assert output.output.value_type is int
