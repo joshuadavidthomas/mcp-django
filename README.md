@@ -47,7 +47,7 @@ cog.outl(f"- Django {', '.join([version for version in DJ_VERSIONS if version !=
     uv sync
     ```
 
-2. Add to your Django project's `INSTALLED_APPS`:
+2. (Optional) Add to your Django project's `INSTALLED_APPS` if you want to use the management command:
 
    ```python
    DEBUG = ...
@@ -55,6 +55,8 @@ cog.outl(f"- Django {', '.join([version for version in DJ_VERSIONS if version !=
    if DEBUG:
        INSTALLED_APPS.append("mcp_django_shell")
    ```
+
+   **Note**: You can now run mcp-django-shell without adding it to `INSTALLED_APPS` by using `python -m mcp_django_shell` directly. [See below](#getting-started) for more info.
 
 > [!WARNING]
 >
@@ -64,7 +66,35 @@ cog.outl(f"- Django {', '.join([version for version in DJ_VERSIONS if version !=
 
 ## Getting Started
 
-mcp-django-shell provides a Django management command that MCP clients can connect to. Configure your client using one of the examples below.
+Run the MCP server directly from your Django project directory:
+
+```bash
+python -m mcp_django_shell
+
+# With explicit settings module
+python -m mcp_django_shell --settings myproject.settings
+
+# With debug logging
+python -m mcp_django_shell --debug
+```
+
+Or using uv:
+
+```bash
+uv run -m mcp_django_shell
+```
+
+The server automatically detects `DJANGO_SETTINGS_MODULE` from your environment. You can override it with `--settings` or add to your Python path with `--pythonpath`.
+
+There's also a Django management command if you prefer, but that requires adding mcp-django-shell to `INSTALLED_APPS`:
+
+```bash
+python manage.py mcp_shell
+```
+
+### Client Configuration
+
+Configure your MCP client using one of the examples below. The command is the same for all clients, just expressed in annoyingly different JSON soup.
 
 Don't see your client? [Submit a PR](CONTRIBUTING.md) with setup instructions.
 
@@ -75,8 +105,11 @@ Don't see your client? [Submit a PR](CONTRIBUTING.md) with setup instructions.
   "mcpServers": {
     "django_shell": {
       "command": "python",
-      "args": ["manage.py", "mcp_shell"],
-      "cwd": "/path/to/your/django/project"
+      "args": ["-m", "mcp_django_shell"],
+      "cwd": "/path/to/your/django/project",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "myproject.settings"
+      }
     }
   }
 }
@@ -90,8 +123,11 @@ Don't see your client? [Submit a PR](CONTRIBUTING.md) with setup instructions.
   "mcp": {
     "django_shell": {
       "type": "local",
-      "command": ["python", "manage.py", "mcp_shell"],
-      "enabled": true
+      "command": ["python", "-m", "mcp_django_shell"],
+      "enabled": true,
+      "environment": {
+        "DJANGO_SETTINGS_MODULE": "myproject.settings"
+      }
     }
   }
 }
