@@ -18,6 +18,10 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Removed
+
+- Removed redundant input field from `django_shell` tool response to reduce output verbosity.
+
 ## [0.6.0]
 
 ### Added
