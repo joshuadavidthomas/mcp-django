@@ -67,6 +67,7 @@ classifiers = [
 dependencies = [
   "django>4.2",
   "fastmcp>=2.11.3",
+  "pydantic[email]>=2.11.7",
 ]
 description = "MCP server providing a stateful Django shell for AI assistants."
 name = "mcp-django-shell"
