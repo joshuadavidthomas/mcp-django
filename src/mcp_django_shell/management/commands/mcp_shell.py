@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from argparse import ArgumentParser
 from typing import Any
 from typing import final
 
-from django.core.management.base import ArgumentParser
 from django.core.management.base import BaseCommand
 
 from mcp_django_shell._typing import override
@@ -23,9 +23,9 @@ class Command(BaseCommand):
         )
 
     @override
-    def handle(self, *args: Any, **options: Any) -> int:
+    def handle(self, *args: Any, **options: Any) -> str | None:
         argv: list[str] = []
         if options.get("debug"):
             argv.append("--debug")
 
-        return main(argv)
+        return str(main(argv))
