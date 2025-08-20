@@ -18,6 +18,10 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Added
+
+- Pydantic is now a explicit dependency of the library. Previously, it was a transitive dependency via FastMCP.
+
 ### Changed
 
 - The `code` argument to the `django_shell` MCP tool now has a helpful description.
