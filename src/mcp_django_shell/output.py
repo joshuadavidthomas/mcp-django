@@ -24,6 +24,8 @@ class DjangoShellOutput(BaseModel):
 
     @classmethod
     def from_result(cls, result: Result) -> DjangoShellOutput:
+        output: Output
+
         match result:
             case ExpressionResult():
                 output = ExpressionOutput(
@@ -34,7 +36,7 @@ class DjangoShellOutput(BaseModel):
                 output = StatementOutput()
             case ErrorResult():
                 exception = ExceptionOutput(
-                    type=type(result.exception),
+                    exc_type=type(result.exception),
                     message=str(result.exception),
                     traceback=result.exception.__traceback__,
                 )
@@ -97,11 +99,11 @@ class ErrorOutput(BaseModel):
 class ExceptionOutput(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    type: type[Exception]
+    exc_type: type[Exception]
     message: str
     traceback: TracebackType | None
 
-    @field_serializer("type")
+    @field_serializer("exc_type")
     def serialize_exception_type(self, exc_type: type[Exception]) -> str:
         return exc_type.__name__
 

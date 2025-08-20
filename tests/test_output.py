@@ -61,7 +61,7 @@ def test_django_shell_output_from_error_result():
 
     assert output.status == ExecutionStatus.ERROR
     assert isinstance(output.output, ErrorOutput)
-    assert output.output.exception.type is ZeroDivisionError
+    assert output.output.exception.exc_type is ZeroDivisionError
     assert "division by zero" in output.output.exception.message
 
 
@@ -69,33 +69,32 @@ def test_exception_output_serialization():
     exc = ValueError("test error")
 
     exc_output = ExceptionOutput(
-        type=type(exc),
+        exc_type=type(exc),
         message=str(exc),
         traceback=None,  # needs to be None since we didn't actually raise it
     )
 
-    # Trigger serialization
     serialized = exc_output.model_dump(mode="json")
 
-    assert serialized["type"] == "ValueError"
+    assert serialized["exc_type"] == "ValueError"
     assert serialized["message"] == "test error"
     assert serialized["traceback"] == []
 
 
 def test_exception_output_with_real_traceback():
+    # Do something that actually raises an error
     try:
-        # Do something that actually raises an error
         1 / 0
     except ZeroDivisionError as e:
         exc_output = ExceptionOutput(
-            type=type(e),
+            exc_type=type(e),
             message=str(e),
             traceback=e.__traceback__,
         )
 
         serialized = exc_output.model_dump(mode="json")
 
-        assert serialized["type"] == "ZeroDivisionError"
+        assert serialized["exc_type"] == "ZeroDivisionError"
         assert "division by zero" in serialized["message"]
         assert isinstance(serialized["traceback"], list)
         assert len(serialized["traceback"]) > 0
@@ -112,7 +111,7 @@ def test_traceback_filtering():
         mcp_django_shell_function()
     except ValueError as e:
         exc_output = ExceptionOutput(
-            type=type(e),
+            exc_type=type(e),
             message=str(e),
             traceback=e.__traceback__,
         )

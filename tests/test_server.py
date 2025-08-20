@@ -65,7 +65,7 @@ async def test_django_shell_error_output():
         result = await client.call_tool("django_shell", {"code": "1 / 0"})
 
         assert result.data.status == ExecutionStatus.ERROR.value
-        assert "ZeroDivisionError" in str(result.data.output.exception.type)
+        assert "ZeroDivisionError" in str(result.data.output.exception.exc_type)
         assert "division by zero" in result.data.output.exception.message
         assert len(result.data.output.exception.traceback) > 0
         assert not any(
