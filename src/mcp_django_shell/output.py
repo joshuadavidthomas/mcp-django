@@ -17,7 +17,6 @@ from mcp_django_shell.shell import StatementResult
 
 class DjangoShellOutput(BaseModel):
     status: ExecutionStatus
-    input: str
     output: Output
     stdout: str
     stderr: str
@@ -44,7 +43,6 @@ class DjangoShellOutput(BaseModel):
 
         return cls(
             status=ExecutionStatus.from_output(output),
-            input=result.code,
             output=output,
             stdout=result.stdout,
             stderr=result.stderr,
