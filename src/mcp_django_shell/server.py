@@ -6,8 +6,9 @@ from typing import Annotated
 from fastmcp import Context
 from fastmcp import FastMCP
 
+from .output import DjangoShellOutput
+from .output import ErrorOutput
 from .shell import DjangoShell
-from .shell import ErrorResult
 
 mcp = FastMCP(
     name="Django Shell",
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 async def django_shell(
     code: Annotated[str, "Python code to be executed inside the Django shell session"],
     ctx: Context,
-) -> str:
+) -> DjangoShellOutput:
     """Execute Python code in a stateful Django shell session.
 
     Django is pre-configured and ready to use with your project. You can import and use any Django
@@ -47,22 +48,17 @@ async def django_shell(
 
     try:
         result = await shell.execute(code)
+        output = DjangoShellOutput.from_result(result)
 
         logger.debug(
             "django_shell execution completed - request_id: %s, result type: %s",
             ctx.request_id,
             type(result).__name__,
         )
-        if isinstance(result, ErrorResult):
-            await ctx.debug(
-                f"Execution failed: {type(result.exception).__name__}",
-                extra={
-                    "error_type": type(result.exception).__name__,
-                    "code_length": len(code),
-                },
-            )
+        if isinstance(output.output, ErrorOutput):
+            await ctx.debug(f"Execution failed: {output.output.exception.message}")
 
-        return result.output
+        return output
 
     except Exception as e:
         logger.error(

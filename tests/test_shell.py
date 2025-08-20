@@ -11,8 +11,6 @@ from mcp_django_shell.shell import ExpressionResult
 from mcp_django_shell.shell import StatementResult
 from mcp_django_shell.shell import parse_code
 
-from .models import AModel
-
 
 @pytest.fixture
 def shell():
@@ -116,13 +114,11 @@ class TestCodeExecution:
 
         assert isinstance(result, ExpressionResult)
         assert result.value == 4
-        assert "4" in result.output
 
     def test_execute_statement_returns_ok(self, shell):
         result = shell._execute("x = 5")
 
         assert isinstance(result, StatementResult)
-        assert result.output == "OK"
 
     def test_execute_multiline_expression_returns_last_value(self, shell):
         code = """\
@@ -134,7 +130,6 @@ x + y
 
         assert isinstance(result, ExpressionResult)
         assert result.value == 15
-        assert "15" in result.output
 
     def test_execute_multiline_statements_returns_ok(self, shell):
         code = """\
@@ -145,14 +140,12 @@ z = x + y
         result = shell._execute(code.strip())
 
         assert isinstance(result, StatementResult)
-        assert result.output == "OK"
 
     def test_execute_print_captures_stdout(self, shell):
         result = shell._execute('print("Hello, World!")')
 
         assert isinstance(result, ExpressionResult)
         assert result.value is None
-        assert "Hello, World!" in result.output
 
     def test_multiline_ending_with_print_no_none(self, shell):
         code = """
@@ -164,20 +157,16 @@ print(f"Sum: {x + y}")
 
         assert isinstance(result, ExpressionResult)
         assert result.value is None
-        assert "Sum: 15" in result.output
-        assert result.output == "Sum: 15"
 
     def test_execute_invalid_code_returns_error(self, shell):
         result = shell._execute("1 / 0")
 
         assert isinstance(result, ErrorResult)
-        assert "ZeroDivisionError" in result.output
 
     def test_execute_empty_string_returns_ok(self, shell):
         result = shell._execute("")
 
         assert isinstance(result, StatementResult)
-        assert result.output == "OK"
 
     def test_execute_whitespace_only_returns_ok(self, shell):
         result = shell._execute("   \n  \t  ")
@@ -192,102 +181,6 @@ print(f"Sum: {x + y}")
 
         assert isinstance(result, ExpressionResult)
         assert result.value == 4
-
-
-class TestResultOutput:
-    def test_expression_with_value_no_stdout(self, shell):
-        result = shell._execute("42")
-        assert isinstance(result, ExpressionResult)
-        assert result.output == "42"
-
-    def test_expression_with_none_no_stdout(self, shell):
-        result = shell._execute("None")
-        assert isinstance(result, ExpressionResult)
-        assert result.output == ""
-
-    def test_expression_with_stdout_and_value(self, shell):
-        code = """\
-print('hello')
-42
-"""
-        result = shell._execute(code.strip())
-        assert isinstance(result, ExpressionResult)
-        assert result.output == "hello"  # No "42" shown
-
-    def test_expression_with_stdout_and_none(self, shell):
-        result = shell._execute("print('hello')")
-        assert isinstance(result, ExpressionResult)
-        assert result.output == "hello"  # No "None" shown
-
-    def test_multiline_ending_with_print(self, shell):
-        code = """\
-x = 5
-y = 10
-print(f"Sum: {x + y}")
-"""
-        result = shell._execute(code.strip())
-        assert isinstance(result, ExpressionResult)
-        assert result.output == "Sum: 15"  # No "None" appended
-
-    def test_function_returning_none(self, shell):
-        code = """\
-def foo():
-    x = 2
-foo()
-"""
-        result = shell._execute(code.strip())
-        assert isinstance(result, ExpressionResult)
-        assert result.output == ""
-
-    @pytest.mark.django_db
-    def test_queryset_shows_standard_repr(self, shell):
-        for i in range(3):
-            AModel.objects.create(name=f"Item {i}", value=i)
-
-        shell._execute("from tests.models import AModel")
-        result = shell._execute("AModel.objects.all()")
-
-        assert isinstance(result, ExpressionResult)
-        assert result.output.startswith("<QuerySet [<AModel:")
-        assert "Item 0" in result.output
-        assert "Item 2" in result.output
-
-    def test_statement_with_stdout(self, shell):
-        result = shell._execute("x = 5; print(x)")
-        assert isinstance(result, StatementResult)
-        assert result.output == "5\n"  # print adds a newline
-
-    def test_statement_no_stdout(self, shell):
-        result = shell._execute("x = 5")
-        assert isinstance(result, StatementResult)
-        assert result.output == "OK"
-
-    def test_error_with_stdout(self, shell):
-        code = """\
-print("Starting...")
-print("Processing...")
-1 / 0
-"""
-        result = shell._execute(code.strip())
-        assert isinstance(result, ErrorResult)
-        assert "Starting..." in result.output
-        assert "Processing..." in result.output
-        assert "ZeroDivisionError" in result.output
-        # Stdout should come before the error
-        assert result.output.index("Starting...") < result.output.index(
-            "ZeroDivisionError"
-        )
-
-    def test_error_no_stdout(self, shell):
-        result = shell._execute("1 / 0")
-        assert isinstance(result, ErrorResult)
-        assert "ZeroDivisionError" in result.output
-        assert "Traceback:" in result.output
-
-    def test_error_filters_framework_lines(self, shell):
-        result = shell._execute("1 / 0")
-        assert isinstance(result, ErrorResult)
-        assert "mcp_django_shell" not in result.output
 
 
 class TestShellState:
