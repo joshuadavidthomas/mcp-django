@@ -5,6 +5,7 @@ from typing import Annotated
 
 from fastmcp import Context
 from fastmcp import FastMCP
+from mcp.types import ToolAnnotations
 
 from .output import DjangoShellOutput
 from .output import ErrorOutput
@@ -18,7 +19,11 @@ shell = DjangoShell()
 logger = logging.getLogger(__name__)
 
 
-@mcp.tool
+@mcp.tool(
+    annotations=ToolAnnotations(
+        title="Django Shell", destructiveHint=True, openWorldHint=True
+    ),
+)
 async def django_shell(
     code: Annotated[str, "Python code to be executed inside the Django shell session"],
     ctx: Context,
@@ -70,7 +75,11 @@ async def django_shell(
         raise
 
 
-@mcp.tool
+@mcp.tool(
+    annotations=ToolAnnotations(
+        title="Reset Django Shell Session", destructiveHint=True, idempotentHint=True
+    ),
+)
 async def django_reset(ctx: Context) -> str:
     """
     Reset the Django shell session, clearing all variables and history.

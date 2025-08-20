@@ -26,6 +26,7 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 - The `code` argument to the `django_shell` MCP tool now has a helpful description.
 - `django_shell` now returns structured output with execution status, error details, and filtered tracebacks instead of plain strings.
+- MCP tools now provide annotations hints via `fastmcp.ToolAnnotations`.
 
 ## [0.5.0]
 
