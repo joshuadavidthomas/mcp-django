@@ -69,7 +69,7 @@ dependencies = [
   "fastmcp>=2.11.3",
   "pydantic[email]>=2.11.7",
 ]
-description = "MCP server providing a stateful Django shell for AI assistants."
+description = "MCP server providing a stateful Django shell for LLM assistants."
 name = "mcp-django-shell"
 readme = "README.md"
 version = "0.7.0"

@@ -16,7 +16,7 @@ cog.outl(f"![Django Version](https://img.shields.io/badge/django-{'%20%7C%20'.jo
 ![Django Version](https://img.shields.io/badge/django-4.2%20%7C%205.1%20%7C%205.2%20%7C%20main-%2344B78B?labelColor=%23092E20)
 <!-- [[[end]]] -->
 
-A Model Context Protocol (MCP) server providing a stateful Django shell for AI assistants to interact with Django projects.
+A Model Context Protocol (MCP) server providing a stateful Django shell for LLM assistants to interact with Django projects.
 
 ## Requirements
 
@@ -160,7 +160,7 @@ Don't see your client? [Submit a PR](CONTRIBUTING.md) with setup instructions.
 
 ## Features
 
-mcp-django-shell provides an MCP server with a stateful Django shell for AI assistants. It sets up Django, maintains session state between calls, and lets the AI write and execute Python code directly against your project.
+mcp-django-shell provides an MCP server with a stateful Django shell for LLM assistants. It sets up Django, maintains session state between calls, and lets the LLM write and execute Python code directly against your project.
 
 It wouldn't be an MCP server README without a gratuitous list of features punctuated by emojis, so:
 
@@ -169,7 +169,7 @@ It wouldn't be an MCP server README without a gratuitous list of features punctu
 - 🔄 **Persistent state** - Imports and variables stick around between calls
 - 🧹 **Reset when needed** - `django_reset` clears the session when things get weird
 - 🚀 **Zero configuration** - No schemas, no settings, just Django
-- 🤖 **LLM-friendly** - Designed for AI assistants that already know Python
+- 🤖 **LLM-friendly** - Designed for LLM assistants that already know Python
 - 📦 **Minimal dependencies** - Just FastMCP and Django (you already have Django)
 - 🌐 **Multiple transports** - STDIO, HTTP, SSE.. It has it all!
 - 🎯 **Does one thing well** - Runs code. That's it. That's the feature.
@@ -193,7 +193,7 @@ Two tools handle shell operations and session management:
 - `django_shell` - Execute Python code in a persistent Django shell session
 - `django_reset` - Reset the session, clearing all variables and imports
 
-Imports and variables persist between calls within the shell tool, so the AI can work iteratively - exploring your models, testing queries, debugging issues.
+Imports and variables persist between calls within the shell tool, so the LLM can work iteratively - exploring your models, testing queries, debugging issues.
 
 ## Development
 
