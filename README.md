@@ -158,20 +158,14 @@ Don't see your client? [Submit a PR](CONTRIBUTING.md) with setup instructions.
 }
 ```
 
-## Usage
+## Features
 
 mcp-django-shell provides an MCP server with a stateful Django shell for AI assistants. It sets up Django, maintains session state between calls, and lets the AI write and execute Python code directly against your project.
 
-The MCP server comes with just two tools:
-
-- `django_shell` - Execute Python code in a persistent Django shell session
-- `django_reset` - Reset the session, clearing all variables and imports
-
-Imports and variables persist between calls, so the AI can work iteratively - exploring your models, testing queries, debugging issues.
-
 It wouldn't be an MCP server README without a gratuitous list of features punctuated by emojis, so:
 
-- 🐚 **One tool** - `django_shell` executes Python code in your Django environment
+- 🐚 **Stateful shell** - `django_shell` executes Python code in your Django environment
+- 🔍 **Project exploration** - MCP resources for discovering apps, models, and configuration
 - 🔄 **Persistent state** - Imports and variables stick around between calls
 - 🧹 **Reset when needed** - `django_reset` clears the session when things get weird
 - 🚀 **Zero configuration** - No schemas, no settings, just Django
@@ -181,6 +175,25 @@ It wouldn't be an MCP server README without a gratuitous list of features punctu
 - 🎯 **Does one thing well** - Runs code. That's it. That's the feature.
 
 Inspired by Armin Ronacher's [Your MCP Doesn't Need 30 Tools: It Needs Code](https://lucumr.pocoo.org/2025/8/18/code-mcps/).
+
+### Resources
+
+Read-only resources are provided for project exploration without executing code (note that resource support varies across MCP clients):
+
+- `django://project` - Python environment and Django configuration details
+- `django://apps` - All installed Django applications with their models
+- `django://models` - Detailed model information with import paths and field types
+
+The idea is to give just enough information about the project to hopefully guide the LLM assistant and prevent needless shell exploration, allowing it to get straight to work.
+
+### Tools
+
+Two tools handle shell operations and session management:
+
+- `django_shell` - Execute Python code in a persistent Django shell session
+- `django_reset` - Reset the session, clearing all variables and imports
+
+Imports and variables persist between calls within the shell tool, so the AI can work iteratively - exploring your models, testing queries, debugging issues.
 
 ## Development
 
