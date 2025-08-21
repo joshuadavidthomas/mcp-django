@@ -43,10 +43,7 @@ class DjangoShell:
         self.history = []
 
     async def execute(
-        self,
-        code: str,
-        setup: str,
-        code_type: Literal["expression", "statement"],
+        self, code: str, setup: str, code_type: Literal["expression", "statement"]
     ) -> Result:
         """Execute Python code in the Django shell context (async wrapper).
 
@@ -62,10 +59,7 @@ class DjangoShell:
         return await sync_to_async(self._execute)(code, setup, code_type)
 
     def _execute(
-        self,
-        code: str,  # The parsed code to execute
-        setup: str,
-        code_type: Literal["expression", "statement"],
+        self, code: str, setup: str, code_type: Literal["expression", "statement"]
     ) -> Result:
         """Execute Python code in the Django shell context (synchronous).
 
