@@ -99,9 +99,36 @@ def test_django_resource_from_django():
     assert "databases" in data
 
 
-def test_django_resource_without_auth(monkeypatch):
+def test_django_resource_without_auth():
     result = DjangoResource.from_django()
     assert result.auth_user_model is None
+
+
+def test_django_resource_without_base_dir(monkeypatch):
+    monkeypatch.delattr(settings, "BASE_DIR", raising=False)
+    resource = DjangoResource.from_django()
+    assert resource.base_dir == Path.cwd()
+
+
+@override_settings(
+    DATABASES={
+        "sqlite": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": Path("/tmp/db.sqlite3"),
+        },
+        "postgres": {"ENGINE": "django.db.backends.postgresql", "NAME": "mydb"},
+    }
+)
+def test_django_resource_mixed_databases():
+    resource = DjangoResource.from_django()
+    assert isinstance(resource.databases["sqlite"]["name"], str)
+    assert isinstance(resource.databases["postgres"]["name"], str)
+
+
+@override_settings(DATABASES={"default": {"ENGINE": "django.db.backends.sqlite3"}})
+def test_django_resource_missing_db_name():
+    resource = DjangoResource.from_django()
+    assert resource.databases["default"]["name"] == ""
 
 
 def test_app_resource_from_app():

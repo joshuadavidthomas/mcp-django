@@ -62,7 +62,7 @@ class DjangoResource(BaseModel):
     apps: list[str]
     auth_user_model: str | None
     base_dir: Path
-    databases: dict[str, dict[str, str | Path]]
+    databases: dict[str, dict[str, str]]
     debug: bool
     settings_module: str
     version: tuple[int, int, int, Literal["alpha", "beta", "rc", "final"], int]
@@ -74,7 +74,7 @@ class DjangoResource(BaseModel):
         databases = {
             db_alias: {
                 "engine": db_config.get("ENGINE", ""),
-                "name": db_config.get("NAME", ""),
+                "name": str(db_config.get("NAME", "")),
             }
             for db_alias, db_config in settings.DATABASES.items()
         }
@@ -88,9 +88,7 @@ class DjangoResource(BaseModel):
         return cls(
             apps=app_names,
             auth_user_model=auth_user_model,
-            base_dir=Path(settings.BASE_DIR)
-            if hasattr(settings, "BASE_DIR")
-            else Path.cwd(),
+            base_dir=Path(getattr(settings, "BASE_DIR", Path.cwd())),
             databases=databases,
             debug=settings.DEBUG,
             settings_module=os.environ.get("DJANGO_SETTINGS_MODULE", ""),
