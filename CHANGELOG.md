@@ -20,12 +20,11 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ### Added
 
-- MCP resources for exploring Django apps and models without shell execution.
-- Support for both general (`django://apps`) and targeted (`django://apps/{app_label}`) resource queries.
+- MCP resources for exploring the project environment, Django apps, and models without shell execution.
 
 ### Changed
 
-- Updated server instructions with resource hierarchy and "Quick Start" guidance to hopefully get LLMs to actually prefer using resources over the `django_shell` tool.
+- Updated server instructions to guide LLMs to use resources for project orientation before shell operations
 
 ### Removed
 
