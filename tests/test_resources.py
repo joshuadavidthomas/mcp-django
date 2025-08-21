@@ -23,10 +23,16 @@ def test_get_source_file_path_with_class():
 
 
 def test_get_source_file_path_with_instance():
-    instance = AModel()
-    result = get_source_file_path(instance)
+    result = get_source_file_path(AModel())
     assert isinstance(result, Path)
     assert result != Path("unknown")
+
+
+def test_get_source_file_path_unknown():
+    # Built-in types like int don't have source files, so this should trigger the exception path
+    result = get_source_file_path(42)
+    assert isinstance(result, Path)
+    assert result == Path("unknown")
 
 
 def test_get_source_file_path_valueerror(monkeypatch):
