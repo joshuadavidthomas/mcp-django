@@ -24,7 +24,7 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ### Changed
 
-- Updated server instructions to guide LLMs to use resources for project orientation before shell operations
+- Updated server instructions to guide LLMs to use resources for project orientation before shell operations.
 
 ### Removed
 
