@@ -18,6 +18,14 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Added
+
+- MCP resources for exploring the project environment, Django apps, and models without shell execution.
+
+### Changed
+
+- Updated server instructions to guide LLMs to use resources for project orientation before shell operations.
+
 ### Removed
 
 - Removed redundant input field from `django_shell` tool response to reduce output verbosity.
