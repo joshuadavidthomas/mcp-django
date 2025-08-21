@@ -18,6 +18,10 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Added
+
+- Optional `imports` parameter to `django_shell` tool for providing import statements separately from main code execution.
+
 ## [0.7.0]
 
 ### Added

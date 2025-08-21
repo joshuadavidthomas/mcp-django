@@ -8,6 +8,8 @@ from fastmcp import Context
 from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
+from .code import filter_existing_imports
+from .code import parse_code
 from .output import DjangoShellOutput
 from .output import ErrorOutput
 from .resources import AppResource
@@ -55,8 +57,12 @@ logger = logging.getLogger(__name__)
     ),
 )
 async def django_shell(
-    code: Annotated[str, "Python code to be executed inside the Django shell session"],
     ctx: Context,
+    code: Annotated[str, "Python code to be executed inside the Django shell session"],
+    imports: Annotated[
+        str | None,
+        "Optional import statements to execute before running the main code. Should contain all necessary imports for the code to run successfully, such as 'from django.contrib.auth.models import User\\nfrom myapp.models import MyModel'",
+    ] = None,
 ) -> DjangoShellOutput:
     """Execute Python code in a stateful Django shell session.
 
@@ -72,17 +78,28 @@ async def django_shell(
     `.filter()` and `.get()` rather than their async counterparts (`.afilter()`, `.aget()`).
     """
     logger.info(
-        "django_shell tool called - request_id: %s, client_id: %s, code: %s",
+        "django_shell tool called - request_id: %s, client_id: %s, code: %s, imports: %s",
         ctx.request_id,
         ctx.client_id or "unknown",
         (code[:100] + "..." if len(code) > 100 else code).replace("\n", "\\n"),
+        (imports[:50] + "..." if imports and len(imports) > 50 else imports or "None"),
     )
     logger.debug(
         "Full code for django_shell - request_id: %s: %s", ctx.request_id, code
     )
+    if imports:
+        logger.debug(
+            "Imports for django_shell - request_id: %s: %s", ctx.request_id, imports
+        )
+
+        filtered_imports = filter_existing_imports(imports, shell.globals)
+        if filtered_imports.strip():
+            code = f"{filtered_imports}\n{code}"
+
+    parsed_code, setup, code_type = parse_code(code)
 
     try:
-        result = await shell.execute(code)
+        result = await shell.execute(parsed_code, setup, code_type)
         output = DjangoShellOutput.from_result(result)
 
         logger.debug(

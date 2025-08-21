@@ -42,7 +42,9 @@ class DjangoShell:
         self.globals = {}
         self.history = []
 
-    async def execute(self, code: str) -> Result:
+    async def execute(
+        self, code: str, setup: str, code_type: Literal["expression", "statement"]
+    ) -> Result:
         """Execute Python code in the Django shell context (async wrapper).
 
         This async wrapper enables use from FastMCP and other async contexts.
@@ -54,9 +56,11 @@ class DjangoShell:
         errors.
         """
 
-        return await sync_to_async(self._execute)(code)
+        return await sync_to_async(self._execute)(code, setup, code_type)
 
-    def _execute(self, code: str) -> Result:
+    def _execute(
+        self, code: str, setup: str, code_type: Literal["expression", "statement"]
+    ) -> Result:
         """Execute Python code in the Django shell context (synchronous).
 
         Attempts to evaluate code as an expression first (returning a value),
@@ -65,6 +69,7 @@ class DjangoShell:
         Note: This synchronous method contains the actual execution logic.
         Use `execute()` for async contexts or `_execute()` for sync/testing.
         """
+
         code_preview = (code[:100] + "..." if len(code) > 100 else code).replace(
             "\n", "\\n"
         )
@@ -75,8 +80,6 @@ class DjangoShell:
 
         with redirect_stdout(stdout), redirect_stderr(stderr):
             try:
-                code, setup, code_type = parse_code(code)
-
                 logger.debug(
                     "Execution type: %s, has setup: %s", code_type, bool(setup)
                 )
@@ -85,7 +88,6 @@ class DjangoShell:
                     code[:200] + "..." if len(code) > 200 else code,
                 )
 
-                # Execute setup, if any (only applicable to expressions)
                 if setup:
                     logger.debug(
                         "Setup code: %s",
@@ -144,36 +146,6 @@ class DjangoShell:
     def save_result(self, result: Result) -> Result:
         self.history.append(result)
         return result
-
-
-def parse_code(code: str) -> tuple[str, str, Literal["expression", "statement"]]:
-    """Determine how code should be executed.
-
-    Returns:
-        A tuple (main_code, setup_code, code_type), where:
-        - main_code: The code to evaluate (expression) or execute (statement)
-        - setup_code: Lines to execute before evaluating expressions (empty for statements)
-        - code_type: "expression" or "statement"
-    """
-
-    def can_eval(code: str) -> bool:
-        try:
-            compile(code, "<stdin>", "eval")
-            return True
-        except SyntaxError:
-            return False
-
-    if can_eval(code):
-        return code, "", "expression"
-
-    lines = code.strip().splitlines()
-    last_line = lines[-1] if lines else ""
-
-    if can_eval(last_line):
-        setup_code = "\n".join(lines[:-1])
-        return last_line, setup_code, "expression"
-
-    return code, "", "statement"
 
 
 @dataclass

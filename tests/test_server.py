@@ -94,6 +94,76 @@ async def test_django_shell_tool_orm():
         assert result.data.status == ExecutionStatus.SUCCESS
 
 
+async def test_django_shell_tool_with_imports():
+    async with Client(mcp) as client:
+        result = await client.call_tool(
+            "django_shell",
+            {"code": "os.path.join('test', 'path')", "imports": "import os"},
+        )
+        assert result.data.status == ExecutionStatus.SUCCESS
+        assert result.data.output.value == "'test/path'"
+
+
+async def test_django_shell_tool_without_imports():
+    """Test that the tool still works when imports parameter is not provided"""
+    async with Client(mcp) as client:
+        result = await client.call_tool("django_shell", {"code": "2 + 2"})
+        assert result.data.status == ExecutionStatus.SUCCESS
+        assert result.data.output.value == "4"
+
+
+async def test_django_shell_tool_with_multiple_imports():
+    async with Client(mcp) as client:
+        result = await client.call_tool(
+            "django_shell",
+            {
+                "code": "datetime.datetime.now().year + math.floor(math.pi)",
+                "imports": "import datetime\nimport math",
+            },
+        )
+        assert result.data.status == ExecutionStatus.SUCCESS
+
+
+async def test_django_shell_tool_with_empty_imports():
+    async with Client(mcp) as client:
+        result = await client.call_tool(
+            "django_shell",
+            {"code": "2 + 2", "imports": ""},
+        )
+        assert result.data.status == ExecutionStatus.SUCCESS
+        assert result.data.output.value == "4"
+
+
+async def test_django_shell_tool_imports_error():
+    async with Client(mcp) as client:
+        result = await client.call_tool(
+            "django_shell",
+            {"code": "2 + 2", "imports": "import nonexistent_module"},
+        )
+        assert result.data.status == ExecutionStatus.ERROR
+        assert "ModuleNotFoundError" in str(result.data.output.exception.exc_type)
+
+
+async def test_django_shell_tool_imports_optimization():
+    """Test that imports are optimized - already imported modules are skipped"""
+    async with Client(mcp) as client:
+        # First call imports os
+        result1 = await client.call_tool(
+            "django_shell",
+            {"code": "os.path.join('test', 'first')", "imports": "import os"},
+        )
+        assert result1.data.status == ExecutionStatus.SUCCESS
+
+        # Second call should not re-import os since it's already available
+        # This tests that the optimization works (no duplicate import error)
+        result2 = await client.call_tool(
+            "django_shell",
+            {"code": "os.path.join('test', 'second')", "imports": "import os"},
+        )
+        assert result2.data.status == ExecutionStatus.SUCCESS
+        assert result2.data.output.value == "'test/second'"
+
+
 async def test_django_shell_error_output():
     async with Client(mcp) as client:
         result = await client.call_tool("django_shell", {"code": "1 / 0"})
