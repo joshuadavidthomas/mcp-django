@@ -3,17 +3,47 @@ from __future__ import annotations
 import logging
 from typing import Annotated
 
+from django.apps import apps
 from fastmcp import Context
 from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
 from .output import DjangoShellOutput
 from .output import ErrorOutput
+from .resources import AppResource
+from .resources import ModelResource
+from .resources import ProjectResource
 from .shell import DjangoShell
 
 mcp = FastMCP(
     name="Django Shell",
-    instructions="Provides a stateful Django shell environment for executing Python code, managing sessions, and exporting command history.",
+    instructions="""Provides Django resource endpoints for project exploration and a stateful shell environment for executing Python code.
+
+RESOURCES:
+Use resources for orientation, then use the shell for all actual work. Resources provide
+precise coordinates (import paths, file locations) to avoid exploration overhead.
+
+- django://project - Python/Django environment metadata (versions, settings, database config)
+- django://apps - All Django apps with their file paths
+- django://models - All models with import paths and source locations
+
+TOOLS:
+The shell maintains state between calls - imports and variables persist. Use django_reset to
+clear state when variables get messy or you need a fresh start.
+
+- django_shell - Execute Python code in a stateful Django shell
+- django_reset - Reset the shell session
+
+EXAMPLES:
+The pattern: Resource → Import Path → Shell Operation. Resources provide coordinates, shell does
+the work.
+
+- Starting fresh? → Check django://project to understand environment and available apps
+- Need information about a model? → Check django://models → Get import path →
+  `from app.models import ModelName` in django_shell
+- Need app structure? → Check django://apps for app labels and paths → Use paths in django_shell
+- Need to query data? → Get model from django://models → Import in django_shell → Run queries
+""",
 )
 shell = DjangoShell()
 logger = logging.getLogger(__name__)
@@ -100,3 +130,46 @@ async def django_reset(ctx: Context) -> str:
     )
 
     return "Django shell session has been reset. All previously set variables and history cleared."
+
+
+@mcp.resource(
+    "django://project",
+    name="Django Project Information",
+    mime_type="application/json",
+    annotations={"readOnlyHint": True, "idempotentHint": True},
+)
+def get_project() -> ProjectResource:
+    """Get comprehensive project information including Python environment and Django configuration.
+
+    Use this to understand the project's runtime environment, installed apps, and database
+    configuration.
+    """
+    return ProjectResource.from_env()
+
+
+@mcp.resource(
+    "django://apps",
+    name="Installed Django Apps",
+    mime_type="application/json",
+    annotations={"readOnlyHint": True, "idempotentHint": True},
+)
+def get_apps() -> list[AppResource]:
+    """Get a list of all installed Django applications with their models.
+
+    Use this to explore the project structure and available models without executing code.
+    """
+    return [AppResource.from_app(app) for app in apps.get_app_configs()]
+
+
+@mcp.resource(
+    "django://models",
+    name="Django Models",
+    mime_type="application/json",
+    annotations={"readOnlyHint": True, "idempotentHint": True},
+)
+def get_models() -> list[ModelResource]:
+    """Get detailed information about all Django models in the project.
+
+    Use this for quick model introspection without shell access.
+    """
+    return [ModelResource.from_model(model) for model in apps.get_models()]

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from unittest.mock import AsyncMock
 
 import pytest
@@ -20,6 +21,39 @@ pytestmark = pytest.mark.asyncio
 async def reset_client_session():
     async with Client(mcp) as client:
         await client.call_tool("django_reset", {})
+
+
+async def test_instructions_match_registered_items():
+    async with Client(mcp) as client:
+        resources = await client.list_resources()
+        templates = await client.list_resource_templates()
+        tools = await client.list_tools()
+
+        instructions = mcp.instructions
+
+        assert instructions is not None
+
+        for resource in resources:
+            uri = str(resource.uri)
+            pattern = rf"\b{re.escape(uri)}\b"
+            assert re.search(pattern, instructions), (
+                f"Resource {uri} not found in instructions"
+            )
+
+        for template in templates:
+            uri = template.uriTemplate
+            # Escape the template but keep the placeholders as wildcards
+            # django://apps/{app_label} -> django://apps/\{app_label\}
+            pattern = re.escape(uri)
+            assert re.search(pattern, instructions), (
+                f"Resource template {uri} not found in instructions"
+            )
+
+        for tool in tools:
+            pattern = rf"\b{re.escape(tool.name)}\b"
+            assert re.search(pattern, instructions), (
+                f"Tool {tool.name} not found in instructions"
+            )
 
 
 async def test_tool_listing():
@@ -96,3 +130,36 @@ async def test_django_reset_session():
         )
         # Check stdout contains "False"
         assert "False" in result.data.stdout
+
+
+async def test_get_apps_resource():
+    async with Client(mcp) as client:
+        result = await client.read_resource("django://apps")
+        assert result is not None
+        assert len(result) > 0
+
+
+async def test_get_models_resource():
+    async with Client(mcp) as client:
+        result = await client.read_resource("django://models")
+        assert result is not None
+        assert len(result) > 0
+
+
+async def test_get_project_resource_no_auth():
+    async with Client(mcp) as client:
+        result = await client.read_resource("django://project")
+        assert result is not None
+
+
+@override_settings(
+    INSTALLED_APPS=settings.INSTALLED_APPS
+    + [
+        "django.contrib.auth",
+        "django.contrib.contenttypes",
+    ]
+)
+async def test_project_resource_with_auth():
+    async with Client(mcp) as client:
+        result = await client.read_resource("django://project")
+        assert result is not None

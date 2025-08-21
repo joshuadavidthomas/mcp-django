@@ -18,6 +18,15 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+### Added
+
+- MCP resources for exploring Django apps and models without shell execution.
+- Support for both general (`django://apps`) and targeted (`django://apps/{app_label}`) resource queries.
+
+### Changed
+
+- Updated server instructions with resource hierarchy and "Quick Start" guidance to hopefully get LLMs to actually prefer using resources over the `django_shell` tool.
+
 ### Removed
 
 - Removed redundant input field from `django_shell` tool response to reduce output verbosity.
