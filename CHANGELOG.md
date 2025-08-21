@@ -18,6 +18,8 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+## [0.7.0]
+
 ### Added
 
 - MCP resources for exploring the project environment, Django apps, and models without shell execution.
@@ -100,7 +102,7 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 - Josh Thomas <josh@joshthomas.dev> (maintainer)
 
-[unreleased]: https://github.com/joshuadavidthomas/mcp-django-shell/compare/v0.6.0...HEAD
+[unreleased]: https://github.com/joshuadavidthomas/mcp-django-shell/compare/v0.7.0...HEAD
 [0.1.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.1.0
 [0.2.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.2.0
 [0.3.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.3.0
@@ -108,3 +110,4 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 [0.4.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.4.0
 [0.5.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.5.0
 [0.6.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.6.0
+[0.7.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.7.0
