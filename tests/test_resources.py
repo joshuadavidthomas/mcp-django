@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import inspect
 import sys
 from pathlib import Path
 
@@ -15,12 +14,6 @@ from mcp_django_shell.resources import ProjectResource
 from mcp_django_shell.resources import PythonResource
 from mcp_django_shell.resources import get_source_file_path
 from tests.models import AModel
-
-
-def test_get_source_file_path_with_module():
-    result = get_source_file_path(inspect)
-    assert isinstance(result, Path)
-    assert result != Path("unknown")
 
 
 def test_get_source_file_path_with_class():

@@ -106,11 +106,8 @@ class AppResource(BaseModel):
 
     @classmethod
     def from_app(cls, app: AppConfig) -> AppResource:
-        try:
-            appconfig = get_source_file_path(app)
-            app_path = Path(appconfig).parent
-        except (TypeError, OSError):
-            app_path = Path("unknown")
+        appconfig = get_source_file_path(app)
+        app_path = appconfig.parent if appconfig != Path("unknown") else Path("unknown")
 
         app_models = (
             [
@@ -137,12 +134,6 @@ class ModelResource(BaseModel):
 
     @classmethod
     def from_model(cls, model: type[models.Model]):
-        try:
-            source_file = get_source_file_path(model)
-            source_path = Path(source_file)
-        except (TypeError, OSError):
-            source_path = Path("unknown")
-
         field_types = {
             field.name: field.__class__.__name__ for field in model._meta.fields
         }
@@ -150,7 +141,7 @@ class ModelResource(BaseModel):
         return cls(
             model_class=model,
             import_path=f"{model.__module__}.{model.__name__}",
-            source_path=source_path,
+            source_path=get_source_file_path(model),
             fields=field_types,
         )
 
