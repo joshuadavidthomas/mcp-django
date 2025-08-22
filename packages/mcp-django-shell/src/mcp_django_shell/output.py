@@ -9,10 +9,10 @@ from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import field_serializer
 
-from mcp_django_shell.shell import ErrorResult
-from mcp_django_shell.shell import ExpressionResult
-from mcp_django_shell.shell import Result
-from mcp_django_shell.shell import StatementResult
+from .shell import ErrorResult
+from .shell import ExpressionResult
+from .shell import Result
+from .shell import StatementResult
 
 
 class DjangoShellOutput(BaseModel):

@@ -7,12 +7,12 @@ from django.apps import apps
 from django.conf import settings
 from django.test import override_settings
 
-from mcp_django_shell.resources import AppResource
-from mcp_django_shell.resources import DjangoResource
-from mcp_django_shell.resources import ModelResource
-from mcp_django_shell.resources import ProjectResource
-from mcp_django_shell.resources import PythonResource
-from mcp_django_shell.resources import get_source_file_path
+from mcp_django.resources import AppResource
+from mcp_django.resources import DjangoResource
+from mcp_django.resources import ModelResource
+from mcp_django.resources import ProjectResource
+from mcp_django.resources import PythonResource
+from mcp_django.resources import get_source_file_path
 from tests.models import AModel
 
 
@@ -39,11 +39,11 @@ def test_get_source_file_path_valueerror(monkeypatch):
     mock_obj = object()
 
     monkeypatch.setattr(
-        "mcp_django_shell.resources.inspect.getfile",
+        "mcp_django.resources.inspect.getfile",
         lambda obj: "/usr/lib/python3.12/os.py",
     )
     monkeypatch.setattr(
-        "mcp_django_shell.resources.Path.cwd",
+        "mcp_django.resources.Path.cwd",
         lambda: Path("/completely/different/path"),
     )
 

@@ -6,7 +6,7 @@ from typing import final
 
 from django.core.management.base import BaseCommand
 
-from mcp_django_shell._typing import override
+from mcp_django._typing import override
 from mcp_django_shell.cli import main
 
 

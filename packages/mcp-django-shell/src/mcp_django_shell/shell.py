@@ -10,7 +10,9 @@ from io import StringIO
 from typing import Any
 from typing import Literal
 
+import django
 from asgiref.sync import sync_to_async
+from django.apps import apps
 
 logger = logging.getLogger(__name__)
 
@@ -19,13 +21,10 @@ class DjangoShell:
     def __init__(self):
         logger.debug("Initializing %s", self.__class__.__name__)
 
-        from django import setup
-        from django.apps import apps
-
         if not apps.ready:  # pragma: no cover
             logger.info("Django not initialized, running django.setup()")
 
-            setup()
+            django.setup()
 
             logger.debug("Django setup completed")
         else:
