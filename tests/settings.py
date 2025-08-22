@@ -11,6 +11,7 @@ DATABASES = {
 
 INSTALLED_APPS = [
     "mcp_django",
+    "mcp_django_shell",
     "tests",
 ]
 

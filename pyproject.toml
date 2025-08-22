@@ -122,7 +122,7 @@ fail_under = 100
 omit = [
   "*/migrations/*",
   "packages/mcp-django-shell/src/mcp_django_shell/management/commands/mcp_shell.py",
-  "packages/mcp-django-shell/src/mcp_django_shell/__main__.py",
+  "src/mcp_django/__main__.py",
   "src/mcp_django/_typing.py",
   "tests/*"
 ]
