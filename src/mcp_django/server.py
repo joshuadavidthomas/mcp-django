@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import logging
+from importlib.util import find_spec
 
 from django.apps import apps
 from fastmcp import FastMCP
@@ -9,9 +11,12 @@ from .resources import AppResource
 from .resources import ModelResource
 from .resources import ProjectResource
 
-mcp = FastMCP(
-    name="Django",
-    instructions="""Provides Django resource endpoints for project exploration.
+logger = logging.getLogger(__name__)
+
+
+async def create_mcp() -> FastMCP:
+    instructions = [
+        """Provides Django resource endpoints for project exploration.
 
 RESOURCES:
 Use resources for orientation. Resources provide precise coordinates (import paths, file
@@ -20,10 +25,26 @@ locations) to avoid exploration overhead.
 - django://project - Python/Django environment metadata (versions, settings, database config)
 - django://apps - All Django apps with their file paths
 - django://models - All models with import paths and source locations
-""",
-)
+"""
+    ]
 
-logger = logging.getLogger(__name__)
+    if find_spec("mcp_django_shell"):
+        from mcp_django_shell.server import mcp as shell_mcp
+
+        if shell_mcp.instructions is not None:
+            instructions.append(shell_mcp.instructions)
+
+    mcp = FastMCP(name="Django", instructions="\n".join(instructions))
+
+    if find_spec("mcp_django_shell"):
+        from mcp_django_shell.server import mcp as shell_mcp
+
+        await mcp.import_server(shell_mcp, prefix="shell")
+
+    return mcp
+
+
+mcp = asyncio.run(create_mcp())
 
 
 @mcp.resource(

@@ -76,6 +76,9 @@ version = "0.1.0"
 requires-python = ">=3.10"
 
 [project.optional-dependencies]
+all = [
+  "mcp-django[shell]",
+]
 shell = [
   "mcp-django-shell",
 ]

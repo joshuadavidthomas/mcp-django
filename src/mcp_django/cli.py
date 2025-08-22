@@ -1,25 +1,14 @@
 from __future__ import annotations
 
 import argparse
-import asyncio
 import logging
 import os
 import signal
 import sys
 from collections.abc import Sequence
-from importlib.util import find_spec
 from typing import Any
 
-from fastmcp import FastMCP
-
 logger = logging.getLogger(__name__)
-
-
-async def setup(mcp: FastMCP) -> None:
-    if find_spec("mcp-django-shell"):
-        from mcp_django_shell.server import mcp as shell_mcp
-
-        await mcp.import_server(shell_mcp, prefix="shell")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -121,7 +110,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         if transport == "http":
             kwargs["path"] = path
 
-        asyncio.run(setup(mcp))
         mcp.run(**kwargs)
 
     except Exception as e:

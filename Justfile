@@ -22,7 +22,7 @@ nox SESSION *ARGS:
 
 bootstrap:
     uv python install
-    uv sync --locked
+    uv sync --all-extras --locked
 
 coverage *ARGS:
     @just nox coverage {{ ARGS }}
