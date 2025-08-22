@@ -53,7 +53,7 @@ dependencies = [
 ]
 description = "MCP server providing a stateful Django shell for LLM assistants."
 name = "mcp-django-shell"
-readme = "README.md"
+readme = "../../README.md"
 version = "0.8.0"
 requires-python = ">=3.10"
 
@@ -61,3 +61,16 @@ requires-python = ">=3.10"
 Documentation = "https://github.com/joshuadavidthomas/mcp-django-shell#README"
 Issues = "https://github.com/joshuadavidthomas/mcp-django-shell/issues"
 Source = "https://github.com/joshuadavidthomas/mcp-django-shell"
+
+[tool.bumpver]
+commit = true
+commit_message = ":bookmark: bump version {old_version} -> {new_version}"
+current_version = "0.8.0"
+push = false  # set to false for CI
+tag = false
+version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+  'version = "{version}"'
+]
