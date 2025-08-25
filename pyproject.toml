@@ -84,9 +84,9 @@ shell = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/joshuadavidthomas/mcp-django-shell#README"
-Issues = "https://github.com/joshuadavidthomas/mcp-django-shell/issues"
-Source = "https://github.com/joshuadavidthomas/mcp-django-shell"
+Documentation = "https://github.com/joshuadavidthomas/mcp-django#README"
+Issues = "https://github.com/joshuadavidthomas/mcp-django/issues"
+Source = "https://github.com/joshuadavidthomas/mcp-django"
 
 [tool.bumpver]
 commit = true

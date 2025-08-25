@@ -208,4 +208,4 @@ For release procedures, see [RELEASING.md](RELEASING.md).
 
 ## License
 
-mcp-django-shell is licensed under the MIT license. See the [`LICENSE`](LICENSE) file for more information.
+mcp-django is licensed under the MIT license. See the [`LICENSE`](LICENSE) file for more information.
