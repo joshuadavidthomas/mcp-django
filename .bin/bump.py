@@ -144,11 +144,7 @@ def update_changelog(bumps: list[tuple[str, str, str]], dry_run: bool = False) -
         if version_entries:
             # Insert version list after Unreleased header
             new_content = (
-                content[:pos]
-                + "\n\n"
-                + "\n".join(version_entries)
-                + "\n"
-                + content[pos:]
+                content[:pos] + "\n\n" + "\n".join(version_entries) + content[pos:]
             )
 
             if not dry_run:
