@@ -1,9 +1,9 @@
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "bumpver",
 #     "rich",
 #     "typer",
+#     "tomli",
 # ]
 # ///
 from __future__ import annotations
@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Annotated
 from typing import override
 
+import tomli
 import typer
 from rich.console import Console
 
@@ -34,14 +35,6 @@ class Version(StrEnum):
     PATCH = "patch"
 
 
-class Tag(StrEnum):
-    DEV = "dev"
-    ALPHA = "alpha"
-    BETA = "beta"
-    RC = "rc"
-    FINAL = "final"
-
-
 def run(
     cmd: list[str],
     *,
@@ -50,9 +43,9 @@ def run(
 ) -> str:
     command_str = " ".join(cmd)
     console.print(
-        f"would run command: {command_str}"
+        f"[dim]would run:[/dim] {command_str}"
         if dry_run and not force_run
-        else f"running command: {command_str}"
+        else f"[dim]running:[/dim] {command_str}"
     )
 
     if dry_run and not force_run:
@@ -65,137 +58,294 @@ def run(
         raise typer.Exit(1) from e
 
 
-def get_new_version(version: Version, tag: Tag | None = None) -> str:
-    cmd = ["bumpver", "update", "--dry", f"--{version}"]
-    if tag:
-        cmd.extend(["--tag", tag])
-    output = run(cmd, force_run=True)
+def get_workspace_packages() -> list[str]:
+    """Get list of workspace packages from packages/ directory."""
+    packages_dir = Path("packages")
+    if not packages_dir.exists():
+        return []
 
-    if match := re.search(r"New Version: (.+)", output):
-        return match.group(1)
-    return typer.prompt("Failed to get new version. Enter manually")
+    packages = []
+    for pkg_dir in packages_dir.iterdir():
+        if pkg_dir.is_dir() and (pkg_dir / "pyproject.toml").exists():
+            packages.append(pkg_dir.name)
+    return sorted(packages)
 
 
-def update_changelog(new_version: str, dry_run: bool = False) -> None:
-    repo_url = (
-        run(["git", "remote", "get-url", "origin"], force_run=True)
-        .strip()
-        .replace(". git", "")
+def get_current_version(package: str | None = None) -> str:
+    """Get current version of a package."""
+    if package:
+        pyproject_path = Path(f"packages/{package}/pyproject.toml")
+    else:
+        pyproject_path = Path("pyproject.toml")
+
+    if not pyproject_path.exists():
+        console.print(f"[red]pyproject.toml not found: {pyproject_path}[/red]")
+        raise typer.Exit(1)
+
+    with open(pyproject_path, "rb") as f:
+        data = tomli.load(f)
+
+    return data["project"]["version"]
+
+
+def get_new_version(version: Version, package: str | None = None) -> tuple[str, str]:
+    """Get the new version after bump. Returns (current, new) tuple."""
+    cmd = ["uv", "version", "--bump", version.value]
+    if package:
+        cmd.extend(["--package", package])
+
+    output = run(cmd + ["--dry-run"], force_run=True)
+
+    # Parse output like "mcp-django 0.1.0 => 0.2.0" or "0.1.0 => 0.2.0"
+    if match := re.search(r"([\d.]+(?:[-.\w]*)?)\s*=>\s*([\d.]+(?:[-.\w]*)?)", output):
+        return match.group(1), match.group(2)
+
+    # Fallback: get current version and prompt for new
+    current = get_current_version(package)
+    new = typer.prompt(
+        f"Failed to parse new version. Current is {current}. Enter new version"
     )
+    return current, new
+
+
+def update_changelog(bumps: list[tuple[str, str, str]], dry_run: bool = False) -> None:
+    """Update CHANGELOG for version bumps.
+
+    Args:
+        bumps: List of (package_name, old_version, new_version) tuples.
+               Use "root" for the root package.
+    """
     changelog = Path("CHANGELOG.md")
+    if not changelog.exists():
+        console.print("[yellow]CHANGELOG.md not found, skipping update[/yellow]")
+        return
+
     content = changelog.read_text()
 
-    content = re.sub(
-        r"## \[Unreleased\]",
-        f"## [{new_version}]",
-        content,
-        count=1,
-    )
-    content = re.sub(
-        rf"## \[{new_version}\]",
-        f"## [Unreleased]\n\n## [{new_version}]",
-        content,
-        count=1,
-    )
-    content += f"[{new_version}]: {repo_url}/releases/tag/v{new_version}\n"
-    content = re.sub(
-        r"\[unreleased\]: .*\n",
-        f"[unreleased]: {repo_url}/compare/v{new_version}...HEAD\n",
-        content,
-        count=1,
-    )
+    if "## [Unreleased]" in content:
+        # Find the position after ## [Unreleased]
+        pos = content.index("## [Unreleased]") + len("## [Unreleased]")
 
-    changelog.write_text(content)
-    run(["git", "add", "."], dry_run=dry_run)
-    run(
-        ["git", "commit", "-m", f"update CHANGELOG for version {new_version}"],
-        dry_run=dry_run,
-    )
+        # Check what's already in the file after Unreleased
+        content_after = content[pos:].lstrip("\n")
+
+        # Build version list entries (simple format)
+        version_entries = []
+        for pkg_name, old_ver, new_ver in bumps:
+            if pkg_name == "root":
+                entry = f"- mcp-django: {new_ver}"
+            else:
+                entry = f"- {pkg_name}: {new_ver}"
+
+            # Only add if not already present
+            if entry not in content_after[:500]:  # Check first 500 chars
+                version_entries.append(entry)
+
+        if version_entries:
+            # Insert version list after Unreleased header
+            new_content = (
+                content[:pos]
+                + "\n\n"
+                + "\n".join(version_entries)
+                + "\n"
+                + content[pos:]
+            )
+
+            if not dry_run:
+                changelog.write_text(new_content)
+                console.print("[green]Updated CHANGELOG.md[/green]")
+        else:
+            console.print("[dim]Version entries already in CHANGELOG, skipping[/dim]")
+    else:
+        console.print("[yellow]Could not find '## [Unreleased]' in CHANGELOG[/yellow]")
 
 
-def update_uv_lock(new_version: str, dry_run: bool = False) -> None:
+def update_uv_lock(dry_run: bool = False) -> None:
+    """Update uv.lock file."""
     run(["uv", "lock"], dry_run=dry_run)
 
     changes = run(["git", "status", "--porcelain"], force_run=True)
     if "uv.lock" not in changes:
-        console.print("No changes to uv.lock, skipping commit")
+        console.print("[dim]No changes to uv.lock[/dim]")
         return
 
-    run(["git", "add", "uv.lock"], dry_run=dry_run)
-    run(
-        ["git", "commit", "-m", f"update uv.lock for version {new_version}"],
-        dry_run=dry_run,
-    )
+    console.print("[green]Updated uv.lock[/green]")
 
 
 @cli.command()
-def version(
+def bump(
     version: Annotated[
-        Version,
-        typer.Option("--version", "-v", help="The tag to add to the new version"),
+        Version, typer.Argument(help="Version component to bump (major/minor/patch)")
     ],
-    tag: Annotated[
-        Tag, typer.Option("--tag", "-t", help="The tag to add to the new version")
-    ]
-    | None = None,
-    dry_run: Annotated[
-        bool, typer.Option("--dry-run", "-d", help="Show commands without executing")
+    packages: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--package",
+            "-p",
+            help="Package(s) to bump. Can be specified multiple times.",
+        ),
+    ] = None,
+    all_packages: Annotated[
+        bool, typer.Option("--all", "-a", help="Bump all packages including root")
     ] = False,
+    dry_run: Annotated[
+        bool,
+        typer.Option(
+            "--dry-run", "-d", help="Show what would be done without executing"
+        ),
+    ] = False,
+    changelog: Annotated[
+        bool, typer.Option("--changelog/--no-changelog", help="Update CHANGELOG.md")
+    ] = True,
+    lock: Annotated[
+        bool, typer.Option("--lock/--no-lock", help="Update uv.lock")
+    ] = True,
 ):
-    # get changes for PR message
-    tags = run(["git", "tag", "--sort=-creatordate"], force_run=True).splitlines()
-    changes = run(
-        [
-            "git",
-            "log",
-            f"{tags[0] if tags else ''}..HEAD",
-            "--pretty=format:- `%h`: %s",
-            "--reverse",
-        ],
-        force_run=True,
-    )
+    """Bump version(s) for workspace packages.
 
-    # get new version
-    new_version = get_new_version(version, tag)
+    Examples:
+        bump.py minor                    # Bump root package
+        bump.py patch -p mcp-django-shell  # Bump specific package
+        bump.py minor -p mcp-django-shell -p mcp-django-crud  # Multiple packages
+        bump.py major --all              # Bump everything
+    """
 
-    # checkout release branch
-    release_branch = f"release-v{new_version}"
-    try:
-        run(["git", "checkout", "-b", release_branch], dry_run=dry_run)
-    except Exception:
-        run(["git", "checkout", release_branch], dry_run=dry_run)
+    # Check for uncommitted changes
+    if not dry_run:
+        status = run(["git", "status", "--porcelain"], force_run=True)
+        if status:
+            console.print("[red]Error: You have uncommitted changes.[/red]")
+            console.print("Please commit or stash them before bumping versions.")
+            console.print("\n[dim]Uncommitted files:[/dim]")
+            console.print(status)
+            raise typer.Exit(1)
 
-    # bump the version
-    cmd = ["bumpver", "update", f"--{version}"]
-    if tag:
-        cmd.extend(["--tag", tag])
-    run(cmd, dry_run=dry_run)
+    # Determine what to bump
+    bumps_to_make = []
 
-    # get bumpver commit message for PR title
-    title = run(["git", "log", "-1", "--pretty=%s"], force_run=True)
+    if all_packages:
+        # Bump root and all workspace packages
+        console.print("[bold]Bumping all packages[/bold]")
 
-    # update ancillary release files
-    update_changelog(new_version, dry_run)
-    update_uv_lock(new_version, dry_run)
+        # Root package
+        current, new = get_new_version(version, None)
+        bumps_to_make.append(("root", current, new))
 
-    # push and create PR
-    run(["git", "push", "--set-upstream", "origin", release_branch], dry_run=dry_run)
-    run(
-        [
-            "gh",
-            "pr",
-            "create",
-            "--base",
-            "main",
-            "--head",
-            release_branch,
-            "--title",
-            title,
-            "--body",
-            changes,
-        ],
-        dry_run=dry_run,
-    )
+        # All workspace packages
+        for pkg in get_workspace_packages():
+            current, new = get_new_version(version, pkg)
+            bumps_to_make.append((pkg, current, new))
+
+    elif packages:
+        # Bump specific packages
+        for pkg in packages:
+            # Validate package exists
+            if pkg != "root" and pkg not in get_workspace_packages():
+                console.print(f"[red]Package not found: {pkg}[/red]")
+                console.print(
+                    f"Available packages: {', '.join(get_workspace_packages())}"
+                )
+                raise typer.Exit(1)
+
+            if pkg == "root":
+                current, new = get_new_version(version, None)
+            else:
+                current, new = get_new_version(version, pkg)
+            bumps_to_make.append((pkg, current, new))
+
+    else:
+        # Default: bump root package only
+        current, new = get_new_version(version, None)
+        bumps_to_make.append(("root", current, new))
+
+    # Display what will be bumped
+    console.print("\n[bold]Version bumps:[/bold]")
+    for pkg_name, current_ver, new_ver in bumps_to_make:
+        display_name = "mcp-django" if pkg_name == "root" else pkg_name
+        console.print(
+            f"  {display_name}: [cyan]{current_ver}[/cyan] → [green]{new_ver}[/green]"
+        )
+
+    if not dry_run and not typer.confirm("\nProceed with these bumps?"):
+        raise typer.Abort()
+
+    # Execute the bumps
+    console.print("\n[bold]Executing version bumps...[/bold]")
+    for pkg_name, _, _ in bumps_to_make:
+        if pkg_name == "root":
+            run(["uv", "version", "--bump", version.value], dry_run=dry_run)
+        else:
+            run(
+                ["uv", "version", "--package", pkg_name, "--bump", version.value],
+                dry_run=dry_run,
+            )
+
+    # Update ancillary files
+    if changelog:
+        console.print("\n[bold]Updating CHANGELOG...[/bold]")
+        update_changelog(bumps_to_make, dry_run)
+
+    if lock:
+        console.print("\n[bold]Updating uv.lock...[/bold]")
+        update_uv_lock(dry_run)
+
+    # Git operations
+    if not dry_run:
+        console.print("\n[bold]Creating git commit...[/bold]")
+
+        # Stage only the files we changed
+        files_to_add = []
+
+        # Add root pyproject.toml if it exists and was potentially modified
+        if Path("pyproject.toml").exists():
+            files_to_add.append("pyproject.toml")
+
+        # Add package pyproject.toml files that were bumped
+        for pkg_name, _, _ in bumps_to_make:
+            if pkg_name != "root":
+                pkg_file = f"packages/{pkg_name}/pyproject.toml"
+                if Path(pkg_file).exists():
+                    files_to_add.append(pkg_file)
+
+        # Add CHANGELOG if it was updated
+        if changelog and Path("CHANGELOG.md").exists():
+            files_to_add.append("CHANGELOG.md")
+
+        # Only add uv.lock if it exists AND is not ignored
+        if lock and Path("uv.lock").exists():
+            # Check if uv.lock is tracked by git
+            result = run(["git", "ls-files", "uv.lock"], force_run=True)
+            if result:  # File is tracked
+                files_to_add.append("uv.lock")
+
+        # Stage the specific files
+        if files_to_add:
+            run(["git", "add"] + files_to_add, dry_run=dry_run)
+        else:
+            console.print("[yellow]No files to stage[/yellow]")
+
+        # Create commit message
+        if len(bumps_to_make) == 1:
+            pkg_name, old_ver, new_ver = bumps_to_make[0]
+            display_name = "mcp-django" if pkg_name == "root" else pkg_name
+            commit_msg = f"bump {display_name} version {old_ver} → {new_ver}"
+        else:
+            pkg_list = ", ".join(
+                "mcp-django" if p == "root" else p for p, _, _ in bumps_to_make
+            )
+            commit_msg = f"bump versions for {pkg_list}"
+
+        run(["git", "commit", "-m", commit_msg], dry_run=dry_run)
+
+        console.print(f"\n[green]✓ Committed:[/green] {commit_msg}")
+
+    console.print("\n[bold green]Version bump complete![/bold green]")
+    if not dry_run:
+        console.print("\n[dim]Next steps:[/dim]")
+        console.print("  1. Review the changes: [cyan]git diff HEAD~1[/cyan]")
+        console.print("  2. Push to remote: [cyan]git push[/cyan]")
+        console.print("  3. Create a PR or merge to main")
+        console.print("  4. Run release script: [cyan]./bin/release.py[/cyan]")
 
 
 if __name__ == "__main__":
