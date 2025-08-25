@@ -13,7 +13,7 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 ### Removed - for now removed features
 ### Fixed - for any bug fixes
 ### Security - in case of vulnerabilities
-[${version}]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v${version}
+[${version}]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/v${version}
 -->
 
 ## [Unreleased]
@@ -108,13 +108,13 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 - Josh Thomas <josh@joshthomas.dev> (maintainer)
 
-[unreleased]: https://github.com/joshuadavidthomas/mcp-django-shell/compare/v0.8.0...HEAD
-[0.1.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.1.0
-[0.2.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.2.0
-[0.3.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.3.0
-[0.3.1]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.3.1
-[0.4.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.4.0
-[0.5.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.5.0
-[0.6.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.6.0
-[0.7.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.7.0
-[0.8.0]: https://github.com/joshuadavidthomas/mcp-django-shell/releases/tag/v0.8.0
+[unreleased]: https://github.com/joshuadavidthomas/mcp-django/compare/mcp-django-shell-v0.8.0...HEAD
+[0.1.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/mcp-django-shell-v0.1.0
+[0.2.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/mcp-django-shell-v0.2.0
+[0.3.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/mcp-django-shell-v0.3.0
+[0.3.1]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/mcp-django-shell-v0.3.1
+[0.4.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/mcp-django-shell-v0.4.0
+[0.5.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/mcp-django-shell-v0.5.0
+[0.6.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/mcp-django-shell-v0.6.0
+[0.7.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/mcp-django-shell-v0.7.0
+[0.8.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/mcp-django-shell-v0.8.0
