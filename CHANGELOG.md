@@ -18,6 +18,23 @@ and this project attempts to adhere to [Semantic Versioning](https://semver.org/
 
 ## [Unreleased]
 
+> **Note**: All releases prior to this one are for `mcp-django-shell` only.
+
+### Changed
+
+- Migrated to workspace structure with multiple packages
+- Repository renamed from `mcp-django-shell` to `mcp-django`
+- Git tags now use package-prefixed format: `mcp-django-shell-vX.Y.Z`
+
+### mcp-django (new)
+
+- Initial release as root package providing core MCP server functionality
+
+### mcp-django-shell
+
+- Moved to workspace package under `packages/` directory
+- Now distributed as separate workspace package alongside core
+
 ## [0.8.0]
 
 ### Added
