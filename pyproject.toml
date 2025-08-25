@@ -80,7 +80,7 @@ all = [
   "mcp-django[shell]",
 ]
 shell = [
-  "mcp-django-shell",
+  "mcp-django-shell>=0.8.0",
 ]
 
 [project.urls]
