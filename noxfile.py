@@ -72,6 +72,7 @@ def tests(session, django):
     session.run_install(
         "uv",
         "sync",
+        "--all-extras",
         "--frozen",
         "--inexact",
         "--no-install-package",
@@ -102,6 +103,7 @@ def coverage(session):
     session.run_install(
         "uv",
         "sync",
+        "--all-extras",
         "--frozen",
         "--python",
         PY_DEFAULT,
@@ -151,6 +153,7 @@ def types(session):
     session.run_install(
         "uv",
         "sync",
+        "--all-extras",
         "--group",
         "types",
         "--frozen",

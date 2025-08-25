@@ -70,10 +70,18 @@ dependencies = [
   "pydantic[email]>=2.11.7",
 ]
 description = "MCP server providing a stateful Django shell for LLM assistants."
-name = "mcp-django-shell"
+name = "mcp-django"
 readme = "README.md"
-version = "0.8.0"
+version = "0.1.0"
 requires-python = ">=3.10"
+
+[project.optional-dependencies]
+all = [
+  "mcp-django[shell]",
+]
+shell = [
+  "mcp-django-shell",
+]
 
 [project.urls]
 Documentation = "https://github.com/joshuadavidthomas/mcp-django-shell#README"
@@ -83,7 +91,7 @@ Source = "https://github.com/joshuadavidthomas/mcp-django-shell"
 [tool.bumpver]
 commit = true
 commit_message = ":bookmark: bump version {old_version} -> {new_version}"
-current_version = "0.8.0"
+current_version = "0.1.0"
 push = false  # set to false for CI
 tag = false
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
@@ -94,7 +102,10 @@ version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 ]
 
 [tool.coverage.paths]
-source = ["src"]
+source = [
+  "packages/*/src",
+  "src"
+]
 
 [tool.coverage.report]
 exclude_lines = [
@@ -109,13 +120,16 @@ fail_under = 100
 
 [tool.coverage.run]
 omit = [
-  "src/mcp_django_shell/management/commands/mcp_shell.py",
-  "src/mcp_django_shell/migrations/*",
-  "src/mcp_django_shell/__main__.py",
-  "src/mcp_django_shell/_typing.py",
+  "*/migrations/*",
+  "packages/mcp-django-shell/src/mcp_django_shell/management/commands/mcp_shell.py",
+  "src/mcp_django/__main__.py",
+  "src/mcp_django/_typing.py",
   "tests/*"
 ]
-source = ["src/mcp_django_shell"]
+source = [
+  "packages/mcp-django-shell/src/mcp_django_shell",
+  "src/mcp_django"
+]
 
 [tool.django-stubs]
 django_settings_module = "tests.settings"
@@ -157,7 +171,11 @@ addopts = "--create-db -n auto --dist loadfile --doctest-modules"
 asyncio_default_fixture_loop_scope = "function"
 norecursedirs = ".* bin build dist *.egg htmlcov logs node_modules templates venv"
 python_files = "tests.py test_*.py *_tests.py"
-pythonpath = ["src", "."]
+pythonpath = [
+  "packages/**/src",
+  "src",
+  "."
+]
 testpaths = ["tests"]
 
 [tool.ruff]
@@ -224,7 +242,11 @@ unfixable = []
 
 [tool.ruff.lint.isort]
 force-single-line = true
-known-first-party = ["mcp_django_shell", "tests"]
+known-first-party = [
+  "mcp_django",
+  "mcp_django_shell",
+  "tests"
+]
 required-imports = ["from __future__ import annotations"]
 
 [tool.ruff.lint.per-file-ignores]
@@ -237,3 +259,10 @@ keep-runtime-typing = true
 
 [tool.uv]
 required-version = ">=0.7"
+
+[tool.uv.sources]
+mcp-django = { workspace = true }
+mcp-django-shell = { workspace = true }
+
+[tool.uv.workspace]
+members = ["packages/*"]

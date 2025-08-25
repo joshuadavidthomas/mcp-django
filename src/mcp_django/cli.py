@@ -78,7 +78,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 1
 
-    logger.info("Starting MCP Django Shell server")
+    logger.info("Starting MCP Django server")
     logger.debug("Django settings module: %s", django_settings)
     logger.debug("Transport: %s", transport)
     if transport in ["http", "sse"]:
@@ -117,6 +117,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 1
 
     finally:
-        logger.info("MCP Django Shell server stopped")
+        logger.info("MCP Django server stopped")
 
     return 0

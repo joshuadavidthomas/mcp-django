@@ -1,4 +1,4 @@
-# mcp-django-shell
+# mcp-django
 
 <!-- [[[cog
 import subprocess
@@ -7,6 +7,7 @@ import cog
 from noxfile import DJ_VERSIONS
 from noxfile import PY_VERSIONS
 
+# TODO: update to mcp-django when releasing
 cog.outl("[![PyPI](https://img.shields.io/pypi/v/mcp-django-shell)](https://pypi.org/project/mcp-django-shell/)")
 cog.outl("![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mcp-django-shell)")
 cog.outl(f"![Django Version](https://img.shields.io/badge/django-{'%20%7C%20'.join(DJ_VERSIONS)}-%2344B78B?labelColor=%23092E20)")
@@ -17,6 +18,10 @@ cog.outl(f"![Django Version](https://img.shields.io/badge/django-{'%20%7C%20'.jo
 <!-- [[[end]]] -->
 
 A Model Context Protocol (MCP) server providing a stateful Django shell for LLM assistants to interact with Django projects.
+
+> [!NOTE]
+>
+> This project is being restructured into a uv workspace with multiple packages. The published PyPI package mcp-django-shell (v0.8.0) is the latest stable release. The README below reflects that release. The workspace restructuring will be part of a future release.
 
 ## Requirements
 
