@@ -12,7 +12,7 @@ from mcp_django.cli import main
 
 @final
 class Command(BaseCommand):
-    help = "Run the MCP Django Shell server"
+    help = "Run the MCP Django server"
 
     @override
     def add_arguments(self, parser: ArgumentParser) -> None:

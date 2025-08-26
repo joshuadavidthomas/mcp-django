@@ -26,22 +26,35 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
-> **Note**: All releases prior to this one are for `mcp-django-shell` only.
+**🚨 BREAKING RELEASE 🚨**
+
+This release restructures the project from a single package to a workspace with multiple packages for better separation of concerns. 
+
+The dev only shell functionality is now an optional extra that must be explicitly installed, while the read-only resources are available in the base package. 
+
+This should allow for safer production deployments where shell access can be completely excluded, as well as allow for future expansion with additional tool packages that can be selectively installed based on environment needs.
+
+> **Note**: All releases prior to this one are for mcp-django-shell only.
 
 ### Changed
 
 - Migrated to workspace structure with multiple packages
-- Repository renamed from `mcp-django-shell` to `mcp-django`
-- Git tags now use package-prefixed format: `mcp-django-shell-vX.Y.Z`
+- Repository renamed from mcp-django-shell to mcp-django
+- **Internal**: Git tags now use package-prefixed format: `mcp-django-shell-vX.Y.Z`
+- **🚨 BREAKING CHANGE 🚨**: Main entry point changed from `python -m mcp_django_shell` to `python -m mcp_django`
+- Shell functionality now installed via extras: `pip install "mcp-django[shell]"`
+- **🚨 BREAKING CHANGE 🚨**: Management command moved from mcp-django-shell to mcp-django package and renamed from `mcp_shell` to `mcp`
 
 ### mcp-django (new)
 
 - Initial release as root package providing core MCP server functionality
+- Includes the read-only resources for project exploration, previously included as a part of mcp-django-shell
 
 ### mcp-django-shell
 
 - Moved to workspace package under `packages/` directory
-- Now distributed as separate workspace package alongside core
+- Now distributed as optional extra of mcp-django
+- Now only includes the two shell tools
 
 ## [0.8.0]
 

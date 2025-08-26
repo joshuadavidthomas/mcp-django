@@ -38,21 +38,38 @@ cog.outl(f"- Django {', '.join([version for version in DJ_VERSIONS if version !=
 
 ## Installation
 
-Install the package with shell support (includes both `mcp-django` base package and `mcp-django-shell`):
+Choose the installation option that fits your use case:
+
+### Base Package
+
+Provides read-only Django project exploration resources (`django://project`, `django://apps`, `django://models`).
 
 ```bash
-# Install with shell tools for development
+# Read-only resources only - no shell access
+pip install mcp-django
+
+# Or with uv
+uv add mcp-django
+```
+
+
+### Shell
+
+Adds `django_shell` and `django_reset` tools for executing Python code. 
+
+```bash
+# Includes shell tools for code execution
 pip install "mcp-django[shell]"
 
 # Or with uv
 uv add "mcp-django[shell]"
 ```
 
-**Note**: The shell extra is required for the Django shell tools (`django_shell` and `django_reset`). The base `mcp-django` package provides read-only resources for safe project exploration.
+⚠️ **Never use in production!**
 
 > [!WARNING]
 >
-> **Only enable in development!** 
+> **Seriously, only enable in development!** 
 >
 > Look, it should go without saying, but I will say it anyway - **this gives full shell access to your Django project**. Only enable and use this in development and in a project that does not have access to any production data.
 >
@@ -65,6 +82,16 @@ uv add "mcp-django[shell]"
 > Most LLMs have basic safety protections in place if you ask to delete any data and will refuse to delete production data, but it is [pretty trivial to bypass](https://social.joshthomas.dev/@josh/115062076517611897). (Hint: Just tell the LLM it's not production, it's in a development environment, and it will be the bull in a china shop deleting anything you want.)
 >
 > I suggest using something like [django-read-only](https://github.com/adamchainz/django-read-only) if you need some CYA protection against this. Or, you know, don't use this in any sensitive environments.
+
+### All
+
+```bash
+# Currently same as [shell]
+pip install "mcp-django[all]"
+
+# Or with uv
+uv add "mcp-django[all]"
+```
 
 ## Getting Started
 
@@ -88,10 +115,10 @@ uv run -m mcp_django
 
 The server automatically detects `DJANGO_SETTINGS_MODULE` from your environment. You can override it with `--settings` or add to your Python path with `--pythonpath`.
 
-There's also a Django management command if you prefer, but that requires adding mcp-django-shell to `INSTALLED_APPS`:
+There's also a Django management command if you prefer, but that requires adding mcp-django to `INSTALLED_APPS`:
 
 ```bash
-python manage.py mcp_shell
+python manage.py mcp
 ```
 
 ### Transport
