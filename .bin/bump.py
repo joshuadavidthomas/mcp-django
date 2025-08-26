@@ -409,7 +409,9 @@ def bump(
 
         # Add CalVer to commit message if we have one
         if calver_tag:
-            commit_msg = f"release {calver_tag}: {commit_msg}"
+            commit_msg = f":bookmark: release {calver_tag}: {commit_msg}"
+        else:
+            commit_msg = f":bookmark: {commit_msg}"
 
         run(["git", "commit", "-m", commit_msg], dry_run=dry_run)
 
