@@ -55,6 +55,8 @@ uv add mcp-django
 
 ### Shell
 
+⚠️ **DO NOT use in production!**
+
 Adds `django_shell` and `django_reset` tools for executing Python code. 
 
 ```bash
@@ -64,8 +66,6 @@ pip install "mcp-django[shell]"
 # Or with uv
 uv add "mcp-django[shell]"
 ```
-
-⚠️ **Never use in production!**
 
 > [!WARNING]
 >
