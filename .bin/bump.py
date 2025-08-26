@@ -243,6 +243,18 @@ def update_uv_lock(dry_run: bool = False) -> None:
     console.print("[green]Updated uv.lock[/green]")
 
 
+def write_version_file(calver: str, dry_run: bool = False) -> None:
+    """Write CalVer to .github/VERSION file."""
+    version_file = Path(".github/VERSION")
+
+    if not dry_run:
+        version_file.parent.mkdir(parents=True, exist_ok=True)
+        version_file.write_text(f"{calver}\n")
+        console.print(f"[green]Wrote CalVer {calver} to .github/VERSION[/green]")
+    else:
+        console.print(f"[dim]Would write CalVer {calver} to .github/VERSION[/dim]")
+
+
 @cli.command()
 def bump(
     version: Annotated[
@@ -357,6 +369,10 @@ def bump(
         console.print("\n[bold]Updating CHANGELOG...[/bold]")
         calver_tag = update_changelog(bumps_to_make, dry_run)
 
+        # Write VERSION file with CalVer
+        if calver_tag:
+            write_version_file(calver_tag, dry_run)
+
     if lock:
         console.print("\n[bold]Updating uv.lock...[/bold]")
         update_uv_lock(dry_run)
@@ -382,6 +398,10 @@ def bump(
         # Add CHANGELOG if it was updated
         if changelog and Path("CHANGELOG.md").exists():
             files_to_add.append("CHANGELOG.md")
+
+        # Add VERSION file if it was created
+        if calver_tag and Path(".github/VERSION").exists():
+            files_to_add.append(".github/VERSION")
 
         # Only add uv.lock if it exists AND is not ignored
         if lock and Path("uv.lock").exists():
