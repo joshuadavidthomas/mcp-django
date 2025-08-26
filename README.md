@@ -7,21 +7,18 @@ import cog
 from noxfile import DJ_VERSIONS
 from noxfile import PY_VERSIONS
 
-# TODO: update to mcp-django when releasing
-cog.outl("[![PyPI](https://img.shields.io/pypi/v/mcp-django-shell)](https://pypi.org/project/mcp-django-shell/)")
-cog.outl("![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mcp-django-shell)")
+cog.outl("[![PyPI - mcp-django](https://img.shields.io/pypi/v/mcp-django?label=mcp-django)](https://pypi.org/project/mcp-django/)")
+cog.outl("[![PyPI - mcp-django-shell](https://img.shields.io/pypi/v/mcp-django-shell?label=mcp-django-shell)](https://pypi.org/project/mcp-django-shell/)")
+cog.outl("![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mcp-django)")
 cog.outl(f"![Django Version](https://img.shields.io/badge/django-{'%20%7C%20'.join(DJ_VERSIONS)}-%2344B78B?labelColor=%23092E20)")
 ]]] -->
-[![PyPI](https://img.shields.io/pypi/v/mcp-django-shell)](https://pypi.org/project/mcp-django-shell/)
-![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mcp-django-shell)
+[![PyPI - mcp-django](https://img.shields.io/pypi/v/mcp-django?label=mcp-django)](https://pypi.org/project/mcp-django/)
+[![PyPI - mcp-django-shell](https://img.shields.io/pypi/v/mcp-django-shell?label=mcp-django-shell)](https://pypi.org/project/mcp-django-shell/)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mcp-django)
 ![Django Version](https://img.shields.io/badge/django-4.2%20%7C%205.1%20%7C%205.2%20%7C%20main-%2344B78B?labelColor=%23092E20)
 <!-- [[[end]]] -->
 
-A Model Context Protocol (MCP) server providing a stateful Django shell for LLM assistants to interact with Django projects.
-
-> [!NOTE]
->
-> This project is being restructured into a uv workspace with multiple packages. The published PyPI package mcp-django-shell (v0.8.0) is the latest stable release. The README below reflects that release. The workspace restructuring will be part of a future release.
+A Model Context Protocol (MCP) server providing Django project exploration resources and optional stateful shell access for LLM assistants to interact with Django projects.
 
 ## Requirements
 
@@ -41,27 +38,17 @@ cog.outl(f"- Django {', '.join([version for version in DJ_VERSIONS if version !=
 
 ## Installation
 
-1. Install the package from [PyPI](https://pypi.org/project/mcp-django-shell).
+Install the package with shell support (includes both `mcp-django` base package and `mcp-django-shell`):
 
-    ```bash
-    python -m pip install mcp-django-shell
+```bash
+# Install with shell tools for development
+pip install "mcp-django[shell]"
 
-    # or if you like the new hotness
+# Or with uv
+uv add "mcp-django[shell]"
+```
 
-    uv add mcp-django-shell
-    uv sync
-    ```
-
-2. (Optional) Add to your Django project's `INSTALLED_APPS` if you want to use the management command:
-
-   ```python
-   DEBUG = ...
-
-   if DEBUG:
-       INSTALLED_APPS.append("mcp_django_shell")
-   ```
-
-   **Note**: You can now run mcp-django-shell without adding it to `INSTALLED_APPS` by using `python -m mcp_django_shell` directly. [See below](#getting-started) for more info.
+**Note**: The shell extra is required for the Django shell tools (`django_shell` and `django_reset`). The base `mcp-django` package provides read-only resources for safe project exploration.
 
 > [!WARNING]
 >
@@ -84,19 +71,19 @@ cog.outl(f"- Django {', '.join([version for version in DJ_VERSIONS if version !=
 Run the MCP server directly from your Django project directory:
 
 ```bash
-python -m mcp_django_shell
+python -m mcp_django
 
 # With explicit settings module
-python -m mcp_django_shell --settings myproject.settings
+python -m mcp_django --settings myproject.settings
 
 # With debug logging
-python -m mcp_django_shell --debug
+python -m mcp_django --debug
 ```
 
 Or using uv:
 
 ```bash
-uv run -m mcp_django_shell
+uv run -m mcp_django
 ```
 
 The server automatically detects `DJANGO_SETTINGS_MODULE` from your environment. You can override it with `--settings` or add to your Python path with `--pythonpath`.
@@ -113,13 +100,13 @@ The server supports multiple transport protocols:
 
 ```bash
 # Default: STDIO
-python -m mcp_django_shell
+python -m mcp_django
 
 # HTTP
-python -m mcp_django_shell --transport http --host 127.0.0.1 --port 8000
+python -m mcp_django --transport http --host 127.0.0.1 --port 8000
 
 # SSE
-python -m mcp_django_shell --transport sse --host 127.0.0.1 --port 8000
+python -m mcp_django --transport sse --host 127.0.0.1 --port 8000
 ```
 
 ### Client Configuration
@@ -133,9 +120,9 @@ Don't see your client? [Submit a PR](CONTRIBUTING.md) with setup instructions.
 ```json
 {
   "mcpServers": {
-    "django_shell": {
+    "django": {
       "command": "python",
-      "args": ["-m", "mcp_django_shell"],
+      "args": ["-m", "mcp_django"],
       "cwd": "/path/to/your/django/project",
       "env": {
         "DJANGO_SETTINGS_MODULE": "myproject.settings"
@@ -151,9 +138,9 @@ Don't see your client? [Submit a PR](CONTRIBUTING.md) with setup instructions.
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
-    "django_shell": {
+    "django": {
       "type": "local",
-      "command": ["python", "-m", "mcp_django_shell"],
+      "command": ["python", "-m", "mcp_django"],
       "enabled": true,
       "environment": {
         "DJANGO_SETTINGS_MODULE": "myproject.settings"
@@ -165,23 +152,27 @@ Don't see your client? [Submit a PR](CONTRIBUTING.md) with setup instructions.
 
 ## Features
 
-mcp-django-shell provides an MCP server with a stateful Django shell for LLM assistants. It sets up Django, maintains session state between calls, and lets the LLM write and execute Python code directly against your project.
+mcp-django provides an MCP server with Django project exploration resources and optional shell access for LLM assistants. The base package offers safe, read-only resources while the shell extra adds stateful code execution capabilities.
 
 It wouldn't be an MCP server README without a gratuitous list of features punctuated by emojis, so:
 
-- 🐚 **Stateful shell** - `django_shell` executes Python code in your Django environment
+**Base package (mcp-django):**
 - 🔍 **Project exploration** - MCP resources for discovering apps, models, and configuration
+- 🚀 **Zero configuration** - No schemas, no settings, just Django
+- 🔒 **Safe by default** - Read-only resources, no code execution
+- 🌐 **Multiple transports** - STDIO, HTTP, SSE support
+
+**Shell extra (mcp-django[shell]):**
+- 🐚 **Stateful shell** - `django_shell` executes Python code in your Django environment
 - 🔄 **Persistent state** - Imports and variables stick around between calls
 - 🧹 **Reset when needed** - `django_reset` clears the session when things get weird
-- 🚀 **Zero configuration** - No schemas, no settings, just Django
 - 🤖 **LLM-friendly** - Designed for LLM assistants that already know Python
 - 📦 **Minimal dependencies** - Just FastMCP and Django (you already have Django)
-- 🌐 **Multiple transports** - STDIO, HTTP, SSE.. It has it all!
 - 🎯 **Does one thing well** - Runs code. That's it. That's the feature.
 
 Inspired by Armin Ronacher's [Your MCP Doesn't Need 30 Tools: It Needs Code](https://lucumr.pocoo.org/2025/8/18/code-mcps/).
 
-### Resources
+### Resources (mcp-django)
 
 Read-only resources are provided for project exploration without executing code (note that resource support varies across MCP clients):
 
@@ -191,9 +182,9 @@ Read-only resources are provided for project exploration without executing code 
 
 The idea is to give just enough information about the project to hopefully guide the LLM assistant and prevent needless shell exploration, allowing it to get straight to work.
 
-### Tools
+### Tools (mcp-django[shell])
 
-Two tools handle shell operations and session management:
+When installed with the shell extra, two tools handle shell operations and session management:
 
 - `django_shell` - Execute Python code in a persistent Django shell session
 - `django_reset` - Reset the session, clearing all variables and imports
