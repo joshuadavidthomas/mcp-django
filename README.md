@@ -183,13 +183,15 @@ mcp-django provides an MCP server with Django project exploration resources and 
 
 It wouldn't be an MCP server README without a gratuitous list of features punctuated by emojis, so:
 
-**Base package (mcp-django):**
+**Core (mcp-django):**
+
 - 🔍 **Project exploration** - MCP resources for discovering apps, models, and configuration
 - 🚀 **Zero configuration** - No schemas, no settings, just Django
 - 🔒 **Safe by default** - Read-only resources, no code execution
 - 🌐 **Multiple transports** - STDIO, HTTP, SSE support
 
-**Shell extra (mcp-django[shell]):**
+**Shell (mcp-django[shell]):**
+
 - 🐚 **Stateful shell** - `django_shell` executes Python code in your Django environment
 - 🔄 **Persistent state** - Imports and variables stick around between calls
 - 🧹 **Reset when needed** - `django_reset` clears the session when things get weird
@@ -209,7 +211,7 @@ Read-only resources are provided for project exploration without executing code 
 
 The idea is to give just enough information about the project to hopefully guide the LLM assistant and prevent needless shell exploration, allowing it to get straight to work.
 
-### Tools (mcp-django[shell])
+### Tools (mcp-django-shell)
 
 When installed with the shell extra, two tools handle shell operations and session management:
 
