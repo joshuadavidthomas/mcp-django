@@ -108,7 +108,7 @@ fail_under = 100
 [tool.coverage.run]
 omit = [
   "*/migrations/*",
-  "packages/mcp-django-shell/src/mcp_django_shell/management/commands/mcp_shell.py",
+  "src/mcp_django/management/commands/mcp.py",
   "src/mcp_django/__main__.py",
   "src/mcp_django/_typing.py",
   "tests/*"
