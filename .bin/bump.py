@@ -110,9 +110,9 @@ def get_new_version(version: Version, package: str | None = None) -> tuple[str, 
 
 
 def get_next_calver() -> str:
-    """Generate next CalVer tag in YYYY.MM.INCR format."""
+    """Generate next CalVer tag in YYYY.M.INCR format."""
     today = date.today()
-    prefix = today.strftime("%Y.%m")
+    prefix = f"{today.year}.{today.month}"  # No zero-padding
 
     # Check CHANGELOG for existing CalVer tags from this month
     changelog_path = Path("CHANGELOG.md")
@@ -352,6 +352,15 @@ def bump(
     if not dry_run and not typer.confirm("\nProceed with these bumps?"):
         raise typer.Abort()
 
+    # Generate CalVer early to use in branch name
+    calver_tag = get_next_calver() if changelog else ""
+
+    # Create release branch
+    if calver_tag and not dry_run:
+        branch_name = f"release-v{calver_tag}"
+        console.print(f"\n[bold]Creating release branch:[/bold] {branch_name}")
+        run(["git", "checkout", "-b", branch_name], dry_run=dry_run)
+
     # Execute the bumps
     console.print("\n[bold]Executing version bumps...[/bold]")
     for pkg_name, _, _ in bumps_to_make:
@@ -364,10 +373,15 @@ def bump(
             )
 
     # Update ancillary files
-    calver_tag = ""
     if changelog:
         console.print("\n[bold]Updating CHANGELOG...[/bold]")
-        calver_tag = update_changelog(bumps_to_make, dry_run)
+        # Pass the already-generated calver_tag to update_changelog
+        updated_calver = update_changelog(bumps_to_make, dry_run)
+        # Verify it matches what we expected
+        if updated_calver != calver_tag:
+            console.print(
+                f"[yellow]Warning: CalVer mismatch - expected {calver_tag}, got {updated_calver}[/yellow]"
+            )
 
         # Write VERSION file with CalVer
         if calver_tag:
@@ -444,9 +458,17 @@ def bump(
     if not dry_run:
         console.print("\n[dim]Next steps:[/dim]")
         console.print("  1. Review the changes: [cyan]git diff HEAD~1[/cyan]")
-        console.print("  2. Push to remote: [cyan]git push[/cyan]")
-        console.print("  3. Create a PR or merge to main")
-        console.print("  4. Run release script: [cyan]./bin/release.py[/cyan]")
+        if calver_tag:
+            console.print(
+                f"  2. Push the release branch: [cyan]git push -u origin release-v{calver_tag}[/cyan]"
+            )
+            console.print("  3. Create a PR from the release branch to main")
+            console.print(
+                "  4. After PR is merged, run release script: [cyan].bin/release.py[/cyan]"
+            )
+        else:
+            console.print("  2. Push to remote: [cyan]git push[/cyan]")
+            console.print("  3. Create a PR or merge to main")
 
 
 if __name__ == "__main__":
