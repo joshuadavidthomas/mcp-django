@@ -88,19 +88,6 @@ Documentation = "https://github.com/joshuadavidthomas/mcp-django#README"
 Issues = "https://github.com/joshuadavidthomas/mcp-django/issues"
 Source = "https://github.com/joshuadavidthomas/mcp-django"
 
-[tool.bumpver]
-commit = true
-commit_message = ":bookmark: bump version {old_version} -> {new_version}"
-current_version = "0.1.0a1"
-push = false  # set to false for CI
-tag = false
-version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
-
-[tool.bumpver.file_patterns]
-"pyproject.toml" = [
-  'version = "{version}"'
-]
-
 [tool.coverage.paths]
 source = [
   "packages/*/src",
