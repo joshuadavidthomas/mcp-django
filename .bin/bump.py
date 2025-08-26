@@ -439,11 +439,11 @@ def bump(
             pkg_list = ", ".join(
                 "mcp-django" if p == "root" else p for p, _, _ in bumps_to_make
             )
-            commit_msg = f"bump versions for {pkg_list}"
+            commit_msg = f"bump {pkg_list}"
 
         # Add CalVer to commit message if we have one
         if calver_tag:
-            commit_msg = f":bookmark: release {calver_tag}: {commit_msg}"
+            commit_msg = f":bookmark: {calver_tag}: {commit_msg}"
         else:
             commit_msg = f":bookmark: {commit_msg}"
 

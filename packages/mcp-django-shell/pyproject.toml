@@ -54,7 +54,7 @@ dependencies = [
 description = "MCP server providing a stateful Django shell for LLM assistants."
 name = "mcp-django-shell"
 readme = "README.md"
-version = "0.8.0"
+version = "0.9.0"
 requires-python = ">=3.10"
 
 [project.urls]

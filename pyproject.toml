@@ -72,7 +72,7 @@ dependencies = [
 description = "A Model Context Protocol (MCP) server for Django integration with LLM assistants."
 name = "mcp-django"
 readme = "README.md"
-version = "0.1.0a1"
+version = "0.1.0"
 requires-python = ">=3.10"
 
 [project.optional-dependencies]
@@ -108,7 +108,7 @@ fail_under = 100
 [tool.coverage.run]
 omit = [
   "*/migrations/*",
-  "packages/mcp-django-shell/src/mcp_django_shell/management/commands/mcp_shell.py",
+  "src/mcp_django/management/commands/mcp.py",
   "src/mcp_django/__main__.py",
   "src/mcp_django/_typing.py",
   "tests/*"
