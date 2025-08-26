@@ -40,7 +40,7 @@ cog.outl(f"- Django {', '.join([version for version in DJ_VERSIONS if version !=
 
 Choose the installation option that fits your use case:
 
-### Base Package
+### Core
 
 Provides read-only Django project exploration resources (`django://project`, `django://apps`, `django://models`).
 
