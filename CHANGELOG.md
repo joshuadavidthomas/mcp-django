@@ -26,6 +26,11 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
+## [2025.8.1]
+
+- mcp-django: 0.2.0
+- mcp-django-shell: 0.9.0
+
 **🚨 BREAKING RELEASE 🚨**
 
 This release restructures the project from a single package to a workspace with multiple packages for better separation of concerns. 
@@ -55,7 +60,6 @@ This should allow for safer production deployments where shell access can be com
 - Moved to workspace package under `packages/` directory
 - Now distributed as optional extra of mcp-django
 - Now only includes the two shell tools
-
 ## [0.8.0]
 
 ### Added
@@ -146,7 +150,8 @@ This should allow for safer production deployments where shell access can be com
 
 - Josh Thomas <josh@joshthomas.dev> (maintainer)
 
-[unreleased]: https://github.com/joshuadavidthomas/mcp-django/compare/mcp-django-shell-v0.8.0...HEAD
+[unreleased]: https://github.com/joshuadavidthomas/mcp-django/compare/2025.8.1...HEAD
+[2025.8.1]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/2025.8.1
 [0.1.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/mcp-django-shell-v0.1.0
 [0.2.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/mcp-django-shell-v0.2.0
 [0.3.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/mcp-django-shell-v0.3.0
