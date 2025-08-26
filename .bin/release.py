@@ -127,11 +127,12 @@ def release(
     # Get CalVer from VERSION file
     calver = get_calver()
 
-    # Check if CalVer release already exists
+    # Check if CalVer release already exists (with v prefix)
+    calver_tag = f"v{calver}"
     try:
-        run(["gh", "release", "view", calver], force_run=True)
+        run(["gh", "release", "view", calver_tag], force_run=True)
         if not force:
-            console.print(f"[red]Release {calver} already exists![/red]")
+            console.print(f"[red]Release {calver_tag} already exists![/red]")
             raise typer.Exit(1)
     except Exception:
         pass  # Release doesn't exist, good to proceed
@@ -152,9 +153,10 @@ def release(
     console.print("\n[bold]Creating tags...[/bold]")
     tags = []
 
-    # CalVer tag
-    tags.append(calver)
-    console.print(f"  [green]✓[/green] {calver}")
+    # CalVer tag with v prefix
+    calver_tag = f"v{calver}"
+    tags.append(calver_tag)
+    console.print(f"  [green]✓[/green] {calver_tag}")
 
     # Package-specific tags
     for package, version in packages.items():
@@ -171,11 +173,11 @@ def release(
     run(["git", "push", "origin"] + tags, dry_run=dry_run)
 
     # Create GitHub release with CalVer tag
-    console.print(f"\n[bold]Creating GitHub release {calver}...[/bold]")
-    run(["gh", "release", "create", calver, "--generate-notes"], dry_run=dry_run)
+    console.print(f"\n[bold]Creating GitHub release {calver_tag}...[/bold]")
+    run(["gh", "release", "create", calver_tag, "--generate-notes"], dry_run=dry_run)
 
     # Success message
-    console.print(f"\n[bold green]✓ Released {calver}![/bold green]")
+    console.print(f"\n[bold green]✓ Released {calver_tag}![/bold green]")
     console.print(
         "\n[dim]The CI/CD pipeline will now build and publish packages to PyPI.[/dim]"
     )
