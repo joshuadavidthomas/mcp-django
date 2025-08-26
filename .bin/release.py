@@ -24,13 +24,12 @@ def run(
     *,
     dry_run: bool = False,
     force_run: bool = False,
-    check: bool = True,
 ) -> str:
     command_str = " ".join(cmd)
     console.print(
-        f"[dim]would run:[/dim] {command_str}"
+        f"would run command: {command_str}"
         if dry_run and not force_run
-        else f"[dim]running:[/dim] {command_str}"
+        else f"running command: {command_str}"
     )
 
     if dry_run and not force_run:
@@ -39,10 +38,8 @@ def run(
     try:
         return subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT).strip()
     except subprocess.CalledProcessError as e:
-        if check:
-            console.print(f"[red]{cmd[0]} failed: {e.output}[/red]")
-            raise typer.Exit(1) from e
-        return ""
+        console.print(f"[red]{cmd[0]} failed: {e.output}[/red]")
+        raise typer.Exit(1) from e
 
 
 def get_calver() -> str:
@@ -53,7 +50,7 @@ def get_calver() -> str:
         raise typer.Exit(1)
 
     calver = version_file.read_text().strip()
-    console.print(f"[cyan]Found CalVer: {calver}[/cyan]")
+    console.print(f"[dim]Found CalVer: {calver}[/dim]")
     return calver
 
 
@@ -75,66 +72,22 @@ def get_package_versions() -> dict[str, str]:
     packages = {}
 
     # Get root package version
+    console.print("[dim]Getting package versions...[/dim]")
     output = run(["uv", "version"], force_run=True)
-    if match := re.search(r"([\d.]+(?:[-.\w]*)?)", output):
+    # Parse output like "mcp-django 0.2.0" or just "0.2.0"
+    if match := re.search(r"(?:mcp-django\s+)?([\d.]+(?:[-.\w]*)?)", output):
         packages["mcp-django"] = match.group(1)
+        console.print(f"  mcp-django: {match.group(1)}")
 
     # Get workspace package versions
     for package in get_workspace_packages():
         output = run(["uv", "version", "--package", package], force_run=True)
-        if match := re.search(r"([\d.]+(?:[-.\w]*)?)", output):
+        # Parse output like "mcp-django-shell 0.9.0" or just "0.9.0"
+        if match := re.search(r"(?:[\w-]+\s+)?([\d.]+(?:[-.\w]*)?)", output):
             packages[package] = match.group(1)
+            console.print(f"  {package}: {match.group(1)}")
 
     return packages
-
-
-def create_and_push_tags(
-    calver: str,
-    packages: dict[str, str],
-    dry_run: bool = False,
-    force: bool = False,
-) -> list[str]:
-    """Create and push git tags for CalVer and all packages."""
-    tags = []
-
-    # Create CalVer tag
-    tags.append(calver)
-
-    # Create package-specific tags
-    for package, version in packages.items():
-        tag = f"{package}-v{version}"
-        tags.append(tag)
-
-    # Check if any tags already exist
-    existing_tags = []
-    for tag in tags:
-        result = run(["git", "tag", "-l", tag], force_run=True)
-        if result:
-            existing_tags.append(tag)
-
-    if existing_tags and not force:
-        console.print("[red]The following tags already exist:[/red]")
-        for tag in existing_tags:
-            console.print(f"  - {tag}")
-        console.print("[yellow]Use --force to overwrite existing tags[/yellow]")
-        raise typer.Exit(1)
-
-    # Create tags (with force if needed)
-    for tag in tags:
-        tag_cmd = ["git", "tag", tag]
-        if force and tag in existing_tags:
-            tag_cmd.insert(2, "-f")  # git tag -f <tag>
-        run(tag_cmd, dry_run=dry_run)
-        console.print(f"[green]Created tag:[/green] {tag}")
-
-    # Push all tags at once
-    push_cmd = ["git", "push", "origin"] + tags
-    if force:
-        push_cmd.insert(2, "-f")  # git push -f origin ...
-    run(push_cmd, dry_run=dry_run)
-    console.print(f"[green]Pushed {len(tags)} tags to origin[/green]")
-
-    return tags
 
 
 @cli.command()
@@ -143,15 +96,10 @@ def release(
         bool, typer.Option("--dry-run", "-d", help="Show commands without executing")
     ] = False,
     force: Annotated[
-        bool,
-        typer.Option(
-            "--force",
-            "-f",
-            help="Skip safety checks and overwrite existing tags/releases",
-        ),
+        bool, typer.Option("--force", "-f", help="Skip safety checks")
     ] = False,
 ):
-    """Create a new release from the current CalVer and package versions."""
+    """Create a new release with CalVer and package-specific tags."""
 
     # Safety checks
     current_branch = run(["git", "branch", "--show-current"], force_run=True).strip()
@@ -167,7 +115,6 @@ def release(
         )
         raise typer.Exit(1)
 
-    # Fetch latest from remote
     run(["git", "fetch", "origin", "main"], dry_run=dry_run)
     local_sha = run(["git", "rev-parse", "@"], force_run=True).strip()
     remote_sha = run(["git", "rev-parse", "@{u}"], force_run=True).strip()
@@ -180,50 +127,57 @@ def release(
     # Get CalVer from VERSION file
     calver = get_calver()
 
-    # Get current package versions from uv
+    # Check if CalVer release already exists
+    try:
+        run(["gh", "release", "view", calver], force_run=True)
+        if not force:
+            console.print(f"[red]Release {calver} already exists![/red]")
+            raise typer.Exit(1)
+    except Exception:
+        pass  # Release doesn't exist, good to proceed
+
+    # Get current package versions
     packages = get_package_versions()
 
-    # Check if GitHub release already exists
-    existing_release = run(
-        ["gh", "release", "view", calver], force_run=True, check=False
-    )
-    if existing_release and not force:
-        console.print(f"[red]GitHub release {calver} already exists![/red]")
-        console.print("[yellow]Use --force to recreate the release[/yellow]")
-        raise typer.Exit(1)
-
-    # Display what we're about to release
+    # Show what we're about to release
     console.print(f"\n[bold]Creating release {calver}[/bold]")
-    console.print("[dim]Package versions:[/dim]")
     for package, version in packages.items():
-        console.print(f"  - {package}: {version}")
+        console.print(f"  [cyan]{package}:[/cyan] {version}")
 
     # Confirm with user
     if not force and not dry_run:
-        if not typer.confirm("\nProceed with release?"):
-            raise typer.Abort()
+        typer.confirm("\nProceed with release?", abort=True)
 
-    # Create and push tags
-    console.print("\n[bold]Creating and pushing tags...[/bold]")
-    tags = create_and_push_tags(calver, packages, dry_run, force)
+    # Create tags
+    console.print("\n[bold]Creating tags...[/bold]")
+    tags = []
 
-    # Delete existing GitHub release if force flag is set
-    if existing_release and force:
-        console.print(f"[yellow]Deleting existing release {calver}...[/yellow]")
-        run(["gh", "release", "delete", calver, "--yes"], dry_run=dry_run)
+    # CalVer tag
+    tags.append(calver)
+    console.print(f"  [green]✓[/green] {calver}")
+
+    # Package-specific tags
+    for package, version in packages.items():
+        tag = f"{package}-v{version}"
+        tags.append(tag)
+        console.print(f"  [green]✓[/green] {tag}")
+
+    # Create all tags locally
+    for tag in tags:
+        run(["git", "tag", tag], dry_run=dry_run)
+
+    # Push all tags at once
+    console.print("\n[bold]Pushing tags to origin...[/bold]")
+    run(["git", "push", "origin"] + tags, dry_run=dry_run)
 
     # Create GitHub release with CalVer tag
-    console.print(f"\n[bold]Creating GitHub release...[/bold]")
+    console.print(f"\n[bold]Creating GitHub release {calver}...[/bold]")
     run(["gh", "release", "create", calver, "--generate-notes"], dry_run=dry_run)
 
     # Success message
     console.print(f"\n[bold green]✓ Released {calver}![/bold green]")
-    console.print(f"[dim]Created {len(tags)} tags:[/dim]")
-    for tag in tags:
-        console.print(f"  - {tag}")
-
     console.print(
-        f"\n[dim]View release: https://github.com/joshuadavidthomas/mcp-django/releases/tag/{calver}[/dim]"
+        "\n[dim]The CI/CD pipeline will now build and publish packages to PyPI.[/dim]"
     )
 
 
