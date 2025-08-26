@@ -70,6 +70,7 @@ dependencies = [
   "pydantic[email]>=2.11.7",
 ]
 description = "A Model Context Protocol (MCP) server for Django integration with LLM assistants."
+license = { file = "LICENSE" }
 name = "mcp-django"
 readme = "README.md"
 version = "0.1.0"
