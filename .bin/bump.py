@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 import subprocess
+from datetime import date
 from enum import Enum
 from pathlib import Path
 from typing import Annotated
@@ -108,52 +109,126 @@ def get_new_version(version: Version, package: str | None = None) -> tuple[str, 
     return current, new
 
 
-def update_changelog(bumps: list[tuple[str, str, str]], dry_run: bool = False) -> None:
-    """Update CHANGELOG for version bumps.
+def get_next_calver() -> str:
+    """Generate next CalVer tag in YYYY.MM.INCR format."""
+    today = date.today()
+    prefix = today.strftime("%Y.%m")
+
+    # Check CHANGELOG for existing CalVer tags from this month
+    changelog_path = Path("CHANGELOG.md")
+    if not changelog_path.exists():
+        return f"{prefix}.1"
+
+    content = changelog_path.read_text()
+
+    # Find all CalVer tags matching this month's prefix
+    # Pattern: ## [YYYY.MM.N]
+    existing = re.findall(rf"## \[{re.escape(prefix)}\.(\d+)\]", content)
+
+    if existing:
+        # Find highest increment and add 1
+        next_incr = max(int(i) for i in existing) + 1
+    else:
+        next_incr = 1
+
+    return f"{prefix}.{next_incr}"
+
+
+def update_changelog(bumps: list[tuple[str, str, str]], dry_run: bool = False) -> str:
+    """Update CHANGELOG for version bumps and convert to CalVer.
 
     Args:
         bumps: List of (package_name, old_version, new_version) tuples.
                Use "root" for the root package.
+
+    Returns:
+        The CalVer tag that was created
     """
     changelog = Path("CHANGELOG.md")
     if not changelog.exists():
         console.print("[yellow]CHANGELOG.md not found, skipping update[/yellow]")
-        return
+        return ""
 
     content = changelog.read_text()
 
-    if "## [Unreleased]" in content:
-        # Find the position after ## [Unreleased]
-        pos = content.index("## [Unreleased]") + len("## [Unreleased]")
+    # Generate CalVer tag
+    calver = get_next_calver()
+    console.print(f"[bold]CalVer release:[/bold] {calver}")
 
-        # Check what's already in the file after Unreleased
-        content_after = content[pos:].lstrip("\n")
-
-        # Build version list entries (simple format)
-        version_entries = []
-        for pkg_name, old_ver, new_ver in bumps:
-            if pkg_name == "root":
-                entry = f"- mcp-django: {new_ver}"
-            else:
-                entry = f"- {pkg_name}: {new_ver}"
-
-            # Only add if not already present
-            if entry not in content_after[:500]:  # Check first 500 chars
-                version_entries.append(entry)
-
-        if version_entries:
-            # Insert version list after Unreleased header
-            new_content = (
-                content[:pos] + "\n\n" + "\n".join(version_entries) + content[pos:]
-            )
-
-            if not dry_run:
-                changelog.write_text(new_content)
-                console.print("[green]Updated CHANGELOG.md[/green]")
-        else:
-            console.print("[dim]Version entries already in CHANGELOG, skipping[/dim]")
-    else:
+    if "## [Unreleased]" not in content:
         console.print("[yellow]Could not find '## [Unreleased]' in CHANGELOG[/yellow]")
+        return ""
+
+    # Find everything under [Unreleased] until the next ## heading
+    unreleased_match = re.search(
+        r"(## \[Unreleased\])(.*?)((?=\n## )|$)", content, re.DOTALL
+    )
+
+    if not unreleased_match:
+        console.print("[yellow]Could not parse Unreleased section[/yellow]")
+        return ""
+
+    unreleased_content = unreleased_match.group(2).strip()
+
+    # Build version list entries
+    version_entries = []
+    for pkg_name, old_ver, new_ver in bumps:
+        if pkg_name == "root":
+            version_entries.append(f"- mcp-django: {new_ver}")
+        else:
+            version_entries.append(f"- {pkg_name}: {new_ver}")
+
+    # Build the new CalVer section with existing content
+    calver_section = f"## [{calver}]\n\n"
+    if version_entries:
+        calver_section += "\n".join(version_entries) + "\n"
+
+    # Add any existing content from Unreleased (but skip if it's just version entries)
+    if unreleased_content and not all(
+        line.strip().startswith("- mcp-django") or line.strip() == ""
+        for line in unreleased_content.split("\n")
+    ):
+        if version_entries:
+            calver_section += "\n"
+        calver_section += unreleased_content
+
+    # Replace [Unreleased] with new [Unreleased] and [CalVer] sections
+    new_content = content.replace(
+        unreleased_match.group(0),
+        f"## [Unreleased]\n\n{calver_section}{unreleased_match.group(3)}",
+    )
+
+    # Update the link references at the bottom
+    # Add new CalVer link and update unreleased comparison
+    if "[unreleased]:" in new_content:
+        # Update unreleased link to compare from new CalVer tag
+        new_content = re.sub(
+            r"\[unreleased\]: (.+?)/compare/(.+?)\.\.\.HEAD",
+            rf"[unreleased]: \1/compare/{calver}...HEAD",
+            new_content,
+            count=1,
+        )
+
+        # Add the CalVer release link
+        # Find the position right after the unreleased link
+        unreleased_link_match = re.search(r"(\[unreleased\]: .+?\n)", new_content)
+        if unreleased_link_match:
+            insert_pos = unreleased_link_match.end()
+            repo_match = re.search(r"\[unreleased\]: (.+?)/compare", new_content)
+            if repo_match:
+                repo_url = repo_match.group(1)
+                calver_link = f"[{calver}]: {repo_url}/releases/tag/{calver}\n"
+                new_content = (
+                    new_content[:insert_pos] + calver_link + new_content[insert_pos:]
+                )
+
+    if not dry_run:
+        changelog.write_text(new_content)
+        console.print(
+            f"[green]Updated CHANGELOG.md with CalVer release {calver}[/green]"
+        )
+
+    return calver
 
 
 def update_uv_lock(dry_run: bool = False) -> None:
@@ -277,9 +352,10 @@ def bump(
             )
 
     # Update ancillary files
+    calver_tag = ""
     if changelog:
         console.print("\n[bold]Updating CHANGELOG...[/bold]")
-        update_changelog(bumps_to_make, dry_run)
+        calver_tag = update_changelog(bumps_to_make, dry_run)
 
     if lock:
         console.print("\n[bold]Updating uv.lock...[/bold]")
@@ -331,11 +407,18 @@ def bump(
             )
             commit_msg = f"bump versions for {pkg_list}"
 
+        # Add CalVer to commit message if we have one
+        if calver_tag:
+            commit_msg = f"release {calver_tag}: {commit_msg}"
+
         run(["git", "commit", "-m", commit_msg], dry_run=dry_run)
 
         console.print(f"\n[green]✓ Committed:[/green] {commit_msg}")
 
     console.print("\n[bold green]Version bump complete![/bold green]")
+    if calver_tag:
+        console.print(f"[bold yellow]Release prepared:[/bold yellow] {calver_tag}")
+
     if not dry_run:
         console.print("\n[dim]Next steps:[/dim]")
         console.print("  1. Review the changes: [cyan]git diff HEAD~1[/cyan]")
