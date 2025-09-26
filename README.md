@@ -8,12 +8,10 @@ from noxfile import DJ_VERSIONS
 from noxfile import PY_VERSIONS
 
 cog.outl("[![PyPI - mcp-django](https://img.shields.io/pypi/v/mcp-django?label=mcp-django)](https://pypi.org/project/mcp-django/)")
-cog.outl("[![PyPI - mcp-django-shell](https://img.shields.io/pypi/v/mcp-django-shell?label=mcp-django-shell)](https://pypi.org/project/mcp-django-shell/)")
 cog.outl("![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mcp-django)")
 cog.outl(f"![Django Version](https://img.shields.io/badge/django-{'%20%7C%20'.join(DJ_VERSIONS)}-%2344B78B?labelColor=%23092E20)")
 ]]] -->
 [![PyPI - mcp-django](https://img.shields.io/pypi/v/mcp-django?label=mcp-django)](https://pypi.org/project/mcp-django/)
-[![PyPI - mcp-django-shell](https://img.shields.io/pypi/v/mcp-django-shell?label=mcp-django-shell)](https://pypi.org/project/mcp-django-shell/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mcp-django)
 ![Django Version](https://img.shields.io/badge/django-4.2%20%7C%205.1%20%7C%205.2%20%7C%20main-%2344B78B?labelColor=%23092E20)
 <!-- [[[end]]] -->
@@ -57,19 +55,12 @@ uv add mcp-django
 
 ⚠️ **DO NOT use in production!**
 
-Adds `django_shell` and `django_reset` tools for executing Python code. 
-
-```bash
-# Includes shell tools for code execution
-pip install "mcp-django[shell]"
-
-# Or with uv
-uv add "mcp-django[shell]"
-```
+Adds `django_shell` and `django_reset` tools for executing Python code. The tools ship with
+`mcp-django`; once installed, you simply choose whether to call the destructive `shell_*` tools.
 
 > [!WARNING]
 >
-> **Seriously, only enable in development!** 
+> **Seriously, only enable in development!**
 >
 > Look, it should go without saying, but I will say it anyway - **this gives full shell access to your Django project**. Only enable and use this in development and in a project that does not have access to any production data.
 >
@@ -82,16 +73,6 @@ uv add "mcp-django[shell]"
 > Most LLMs have basic safety protections in place if you ask to delete any data and will refuse to delete production data, but it is [pretty trivial to bypass](https://social.joshthomas.dev/@josh/115062076517611897). (Hint: Just tell the LLM it's not production, it's in a development environment, and it will be the bull in a china shop deleting anything you want.)
 >
 > I suggest using something like [django-read-only](https://github.com/adamchainz/django-read-only) if you need some CYA protection against this. Or, you know, don't use this in any sensitive environments.
-
-### All
-
-```bash
-# Currently same as [shell]
-pip install "mcp-django[all]"
-
-# Or with uv
-uv add "mcp-django[all]"
-```
 
 ## Getting Started
 
@@ -179,7 +160,7 @@ Don't see your client? [Submit a PR](CONTRIBUTING.md) with setup instructions.
 
 ## Features
 
-mcp-django provides an MCP server with Django project exploration resources and optional shell access for LLM assistants. The base package offers safe, read-only resources while the shell extra adds stateful code execution capabilities.
+mcp-django provides an MCP server with Django project exploration resources and optional shell access for LLM assistants. The base package offers safe, read-only resources while the bundled shell module adds stateful code execution capabilities when enabled.
 
 It wouldn't be an MCP server README without a gratuitous list of features punctuated by emojis, so:
 
@@ -190,7 +171,7 @@ It wouldn't be an MCP server README without a gratuitous list of features punctu
 - 🔒 **Safe by default** - Read-only resources, no code execution
 - 🌐 **Multiple transports** - STDIO, HTTP, SSE support
 
-**Shell (mcp-django[shell]):**
+**Shell tools:**
 
 - 🐚 **Stateful shell** - `django_shell` executes Python code in your Django environment
 - 🔄 **Persistent state** - Imports and variables stick around between calls
@@ -211,9 +192,9 @@ Read-only resources are provided for project exploration without executing code 
 
 The idea is to give just enough information about the project to hopefully guide the LLM assistant and prevent needless shell exploration, allowing it to get straight to work.
 
-### Tools (mcp-django-shell)
+### Tools (shell)
 
-When installed with the shell extra, two tools handle shell operations and session management:
+The included shell module exposes two tools for shell operations and session management:
 
 - `django_shell` - Execute Python code in a persistent Django shell session
 - `django_reset` - Reset the session, clearing all variables and imports

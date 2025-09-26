@@ -22,7 +22,7 @@ nox SESSION *ARGS:
 
 bootstrap:
     uv python install
-    uv sync --all-extras --locked
+    uv sync --locked
 
 coverage *ARGS:
     @just nox coverage {{ ARGS }}
@@ -47,7 +47,7 @@ manage *COMMAND:
             "forget to activate a virtual environment?"
         ) from exc
 
-    settings.configure(INSTALLED_APPS=["mcp_django_shell"])
+    settings.configure(INSTALLED_APPS=["mcp_django.shell"])
     execute_from_command_line(sys.argv + "{{ COMMAND }}".split(" "))
 
 test *ARGS:

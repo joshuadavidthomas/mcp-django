@@ -111,10 +111,15 @@ class ExceptionOutput(BaseModel):
             return []
 
         tb_lines = traceback.format_tb(tb)
+        internal_markers = (
+            "mcp_django/shell",
+            "mcp_django.shell",
+        )
         relevant_tb_lines = [
             line.strip()
             for line in tb_lines
-            if "mcp_django_shell" not in line and line.strip()
+            if line.strip()
+            and not any(marker in line for marker in internal_markers)
         ]
 
         return relevant_tb_lines

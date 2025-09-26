@@ -172,7 +172,7 @@ def update_changelog(bumps: list[tuple[str, str, str]], dry_run: bool = False) -
 
     # Build version list entries
     version_entries = []
-    for pkg_name, old_ver, new_ver in bumps:
+    for pkg_name, _old_ver, new_ver in bumps:
         if pkg_name == "root":
             version_entries.append(f"- mcp-django: {new_ver}")
         else:

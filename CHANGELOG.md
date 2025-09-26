@@ -26,6 +26,15 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
+### Changed
+
+- Shell tooling now lives under `mcp_django.shell` within the primary package; the separate `mcp-django-shell` workspace package and extra are retired.
+- Configuration, docs, and tooling updated to assume a single `mcp-django` distribution (coverage paths, pytest configuration, optional dependencies).
+
+### Removed
+
+- UV workspace metadata and the `packages/` directory that previously housed `mcp-django-shell`.
+
 ## [2025.8.1]
 
 - mcp-django: 0.2.0
@@ -33,9 +42,9 @@ For multi-package releases, use package names as subsections:
 
 **🚨 BREAKING RELEASE 🚨**
 
-This release restructures the project from a single package to a workspace with multiple packages for better separation of concerns. 
+This release restructures the project from a single package to a workspace with multiple packages for better separation of concerns.
 
-The dev only shell functionality is now an optional extra that must be explicitly installed, while the read-only resources are available in the base package. 
+The dev only shell functionality is now an optional extra that must be explicitly installed, while the read-only resources are available in the base package.
 
 This should allow for safer production deployments where shell access can be completely excluded, as well as allow for future expansion with additional tool packages that can be selectively installed based on environment needs.
 

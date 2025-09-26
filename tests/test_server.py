@@ -11,8 +11,8 @@ from fastmcp import Client
 from fastmcp.exceptions import ToolError
 
 from mcp_django.server import mcp
-from mcp_django_shell.output import ExecutionStatus
-from mcp_django_shell.server import shell
+from mcp_django.server import shell
+from mcp_django.shell.output import ExecutionStatus
 
 pytestmark = pytest.mark.asyncio
 
@@ -72,7 +72,7 @@ async def test_tool_listing():
 
         django_shell_tool = next(t for t in tools if t.name == "shell_django_shell")
         assert django_shell_tool.description is not None
-        assert "Useful exploration commands:" in django_shell_tool.description
+        assert "Execute Python code" in django_shell_tool.description
 
 
 async def test_django_shell_tool():
@@ -179,7 +179,7 @@ async def test_django_shell_error_output():
         assert "division by zero" in result.data.output.exception.message
         assert len(result.data.output.exception.traceback) > 0
         assert not any(
-            "mcp_django_shell" in line
+            "mcp_django/shell" in line or "mcp_django.shell" in line
             for line in result.data.output.exception.traceback
         )
 

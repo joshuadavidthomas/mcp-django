@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import traceback
 
-from mcp_django_shell.output import DjangoShellOutput
-from mcp_django_shell.output import ErrorOutput
-from mcp_django_shell.output import ExceptionOutput
-from mcp_django_shell.output import ExecutionStatus
-from mcp_django_shell.output import ExpressionOutput
-from mcp_django_shell.shell import ErrorResult
-from mcp_django_shell.shell import ExpressionResult
+from mcp_django.shell.output import DjangoShellOutput
+from mcp_django.shell.output import ErrorOutput
+from mcp_django.shell.output import ExceptionOutput
+from mcp_django.shell.output import ExecutionStatus
+from mcp_django.shell.output import ExpressionOutput
+from mcp_django.shell.shell import ErrorResult
+from mcp_django.shell.shell import ExpressionResult
 
 
 def test_django_shell_output_from_expression_result():
@@ -82,8 +82,11 @@ def test_exception_output_serialization():
 
 def test_exception_output_with_real_traceback():
     # Do something that actually raises an error
+    def trigger_zero_division() -> None:
+        return 1 / 0
+
     try:
-        1 / 0
+        trigger_zero_division()
     except ZeroDivisionError as e:
         exc_output = ExceptionOutput(
             exc_type=type(e),
@@ -97,8 +100,11 @@ def test_exception_output_with_real_traceback():
         assert "division by zero" in serialized["message"]
         assert isinstance(serialized["traceback"], list)
         assert len(serialized["traceback"]) > 0
-        assert any("1 / 0" in line for line in serialized["traceback"])
-        assert not any("mcp_django_shell" in line for line in serialized["traceback"])
+        assert any("return 1 / 0" in line for line in serialized["traceback"])
+        assert not any(
+            "mcp_django/shell" in line or "mcp_django.shell" in line
+            for line in serialized["traceback"]
+        )
 
 
 def test_traceback_filtering():
@@ -123,5 +129,6 @@ def test_traceback_filtering():
         serialized = exc_output.model_dump(mode="json")
 
         assert len(serialized["traceback"]) == 0 or not any(
-            "mcp_django_shell" in line for line in serialized["traceback"]
+            "mcp_django/shell" in line or "mcp_django.shell" in line
+            for line in serialized["traceback"]
         )

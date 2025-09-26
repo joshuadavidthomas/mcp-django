@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from mcp_django_shell.code import filter_existing_imports
-from mcp_django_shell.code import parse_code
+from mcp_django.shell.code import filter_existing_imports
+from mcp_django.shell.code import parse_code
 
 
 def test_parse_code_single_expression():

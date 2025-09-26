@@ -76,14 +76,6 @@ readme = "README.md"
 version = "0.1.0"
 requires-python = ">=3.10"
 
-[project.optional-dependencies]
-all = [
-  "mcp-django[shell]",
-]
-shell = [
-  "mcp-django-shell>=0.8.0",
-]
-
 [project.urls]
 Documentation = "https://github.com/joshuadavidthomas/mcp-django#README"
 Issues = "https://github.com/joshuadavidthomas/mcp-django/issues"
@@ -91,7 +83,6 @@ Source = "https://github.com/joshuadavidthomas/mcp-django"
 
 [tool.coverage.paths]
 source = [
-  "packages/*/src",
   "src"
 ]
 
@@ -115,7 +106,6 @@ omit = [
   "tests/*"
 ]
 source = [
-  "packages/mcp-django-shell/src/mcp_django_shell",
   "src/mcp_django"
 ]
 
@@ -160,7 +150,6 @@ asyncio_default_fixture_loop_scope = "function"
 norecursedirs = ".* bin build dist *.egg htmlcov logs node_modules templates venv"
 python_files = "tests.py test_*.py *_tests.py"
 pythonpath = [
-  "packages/**/src",
   "src",
   "."
 ]
@@ -232,7 +221,6 @@ unfixable = []
 force-single-line = true
 known-first-party = [
   "mcp_django",
-  "mcp_django_shell",
   "tests"
 ]
 required-imports = ["from __future__ import annotations"]
@@ -247,10 +235,3 @@ keep-runtime-typing = true
 
 [tool.uv]
 required-version = ">=0.7"
-
-[tool.uv.sources]
-mcp-django = { workspace = true }
-mcp-django-shell = { workspace = true }
-
-[tool.uv.workspace]
-members = ["packages/*"]
