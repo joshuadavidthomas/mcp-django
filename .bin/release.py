@@ -54,40 +54,18 @@ def get_calver() -> str:
     return calver
 
 
-def get_workspace_packages() -> list[str]:
-    """Get list of workspace packages from packages/ directory."""
-    packages_dir = Path("packages")
-    if not packages_dir.exists():
-        return []
-
-    packages = []
-    for pkg_dir in packages_dir.iterdir():
-        if pkg_dir.is_dir() and (pkg_dir / "pyproject.toml").exists():
-            packages.append(pkg_dir.name)
-    return sorted(packages)
-
-
-def get_package_versions() -> dict[str, str]:
-    """Get current versions of all packages using uv."""
-    packages = {}
-
-    # Get root package version
-    console.print("[dim]Getting package versions...[/dim]")
+def get_package_version() -> str:
+    """Get current version of mcp-django using uv."""
+    console.print("[dim]Getting package version...[/dim]")
     output = run(["uv", "version"], force_run=True)
     # Parse output like "mcp-django 0.2.0" or just "0.2.0"
     if match := re.search(r"(?:mcp-django\s+)?([\d.]+(?:[-.\w]*)?)", output):
-        packages["mcp-django"] = match.group(1)
-        console.print(f"  mcp-django: {match.group(1)}")
+        version = match.group(1)
+        console.print(f"  mcp-django: {version}")
+        return version
 
-    # Get workspace package versions
-    for package in get_workspace_packages():
-        output = run(["uv", "version", "--package", package], force_run=True)
-        # Parse output like "mcp-django-shell 0.9.0" or just "0.9.0"
-        if match := re.search(r"(?:[\w-]+\s+)?([\d.]+(?:[-.\w]*)?)", output):
-            packages[package] = match.group(1)
-            console.print(f"  {package}: {match.group(1)}")
-
-    return packages
+    console.print("[red]Failed to parse version from uv output[/red]")
+    raise typer.Exit(1)
 
 
 @cli.command()
@@ -137,13 +115,12 @@ def release(
     except Exception:
         pass  # Release doesn't exist, good to proceed
 
-    # Get current package versions
-    packages = get_package_versions()
+    # Get current package version
+    version = get_package_version()
 
     # Show what we're about to release
     console.print(f"\n[bold]Creating release {calver}[/bold]")
-    for package, version in packages.items():
-        console.print(f"  [cyan]{package}:[/cyan] {version}")
+    console.print(f"  [cyan]mcp-django:[/cyan] {version}")
 
     # Confirm with user
     if not force and not dry_run:
@@ -158,11 +135,10 @@ def release(
     tags.append(calver_tag)
     console.print(f"  [green]✓[/green] {calver_tag}")
 
-    # Package-specific tags
-    for package, version in packages.items():
-        tag = f"{package}-v{version}"
-        tags.append(tag)
-        console.print(f"  [green]✓[/green] {tag}")
+    # Package-specific tag
+    package_tag = f"mcp-django-v{version}"
+    tags.append(package_tag)
+    console.print(f"  [green]✓[/green] {package_tag}")
 
     # Create all tags locally
     for tag in tags:

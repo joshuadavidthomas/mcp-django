@@ -36,43 +36,32 @@ cog.outl(f"- Django {', '.join([version for version in DJ_VERSIONS if version !=
 
 ## Installation
 
-Choose the installation option that fits your use case:
-
-### Core
-
-Provides read-only Django project exploration resources (`django://project`, `django://apps`, `django://models`).
-
 ```bash
-# Read-only resources only - no shell access
 pip install mcp-django
 
 # Or with uv
 uv add mcp-django
 ```
 
+## ⚠️ Security Warning
 
-### Shell
-
-⚠️ **DO NOT use in production!**
-
-Adds `django_shell` and `django_reset` tools for executing Python code. The tools ship with
-`mcp-django`; once installed, you simply choose whether to call the destructive `shell_*` tools.
+The shell tools (`shell` and `shell_reset`) provide **unrestricted code execution** in your Django environment.
 
 > [!WARNING]
 >
-> **Seriously, only enable in development!**
+> **DO NOT use shell tools in production!**
 >
-> Look, it should go without saying, but I will say it anyway - **this gives full shell access to your Django project**. Only enable and use this in development and in a project that does not have access to any production data.
+> These tools give full shell access to your Django project. Only use them in development environments with non-production data.
 >
 > LLMs can go off the rails, get spooked by some random error, and in trying to fix things [drop a production database](https://xcancel.com/jasonlk/status/1946069562723897802).
 
 > [!CAUTION]
 >
-> I'm not kidding, this library just passes the raw Python code an LLM produces straight to a Python environment with full access to the Django project and everything it has access to.
+> This library passes raw Python code from the LLM straight to a Python environment with full access to your Django project and everything it can reach.
 >
-> Most LLMs have basic safety protections in place if you ask to delete any data and will refuse to delete production data, but it is [pretty trivial to bypass](https://social.joshthomas.dev/@josh/115062076517611897). (Hint: Just tell the LLM it's not production, it's in a development environment, and it will be the bull in a china shop deleting anything you want.)
+> Most LLMs have basic safety protections for destructive operations, but it is [pretty trivial to bypass them](https://social.joshthomas.dev/@josh/115062076517611897). (Hint: Just tell the LLM it's not production, it's a development environment, and it will be the bull in a china shop deleting anything you want.)
 >
-> I suggest using something like [django-read-only](https://github.com/adamchainz/django-read-only) if you need some CYA protection against this. Or, you know, don't use this in any sensitive environments.
+> Consider using something like [django-read-only](https://github.com/adamchainz/django-read-only) if you need protection. Or, you know, don't use shell tools in any sensitive environments.
 
 ## Getting Started
 
@@ -102,7 +91,7 @@ There's also a Django management command if you prefer, but that requires adding
 python manage.py mcp
 ```
 
-### Transport
+### Transport Options
 
 The server supports multiple transport protocols:
 
@@ -117,13 +106,13 @@ python -m mcp_django --transport http --host 127.0.0.1 --port 8000
 python -m mcp_django --transport sse --host 127.0.0.1 --port 8000
 ```
 
-### Client Configuration
+## Client Configuration
 
 Configure your MCP client using one of the examples below. The command is the same for all clients, just expressed in annoyingly different JSON soup.
 
 Don't see your client? [Submit a PR](CONTRIBUTING.md) with setup instructions.
 
-### Claude Code
+#### Claude Code
 
 ```json
 {
@@ -140,7 +129,7 @@ Don't see your client? [Submit a PR](CONTRIBUTING.md) with setup instructions.
 }
 ```
 
-### Opencode
+#### Opencode
 
 ```json
 {
@@ -160,46 +149,39 @@ Don't see your client? [Submit a PR](CONTRIBUTING.md) with setup instructions.
 
 ## Features
 
-mcp-django provides an MCP server with Django project exploration resources and optional shell access for LLM assistants. The base package offers safe, read-only resources while the bundled shell module adds stateful code execution capabilities when enabled.
-
 It wouldn't be an MCP server README without a gratuitous list of features punctuated by emojis, so:
-
-**Core (mcp-django):**
 
 - 🔍 **Project exploration** - MCP resources for discovering apps, models, and configuration
 - 🚀 **Zero configuration** - No schemas, no settings, just Django
-- 🔒 **Safe by default** - Read-only resources, no code execution
+- 🔒 **Safe by default** - Read-only resources with optional shell access
 - 🌐 **Multiple transports** - STDIO, HTTP, SSE support
-
-**Shell tools:**
-
-- 🐚 **Stateful shell** - `django_shell` executes Python code in your Django environment
+- 🐚 **Stateful shell** - Execute Python code in your Django environment
 - 🔄 **Persistent state** - Imports and variables stick around between calls
-- 🧹 **Reset when needed** - `django_reset` clears the session when things get weird
+- 🧹 **Reset when needed** - Clear the session when things get weird
 - 🤖 **LLM-friendly** - Designed for LLM assistants that already know Python
 - 📦 **Minimal dependencies** - Just FastMCP and Django (you already have Django)
 - 🎯 **Does one thing well** - Runs code. That's it. That's the feature.
 
-Inspired by Armin Ronacher's [Your MCP Doesn't Need 30 Tools: It Needs Code](https://lucumr.pocoo.org/2025/8/18/code-mcps/).
+Shell tools inspired by Armin Ronacher's [Your MCP Doesn't Need 30 Tools: It Needs Code](https://lucumr.pocoo.org/2025/8/18/code-mcps/).
 
-### Resources (mcp-django)
+## Resources
 
-Read-only resources are provided for project exploration without executing code (note that resource support varies across MCP clients):
+Read-only resources for project exploration without executing code (note that resource support varies across MCP clients):
 
-- `django://project` - Python environment and Django configuration details
-- `django://apps` - All installed Django applications with their models
-- `django://models` - Detailed model information with import paths and field types
+- **`django://project`** - Python environment and Django configuration details
+- **`django://apps`** - All installed Django applications with their models
+- **`django://models`** - Detailed model information with import paths and field types
 
 The idea is to give just enough information about the project to hopefully guide the LLM assistant and prevent needless shell exploration, allowing it to get straight to work.
 
-### Tools (shell)
+## Tools
 
-The included shell module exposes two tools for shell operations and session management:
+Two tools for shell operations and session management:
 
-- `django_shell` - Execute Python code in a persistent Django shell session
-- `django_reset` - Reset the session, clearing all variables and imports
+- **`shell`** - Execute Python code in a persistent Django shell session
+- **`shell_reset`** - Reset the session, clearing all variables and imports
 
-Imports and variables persist between calls within the shell tool, so the LLM can work iteratively - exploring your models, testing queries, debugging issues.
+Imports and variables persist between calls, so the LLM can work iteratively - exploring your models, testing queries, debugging issues.
 
 ## Development
 
