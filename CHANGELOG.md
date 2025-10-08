@@ -26,6 +26,12 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
+After splitting into separate packages in v2025.8.1 for security isolation, we're consolidating back into a single package, for a few reasons:
+
+- It seemed like a good idea, but it's early and the added complexity adds friction
+- Premature abstraction is the root of all evil (or at least unnecessary workspace configs)
+- While production deployment would be nice eventually, the current focus is developer tooling and building a damn good MCP server for Django
+
 ### Changed
 
 - Shell tooling now lives under `mcp_django.shell` within the primary package; the separate `mcp-django-shell` workspace package and extra are retired.
@@ -33,7 +39,7 @@ For multi-package releases, use package names as subsections:
 
 ### Removed
 
-- UV workspace metadata and the `packages/` directory that previously housed `mcp-django-shell`.
+- uv workspace metadata and the `packages/` directory that previously housed `mcp-django-shell`.
 
 ## [2025.8.1]
 

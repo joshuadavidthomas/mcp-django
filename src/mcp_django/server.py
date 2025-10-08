@@ -35,8 +35,8 @@ TOOLS:
 The shell maintains state between calls - imports and variables persist. Use shell_django_reset to
 clear state when variables get messy or you need a fresh start.
 
-- shell_django_shell - Execute Python code in a stateful Django shell
-- shell_django_reset - Reset the shell session
+- shell - Execute Python code in a stateful Django shell
+- shell_reset - Reset the shell session
 
 EXAMPLES:
 The pattern: Resource → Import Path → Shell Operation. Resources provide coordinates, shell does
@@ -103,12 +103,12 @@ def get_models() -> list[ModelResource]:
 
 
 @mcp.tool(
-    name="shell_django_shell",
+    name="shell",
     annotations=ToolAnnotations(
         title="Django Shell", destructiveHint=True, openWorldHint=True
     ),
 )
-async def shell_django_shell(
+async def django_shell(
     ctx: Context,
     code: Annotated[str, "Python code to be executed inside the Django shell session"],
     imports: Annotated[
@@ -118,19 +118,15 @@ async def shell_django_shell(
 ) -> DjangoShellOutput:
     """Execute Python code in a stateful Django shell session."""
     logger.info(
-        "django_shell tool called - request_id: %s, client_id: %s, code: %s, imports: %s",
+        "shell tool called - request_id: %s, client_id: %s, code: %s, imports: %s",
         ctx.request_id,
         ctx.client_id or "unknown",
         (code[:100] + "..." if len(code) > 100 else code).replace("\n", "\\n"),
         (imports[:50] + "..." if imports and len(imports) > 50 else imports or "None"),
     )
-    logger.debug(
-        "Full code for django_shell - request_id: %s: %s", ctx.request_id, code
-    )
+    logger.debug("Full code for shell - request_id: %s: %s", ctx.request_id, code)
     if imports:
-        logger.debug(
-            "Imports for django_shell - request_id: %s: %s", ctx.request_id, imports
-        )
+        logger.debug("Imports for shell - request_id: %s: %s", ctx.request_id, imports)
 
         filtered_imports = filter_existing_imports(imports, shell.globals)
         if filtered_imports.strip():
@@ -143,7 +139,7 @@ async def shell_django_shell(
         output = DjangoShellOutput.from_result(result)
 
         logger.debug(
-            "django_shell execution completed - request_id: %s, result type: %s",
+            "shell execution completed - request_id: %s, result type: %s",
             ctx.request_id,
             type(result).__name__,
         )
@@ -154,7 +150,7 @@ async def shell_django_shell(
 
     except Exception as exc:  # pragma: no cover - re-raised for FastMCP handling
         logger.error(
-            "Unexpected error in django_shell tool - request_id: %s: %s",
+            "Unexpected error in shell tool - request_id: %s: %s",
             ctx.request_id,
             exc,
             exc_info=True,
@@ -163,15 +159,15 @@ async def shell_django_shell(
 
 
 @mcp.tool(
-    name="shell_django_reset",
+    name="shell_reset",
     annotations=ToolAnnotations(
         title="Reset Django Shell Session", destructiveHint=True, idempotentHint=True
     ),
 )
-async def shell_django_reset(ctx: Context) -> str:
+async def django_shell_reset(ctx: Context) -> str:
     """Reset the Django shell session, clearing all variables and history."""
     logger.info(
-        "django_reset tool called - request_id: %s, client_id: %s",
+        "shell_reset tool called - request_id: %s, client_id: %s",
         ctx.request_id,
         ctx.client_id or "unknown",
     )
