@@ -33,6 +33,10 @@ After splitting into separate packages in v2025.8.1 for security isolation, we'r
 
 The GitHub releases were previously using calendar versioning (e.g., v2025.8.1) while individual packages used semantic versioning. With the consolidation to a single package, GitHub releases will now use the package version directly. The consolidated package will be v0.10.0, continuing from the highest version among the previous packages (mcp-django-shell was at 0.9.0).
 
+### Added
+
+- Added support for Python 3.14
+
 ### Changed
 
 - **BREAKING**: Consolidated mcp-django-shell functionality into main mcp-django package
