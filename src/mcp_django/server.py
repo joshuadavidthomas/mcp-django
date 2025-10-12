@@ -18,7 +18,6 @@ from .resources import ProjectResource
 from .shell import DjangoShell
 
 logger = logging.getLogger(__name__)
-shell = DjangoShell()
 
 mcp = FastMCP(
     name="Django",
@@ -93,6 +92,9 @@ def get_models() -> list[ModelResource]:
     Use this for quick model introspection without shell access.
     """
     return [ModelResource.from_model(model) for model in apps.get_models()]
+
+
+shell = DjangoShell()
 
 
 @mcp.tool(
