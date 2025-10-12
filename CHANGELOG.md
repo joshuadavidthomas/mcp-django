@@ -26,6 +26,14 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
+After splitting into separate packages in v2025.8.1 for security isolation, we're consolidating back into a single package, for a few reasons:
+
+- It seemed like a good idea, but it's early and the added complexity adds friction
+- Premature abstraction is the root of all evil (or at least unnecessary workspace configs)
+- While production deployment would be nice eventually, the current focus is developer tooling and building a damn good MCP server for Django
+
+The GitHub releases were previously using calendar versioning (e.g., v2025.8.1) while individual packages used semantic versioning. With the consolidation to a single package, GitHub releases will now use the package version directly. The consolidated package will be v0.10.0, continuing from the highest version among the previous packages (mcp-django-shell was at 0.9.0).
+
 ### Changed
 
 - **BREAKING**: Consolidated mcp-django-shell functionality into main mcp-django package
