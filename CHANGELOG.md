@@ -26,6 +26,20 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING**: Consolidated mcp-django-shell functionality into main mcp-django package
+- Shell tools are now included by default (no longer optional via extras)
+- Tool names changed: `shell_django_shell` → `django_shell`, `shell_django_reset` → `django_shell_reset`
+
+### Deprecated
+
+- mcp-django-shell package is deprecated, functionality moved to mcp-django
+
+### Removed
+
+- Optional installation extras `[shell]` and `[all]` - shell is now always included
+
 ## [2025.8.1]
 
 - mcp-django: 0.2.0

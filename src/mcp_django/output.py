@@ -114,7 +114,10 @@ class ExceptionOutput(BaseModel):
         relevant_tb_lines = [
             line.strip()
             for line in tb_lines
-            if "mcp_django_shell" not in line and line.strip()
+            if "mcp_django/shell" not in line
+            and "mcp_django/code" not in line
+            and "mcp_django/output" not in line
+            and line.strip()
         ]
 
         return relevant_tb_lines
