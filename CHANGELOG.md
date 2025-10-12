@@ -36,6 +36,7 @@ The GitHub releases were previously using calendar versioning (e.g., v2025.8.1) 
 ### Added
 
 - Added support for Python 3.14
+- Added support for Django 6.0
 
 ### Changed
 
