@@ -94,7 +94,7 @@ def get_models() -> list[ModelResource]:
     return [ModelResource.from_model(model) for model in apps.get_models()]
 
 
-shell = DjangoShell()
+django_shell = DjangoShell()
 
 
 @mcp.tool(
@@ -102,7 +102,7 @@ shell = DjangoShell()
         title="Django Shell", destructiveHint=True, openWorldHint=True
     ),
 )
-async def django_shell(
+async def shell(
     ctx: Context,
     code: Annotated[str, "Python code to be executed inside the Django shell session"],
     imports: Annotated[
@@ -138,14 +138,14 @@ async def django_shell(
             "Imports for django_shell - request_id: %s: %s", ctx.request_id, imports
         )
 
-        filtered_imports = filter_existing_imports(imports, shell.globals)
+        filtered_imports = filter_existing_imports(imports, django_shell.globals)
         if filtered_imports.strip():
             code = f"{filtered_imports}\n{code}"
 
     parsed_code, setup, code_type = parse_code(code)
 
     try:
-        result = await shell.execute(parsed_code, setup, code_type)
+        result = await django_shell.execute(parsed_code, setup, code_type)
         output = DjangoShellOutput.from_result(result)
 
         logger.debug(
@@ -173,7 +173,7 @@ async def django_shell(
         title="Reset Django Shell Session", destructiveHint=True, idempotentHint=True
     ),
 )
-async def django_shell_reset(ctx: Context) -> str:
+async def shell_reset(ctx: Context) -> str:
     """Reset the Django shell session, clearing all variables and history.
 
     Use this when you want to start fresh or if the session state becomes corrupted.
@@ -185,7 +185,7 @@ async def django_shell_reset(ctx: Context) -> str:
     )
     await ctx.debug("Django shell session reset")
 
-    shell.reset()
+    django_shell.reset()
 
     logger.debug(
         "Django shell session reset completed - request_id: %s", ctx.request_id
