@@ -179,8 +179,8 @@ The idea is to give just enough information about the project to hopefully guide
 
 Two tools handle shell operations and session management:
 
-- `django_shell` - Execute Python code in a persistent Django shell session
-- `django_shell_reset` - Reset the session, clearing all variables and imports
+- `shell` - Execute Python code in a persistent Django shell session
+- `shell_reset` - Reset the session, clearing all variables and imports
 
 Imports and variables persist between calls within the shell tool, so the LLM can work iteratively - exploring your models, testing queries, debugging issues.
 
