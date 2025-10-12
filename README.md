@@ -30,7 +30,7 @@ from noxfile import PY_VERSIONS
 cog.outl(f"- Python {', '.join([version for version in PY_VERSIONS])}")
 cog.outl(f"- Django {', '.join([version for version in DJ_VERSIONS if version != 'main'])}")
 ]]] -->
-- Python 3.10, 3.11, 3.12, 3.13
+- Python 3.10, 3.11, 3.12, 3.13, 3.14
 - Django 4.2, 5.1, 5.2
 <!-- [[[end]]] -->
 
