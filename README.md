@@ -29,12 +29,17 @@ import cog
 
 from noxfile import DJ_VERSIONS
 from noxfile import PY_VERSIONS
+from noxfile import display_version
 
-cog.outl(f"- Python {', '.join([version for version in PY_VERSIONS])}")
-cog.outl(f"- Django {', '.join([version for version in DJ_VERSIONS if version != 'main'])}")
+django_versions = [
+    display_version(version) for version in DJ_VERSIONS if version != "main"
+]
+
+cog.outl(f"- Python {', '.join(PY_VERSIONS)}")
+cog.outl(f"- Django {', '.join(django_versions)}")
 ]]] -->
 - Python 3.10, 3.11, 3.12, 3.13, 3.14
-- Django 4.2, 5.1, 5.2, 6.0a1
+- Django 4.2, 5.1, 5.2, 6.0
 <!-- [[[end]]] -->
 
 ## Installation
