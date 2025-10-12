@@ -26,6 +26,10 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
+### Removed
+
+- Deprecated mcp-django-shell package deleted from repository
+
 ## [0.10.0]
 
 **🚨 BREAKING RELEASE 🚨** (Again.. sorry!)
