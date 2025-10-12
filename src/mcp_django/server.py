@@ -35,8 +35,8 @@ TOOLS:
 The shell maintains state between calls - imports and variables persist. Use django_shell_reset to
 clear state when variables get messy or you need a fresh start.
 
-- django_shell - Execute Python code in a stateful Django shell
-- django_shell_reset - Reset the shell session
+- shell - Execute Python code in a stateful Django shell
+- shell_reset - Reset the shell session
 
 EXAMPLES:
 The pattern: Resource → Import Path → Shell Operation. Resources provide coordinates, shell does
