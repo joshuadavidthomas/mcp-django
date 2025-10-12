@@ -1,9 +1,5 @@
 # Releasing a New Version
 
-> [!NOTE]
->
-> This is out-of-date and will be updated soon.
-
 When it comes time to cut a new release, follow these steps:
 
 1. Create a new git branch off of `main` for the release.

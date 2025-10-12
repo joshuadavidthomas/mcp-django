@@ -26,6 +26,27 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
+After splitting into separate packages in v2025.8.1 for security isolation, we're consolidating back into a single package, for a few reasons:
+
+- It seemed like a good idea, but it's early and the extra complexity adds unnecessary friction
+- While production deployment would be nice eventually, the current focus is developer tooling and building a damn good MCP server for Django
+
+The GitHub releases were previously using calendar versioning (e.g., v2025.8.1) while individual packages used semantic versioning. With the consolidation to a single package, GitHub releases will now use the package version directly. The consolidated package will be v0.10.0, continuing from the highest version among the previous packages (mcp-django-shell was at 0.9.0).
+
+### Changed
+
+- **BREAKING**: Consolidated mcp-django-shell functionality into main mcp-django package
+- Shell tools are now included by default (no longer optional via extras)
+- Tool names changed: `shell_django_shell` → `django_shell`, `shell_django_reset` → `django_shell_reset`
+
+### Deprecated
+
+- mcp-django-shell package is deprecated, functionality moved to mcp-django
+
+### Removed
+
+- Optional installation extras `[shell]` and `[all]` - shell is now always included
+
 ## [2025.8.1]
 
 - mcp-django: 0.2.0

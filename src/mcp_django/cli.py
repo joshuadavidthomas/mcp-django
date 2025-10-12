@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import logging
 import os
-import signal
 import sys
 from collections.abc import Sequence
 from typing import Any
@@ -88,13 +87,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             port,
             path if transport == "http" else "",
         )
-
-    def signal_handler(signum: int, _frame: Any):  # pragma: no cover
-        logger.info("Received signal %s, shutting down MCP server", signum)
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
 
     try:
         logger.info("MCP server ready and listening")

@@ -24,15 +24,9 @@ jobs:
         with:
           enable-cache: true
 
-      - name: Build all packages
+      - name: Build package
         run: |
           uv build
-
-          for package_dir in packages/*/; do
-            if [ -f "$package_dir/pyproject.toml" ]; then
-              uv build --package $(basename "$package_dir")
-            fi
-          done
 
       - name: Upload release assets to GitHub
         env:

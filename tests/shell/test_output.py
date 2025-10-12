@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import traceback
 
-from mcp_django_shell.output import DjangoShellOutput
-from mcp_django_shell.output import ErrorOutput
-from mcp_django_shell.output import ExceptionOutput
-from mcp_django_shell.output import ExecutionStatus
-from mcp_django_shell.output import ExpressionOutput
-from mcp_django_shell.shell import ErrorResult
-from mcp_django_shell.shell import ExpressionResult
+from mcp_django.output import DjangoShellOutput
+from mcp_django.output import ErrorOutput
+from mcp_django.output import ExceptionOutput
+from mcp_django.output import ExecutionStatus
+from mcp_django.output import ExpressionOutput
+from mcp_django.shell import ErrorResult
+from mcp_django.shell import ExpressionResult
 
 
 def test_django_shell_output_from_expression_result():
@@ -98,16 +98,16 @@ def test_exception_output_with_real_traceback():
         assert isinstance(serialized["traceback"], list)
         assert len(serialized["traceback"]) > 0
         assert any("1 / 0" in line for line in serialized["traceback"])
-        assert not any("mcp_django_shell" in line for line in serialized["traceback"])
+        assert not any("mcp_django" in line for line in serialized["traceback"])
 
 
 def test_traceback_filtering():
     # Create a function that will appear in the traceback
-    def mcp_django_shell_function():
+    def mcp_django_function():
         raise ValueError("test error")
 
     try:
-        mcp_django_shell_function()
+        mcp_django_function()
     except ValueError as e:
         exc_output = ExceptionOutput(
             exc_type=type(e),
@@ -116,12 +116,15 @@ def test_traceback_filtering():
         )
 
         assert any(
-            "mcp_django_shell_function" in line
+            "mcp_django_function" in line
             for line in traceback.format_tb(e.__traceback__)
         )
 
         serialized = exc_output.model_dump(mode="json")
 
         assert len(serialized["traceback"]) == 0 or not any(
-            "mcp_django_shell" in line for line in serialized["traceback"]
+            "mcp_django/shell" in line
+            or "mcp_django/code" in line
+            or "mcp_django/output" in line
+            for line in serialized["traceback"]
         )

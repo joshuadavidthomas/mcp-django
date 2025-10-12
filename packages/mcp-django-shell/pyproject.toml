@@ -51,7 +51,7 @@ dependencies = [
   "mcp-django>=0.1.0,<1.0.0",
   "pydantic[email]>=2.11.7",
 ]
-description = "MCP server providing a stateful Django shell for LLM assistants."
+description = "[DEPRECATED - Use mcp-django instead] MCP server providing a stateful Django shell for LLM assistants."
 license = { file = "LICENSE" }
 name = "mcp-django-shell"
 readme = "README.md"
