@@ -8,12 +8,10 @@ from noxfile import DJ_VERSIONS
 from noxfile import PY_VERSIONS
 
 cog.outl("[![PyPI - mcp-django](https://img.shields.io/pypi/v/mcp-django?label=mcp-django)](https://pypi.org/project/mcp-django/)")
-cog.outl("[![PyPI - mcp-django-shell](https://img.shields.io/pypi/v/mcp-django-shell?label=mcp-django-shell)](https://pypi.org/project/mcp-django-shell/)")
 cog.outl("![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mcp-django)")
 cog.outl(f"![Django Version](https://img.shields.io/badge/django-{'%20%7C%20'.join(DJ_VERSIONS)}-%2344B78B?labelColor=%23092E20)")
 ]]] -->
 [![PyPI - mcp-django](https://img.shields.io/pypi/v/mcp-django?label=mcp-django)](https://pypi.org/project/mcp-django/)
-[![PyPI - mcp-django-shell](https://img.shields.io/pypi/v/mcp-django-shell?label=mcp-django-shell)](https://pypi.org/project/mcp-django-shell/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mcp-django)
 ![Django Version](https://img.shields.io/badge/django-4.2%20%7C%205.1%20%7C%205.2%20%7C%20main-%2344B78B?labelColor=%23092E20)
 <!-- [[[end]]] -->
