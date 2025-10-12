@@ -193,18 +193,6 @@ extend-include = ["*.pyi?"]
 indent-width = 4
 # Same as Black.
 line-length = 88
-# [[[cog
-# import subprocess
-# import cog
-#
-# from noxfile import PY_DEFAULT
-#
-# cog.outl(f"# Assume Python >{PY_DEFAULT}")
-# cog.outl(f'target-version = "py{PY_DEFAULT.replace(".", "")}"')
-# ]]] -->
-# Assume Python >3.10
-target-version = "py310"
-# [[[end]]]
 
 [tool.ruff.format]
 # Like Black, indent with spaces, rather than tabs.
