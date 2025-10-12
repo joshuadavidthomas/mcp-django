@@ -85,7 +85,7 @@ readme = "README.md"
 # ]]] -->
 requires-python = ">=3.10"
 # [[[end]]]
-version = "0.1.0"
+version = "0.10.0"
 
 [project.urls]
 Documentation = "https://github.com/joshuadavidthomas/mcp-django#README"
