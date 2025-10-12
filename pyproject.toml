@@ -33,15 +33,17 @@ classifiers = [
   # import cog
   #
   # from noxfile import DJ_VERSIONS
+  # from noxfile import display_version
   #
   # for version in DJ_VERSIONS:
   #     if version == "main":
   #         continue
-  #     cog.outl(f'  "Framework :: Django :: {version}",')
+  #     cog.outl(f'  "Framework :: Django :: {display_version(version)}",')
   # ]]] -->
   "Framework :: Django :: 4.2",
   "Framework :: Django :: 5.1",
   "Framework :: Django :: 5.2",
+  "Framework :: Django :: 6.0",
   # [[[end]]]
   "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
@@ -74,8 +76,16 @@ description = "A Model Context Protocol (MCP) server for Django integration with
 license = { file = "LICENSE" }
 name = "mcp-django"
 readme = "README.md"
-version = "0.1.0"
+# [[[cog
+# import cog
+#
+# from noxfile import PY_DEFAULT
+#
+# cog.outl(f'requires-python = ">={PY_DEFAULT}"')
+# ]]] -->
 requires-python = ">=3.10"
+# [[[end]]]
+version = "0.1.0"
 
 [project.urls]
 Documentation = "https://github.com/joshuadavidthomas/mcp-django#README"

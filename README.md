@@ -6,14 +6,17 @@ import cog
 
 from noxfile import DJ_VERSIONS
 from noxfile import PY_VERSIONS
+from noxfile import display_version
+
+django_versions = [display_version(version) for version in DJ_VERSIONS]
 
 cog.outl("[![PyPI - mcp-django](https://img.shields.io/pypi/v/mcp-django?label=mcp-django)](https://pypi.org/project/mcp-django/)")
 cog.outl("![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mcp-django)")
-cog.outl(f"![Django Version](https://img.shields.io/badge/django-{'%20%7C%20'.join(DJ_VERSIONS)}-%2344B78B?labelColor=%23092E20)")
+cog.outl(f"![Django Version](https://img.shields.io/badge/django-{'%20%7C%20'.join(django_versions)}-%2344B78B?labelColor=%23092E20)")
 ]]] -->
 [![PyPI - mcp-django](https://img.shields.io/pypi/v/mcp-django?label=mcp-django)](https://pypi.org/project/mcp-django/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mcp-django)
-![Django Version](https://img.shields.io/badge/django-4.2%20%7C%205.1%20%7C%205.2%20%7C%20main-%2344B78B?labelColor=%23092E20)
+![Django Version](https://img.shields.io/badge/django-4.2%20%7C%205.1%20%7C%205.2%20%7C%206.0%20%7C%20main-%2344B78B?labelColor=%23092E20)
 <!-- [[[end]]] -->
 
 A Model Context Protocol (MCP) server providing Django project exploration resources and optional stateful shell access for LLM assistants to interact with Django projects.
@@ -26,12 +29,17 @@ import cog
 
 from noxfile import DJ_VERSIONS
 from noxfile import PY_VERSIONS
+from noxfile import display_version
 
-cog.outl(f"- Python {', '.join([version for version in PY_VERSIONS])}")
-cog.outl(f"- Django {', '.join([version for version in DJ_VERSIONS if version != 'main'])}")
+django_versions = [
+    display_version(version) for version in DJ_VERSIONS if version != "main"
+]
+
+cog.outl(f"- Python {', '.join(PY_VERSIONS)}")
+cog.outl(f"- Django {', '.join(django_versions)}")
 ]]] -->
 - Python 3.10, 3.11, 3.12, 3.13, 3.14
-- Django 4.2, 5.1, 5.2
+- Django 4.2, 5.1, 5.2, 6.0
 <!-- [[[end]]] -->
 
 ## Installation
