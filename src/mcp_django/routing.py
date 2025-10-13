@@ -42,3 +42,51 @@ def extract_url_parameters(pattern: str) -> list[str]:
     """
     param_regex = r"<(?:\w+:)?(\w+)>"
     return re.findall(param_regex, pattern)
+
+
+def introspect_view(callback: Any) -> ViewSchema:
+    """Introspect a Django view callback to extract metadata."""
+    view_func = callback
+    while hasattr(view_func, "__wrapped__"):
+        view_func = view_func.__wrapped__
+
+    is_class = inspect.isclass(view_func)
+
+    module = inspect.getmodule(view_func)
+    if module:
+        name = f"{module.__name__}.{view_func.__name__}"
+    else:
+        name = view_func.__name__
+
+    source_path = get_source_file_path(view_func)
+
+    if is_class:
+        bases = [
+            base.__name__ for base in view_func.__bases__ if base.__name__ != "object"
+        ]
+        class_bases = bases if bases else None
+
+        if hasattr(view_func, "http_method_names"):
+            methods = [m.upper() for m in view_func.http_method_names]
+        else:
+            methods = [
+                "GET",
+                "HEAD",
+                "POST",
+                "PUT",
+                "PATCH",
+                "DELETE",
+                "OPTIONS",
+                "TRACE",
+            ]
+    else:
+        class_bases = None
+        methods = ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE"]
+
+    return ViewSchema(
+        name=name,
+        type="class" if is_class else "function",
+        source_path=source_path,
+        class_bases=class_bases,
+        methods=methods,
+    )

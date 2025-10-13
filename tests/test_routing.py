@@ -2,11 +2,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from django.views import View
+from django.views.generic import ListView
+
 from mcp_django.routing import (
     RouteSchema,
     ViewSchema,
     extract_url_parameters,
     get_source_file_path,
+    introspect_view,
 )
 
 
@@ -136,3 +140,44 @@ def test_extract_url_parameters_mixed():
         "user_id",
         "post_id",
     ]
+
+
+def dummy_function_view(request):
+    return None
+
+
+class DummyClassView(View):
+    def get(self, request):
+        return None
+
+
+class DummyListView(ListView):
+    model = None
+
+
+def test_introspect_view_function():
+    schema = introspect_view(dummy_function_view)
+
+    assert schema.type == "function"
+    assert schema.name.endswith("dummy_function_view")
+    assert schema.class_bases is None
+    assert "GET" in schema.methods
+    assert isinstance(schema.source_path, Path)
+
+
+def test_introspect_view_class():
+    schema = introspect_view(DummyClassView)
+
+    assert schema.type == "class"
+    assert schema.name.endswith("DummyClassView")
+    assert schema.class_bases == ["View"]
+    assert "GET" in schema.methods
+    assert isinstance(schema.source_path, Path)
+
+
+def test_introspect_view_generic():
+    schema = introspect_view(DummyListView)
+
+    assert schema.type == "class"
+    assert schema.class_bases == ["ListView"]
+    assert "GET" in schema.methods
