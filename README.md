@@ -57,7 +57,7 @@ uv add mcp-django
 
 > [!WARNING]
 >
-> **Seriously, only enable in development!** 
+> **Seriously, only enable in development!**
 >
 > Look, it should go without saying, but I will say it anyway - **this gives full shell access to your Django project**. Only enable and use this in development and in a project that does not have access to any production data.
 >

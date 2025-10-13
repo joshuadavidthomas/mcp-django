@@ -67,9 +67,9 @@ The GitHub releases were previously using calendar versioning (e.g., v2025.8.1) 
 
 **🚨 BREAKING RELEASE 🚨**
 
-This release restructures the project from a single package to a workspace with multiple packages for better separation of concerns. 
+This release restructures the project from a single package to a workspace with multiple packages for better separation of concerns.
 
-The dev only shell functionality is now an optional extra that must be explicitly installed, while the read-only resources are available in the base package. 
+The dev only shell functionality is now an optional extra that must be explicitly installed, while the read-only resources are available in the base package.
 
 This should allow for safer production deployments where shell access can be completely excluded, as well as allow for future expansion with additional tool packages that can be selectively installed based on environment needs.
 
