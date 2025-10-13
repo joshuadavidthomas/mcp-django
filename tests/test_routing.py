@@ -3,7 +3,6 @@ from __future__ import annotations
 import inspect
 from pathlib import Path
 
-import pytest
 from django.views import View
 from django.views.decorators.http import require_GET
 from django.views.decorators.http import require_http_methods
@@ -417,3 +416,20 @@ def test_nested_namespaces():
     post_list = next((r for r in blog_routes if r.name == "post-list"), None)
     assert post_list is not None
     assert post_list.namespace == "blog"
+
+
+def test_filter_routes_with_none_route_names():
+    """Test that filtering by name handles routes with name=None correctly."""
+    routes = get_all_routes()
+
+    # Filter by a name that exists - should only return routes with that name
+    filtered = filter_routes(routes, name="get_only")
+
+    # All returned routes must have a name containing the filter string
+    for route in filtered:
+        assert route.name is not None
+        assert "get_only" in route.name
+
+    # Routes with name=None should not be included
+    none_named_routes_in_filtered = [r for r in filtered if r.name is None]
+    assert len(none_named_routes_in_filtered) == 0

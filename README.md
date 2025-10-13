@@ -197,8 +197,8 @@ List all Django URL routes with comprehensive metadata and filtering.
 
 **Parameters:**
 - `method` (optional): Filter by HTTP method (e.g., "GET", "POST")
-- `name` (optional): Filter by route name (contains matching)
-- `pattern` (optional): Filter by URL pattern (contains matching)
+- `name` (optional): Filter by route name substring (case-sensitive, uses contains matching)
+- `pattern` (optional): Filter by URL pattern substring (case-sensitive, uses contains matching)
 
 **Returns:** List of routes with:
 - URL pattern and parameters
@@ -210,10 +210,10 @@ List all Django URL routes with comprehensive metadata and filtering.
 **Usage via MCP client:**
 - "List all routes in this Django project"
 - "Show me routes that handle POST requests"
-- "Find all admin routes" (filters by pattern="admin")
-- "What routes are named 'blog-detail'?" (filters by name="blog-detail")
+- "Find all admin routes" (filters by pattern containing "admin")
+- "What routes are named 'blog-detail'?" (filters by name containing "blog-detail")
 
-All filters use contains matching and are combined with AND logic.
+All filters use substring matching (contains) and are combined with AND logic.
 
 ## Development
 

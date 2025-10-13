@@ -154,6 +154,7 @@ def extract_url_parameters(pattern: str) -> list[str]:
         >>> extract_url_parameters("api/<uuid:id>/posts/<int:post_id>/")
         ['id', 'post_id']
     """
+    # Matches <converter:name> or <name> and captures the parameter name
     param_regex = r"<(?:\w+:)?(\w+)>"
     return re.findall(param_regex, pattern)
 
@@ -188,6 +189,13 @@ def _extract_methods_from_closure(view_func: Any) -> list[ViewMethod] | None:
 
 
 def get_view_func(callback: Any):
+    """Extract the actual view function or class from a callback.
+
+    Unwraps decorators and extracts view_class from .as_view() callbacks.
+
+    Returns:
+        The underlying function or class object
+    """
     view_func = callback
 
     if hasattr(view_func, "view_class"):
@@ -200,6 +208,11 @@ def get_view_func(callback: Any):
 
 
 def get_view_name(view_func: Any):
+    """Get the fully qualified name of a view function or class.
+
+    Returns:
+        Fully qualified name (module.name) if module is found, otherwise just the name
+    """
     module = inspect.getmodule(view_func)
     if module:
         name = f"{module.__name__}.{view_func.__name__}"
@@ -285,8 +298,7 @@ def filter_routes(
     All filters are AND'd together - routes must match all provided filters.
 
     Args:
-        method: HTTP method name (case-insensitive). Valid values: GET, POST, PUT,
-                PATCH, DELETE, HEAD, OPTIONS, TRACE
+        method: ViewMethod enum or None for filtering by HTTP method
         name: Route name substring for filtering (case-sensitive)
         pattern: URL pattern substring for filtering (case-sensitive)
 
