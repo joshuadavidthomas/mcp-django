@@ -145,3 +145,28 @@ def get_all_routes() -> list[RouteSchema]:
     resolver = get_resolver()
     routes = extract_routes(resolver.url_patterns)  # type: ignore[arg-type]
     return routes
+
+
+def filter_routes(
+    routes: list[RouteSchema],
+    method: str | None = None,
+    name: str | None = None,
+    pattern: str | None = None,
+) -> list[RouteSchema]:
+    """Filter routes using contains matching on each parameter.
+
+    All filters are AND'd together - routes must match all provided filters.
+    """
+    filtered = routes
+
+    if method:
+        method_upper = method.upper()
+        filtered = [r for r in filtered if method_upper in r.view.methods]
+
+    if name:
+        filtered = [r for r in filtered if r.name and name in r.name]
+
+    if pattern:
+        filtered = [r for r in filtered if pattern in r.pattern]
+
+    return filtered

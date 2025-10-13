@@ -9,6 +9,7 @@ from mcp_django.routing import RouteSchema
 from mcp_django.routing import ViewSchema
 from mcp_django.routing import extract_routes
 from mcp_django.routing import extract_url_parameters
+from mcp_django.routing import filter_routes
 from mcp_django.routing import get_all_routes
 from mcp_django.routing import get_source_file_path
 from mcp_django.routing import introspect_view
@@ -200,3 +201,62 @@ def test_get_all_routes_has_expected_fields():
     assert route.namespace is None or isinstance(route.namespace, str)
     assert isinstance(route.parameters, list)
     assert isinstance(route.view, ViewSchema)
+
+
+def test_filter_routes_no_filters():
+    routes = get_all_routes()
+    filtered = filter_routes(routes)
+
+    assert filtered == routes
+
+
+def test_filter_routes_by_pattern():
+    routes = get_all_routes()
+
+    if routes:
+        test_pattern = (
+            routes[0].pattern[:5] if len(routes[0].pattern) >= 5 else routes[0].pattern
+        )
+        filtered = filter_routes(routes, pattern=test_pattern)
+
+        assert len(filtered) > 0
+        assert all(test_pattern in route.pattern for route in filtered)
+
+
+def test_filter_routes_by_name():
+    routes = get_all_routes()
+
+    named_routes = [r for r in routes if r.name]
+    if named_routes:
+        test_name = named_routes[0].name
+        filtered = filter_routes(routes, name=test_name)
+
+        assert len(filtered) > 0
+        assert all(test_name in (route.name or "") for route in filtered)
+
+
+def test_filter_routes_by_method():
+    routes = get_all_routes()
+
+    filtered = filter_routes(routes, method="GET")
+
+    assert len(filtered) > 0
+    assert all("GET" in route.view.methods for route in filtered)
+
+
+def test_filter_routes_multiple_filters():
+    routes = get_all_routes()
+
+    if routes:
+        filtered = filter_routes(routes, method="GET", pattern=routes[0].pattern[:3])
+
+        assert all("GET" in route.view.methods for route in filtered)
+        assert all(routes[0].pattern[:3] in route.pattern for route in filtered)
+
+
+def test_filter_routes_no_matches():
+    routes = get_all_routes()
+
+    filtered = filter_routes(routes, pattern="NONEXISTENT_PATTERN_XYZ123")
+
+    assert filtered == []
