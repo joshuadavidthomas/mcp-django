@@ -48,6 +48,23 @@ class FunctionViewSchema(BaseModel):
     source_path: Path
     methods: list[ViewMethod]
 
+    @classmethod
+    def from_callback(cls, callback: Any):
+        view_func = get_view_func(callback)
+        name = get_view_name(view_func)
+        source_path = get_source_file_path(view_func)
+        methods = _extract_methods_from_closure(callback)
+
+        if methods is None:
+            methods = []
+
+        return FunctionViewSchema(
+            name=name,
+            type=ViewType.FUNCTION,
+            source_path=source_path,
+            methods=methods,
+        )
+
 
 class ClassViewSchema(BaseModel):
     """Schema for class-based view.
@@ -68,6 +85,31 @@ class ClassViewSchema(BaseModel):
     source_path: Path
     methods: list[ViewMethod]
     class_bases: list[str]
+
+    @classmethod
+    def from_callback(cls, callback: Any):
+        view_func = get_view_func(callback)
+        name = get_view_name(view_func)
+        source_path = get_source_file_path(view_func)
+
+        bases = [
+            base.__name__ for base in view_func.__bases__ if base.__name__ != "object"
+        ]
+        class_bases = bases if bases else []
+
+        implemented_methods = [
+            method for method in ViewMethod if hasattr(view_func, method.value.lower())
+        ]
+
+        methods = implemented_methods if implemented_methods else []
+
+        return cls(
+            name=name,
+            type=ViewType.CLASS,
+            source_path=source_path,
+            class_bases=class_bases,
+            methods=methods,
+        )
 
 
 ViewSchema = FunctionViewSchema | ClassViewSchema
@@ -145,22 +187,7 @@ def _extract_methods_from_closure(view_func: Any) -> list[ViewMethod] | None:
     return None
 
 
-def introspect_view(callback: Any) -> FunctionViewSchema | ClassViewSchema:
-    """Introspect a Django view callback to extract metadata.
-
-    Handles both function-based views (FBVs) and class-based views (CBVs),
-    including .as_view() callbacks. For FBVs, attempts to detect HTTP method
-    restrictions via closure inspection of Django decorators.
-
-    Args:
-        callback: View function, class, or .as_view() callback
-
-    Returns:
-        FunctionViewSchema for FBVs with method detection via decorators,
-        ClassViewSchema for CBVs with methods determined by checking which
-        method handlers (get, post, etc.) are actually implemented.
-    """
-    original_callback = callback
+def get_view_func(callback: Any):
     view_func = callback
 
     if hasattr(view_func, "view_class"):
@@ -169,54 +196,16 @@ def introspect_view(callback: Any) -> FunctionViewSchema | ClassViewSchema:
     while hasattr(view_func, "__wrapped__"):
         view_func = view_func.__wrapped__
 
-    is_class = inspect.isclass(view_func)
+    return view_func
 
+
+def get_view_name(view_func: Any):
     module = inspect.getmodule(view_func)
     if module:
         name = f"{module.__name__}.{view_func.__name__}"
     else:
         name = view_func.__name__
-
-    source_path = get_source_file_path(view_func)
-
-    if is_class:
-        bases = [
-            base.__name__ for base in view_func.__bases__ if base.__name__ != "object"
-        ]
-        class_bases = bases if bases else []
-
-        method_names = getattr(
-            view_func,
-            "http_method_names",
-            ["get", "post", "put", "patch", "delete", "head", "options", "trace"],
-        )
-
-        implemented_methods = []
-        for method_name in method_names:
-            if hasattr(view_func, method_name):
-                implemented_methods.append(ViewMethod[method_name.upper()])
-
-        methods = implemented_methods if implemented_methods else []
-
-        return ClassViewSchema(
-            name=name,
-            type=ViewType.CLASS,
-            source_path=source_path,
-            class_bases=class_bases,
-            methods=methods,
-        )
-    else:
-        detected_methods = _extract_methods_from_closure(original_callback)
-
-        if detected_methods is None:
-            detected_methods = []
-
-        return FunctionViewSchema(
-            name=name,
-            type=ViewType.FUNCTION,
-            source_path=source_path,
-            methods=detected_methods,
-        )
+    return name
 
 
 def extract_routes(
@@ -249,7 +238,11 @@ def extract_routes(
             full_pattern = prefix + str(pattern.pattern)
             parameters = extract_url_parameters(full_pattern)
 
-            view_schema = introspect_view(pattern.callback)
+            view_func = get_view_func(pattern.callback)
+            if inspect.isclass(view_func):
+                view_schema = ClassViewSchema.from_callback(pattern.callback)
+            else:
+                view_schema = FunctionViewSchema.from_callback(pattern.callback)
 
             route = RouteSchema(
                 pattern=full_pattern,

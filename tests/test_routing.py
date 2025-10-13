@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from pathlib import Path
 
 import pytest
@@ -17,7 +18,7 @@ from mcp_django.routing import extract_url_parameters
 from mcp_django.routing import filter_routes
 from mcp_django.routing import get_all_routes
 from mcp_django.routing import get_source_file_path
-from mcp_django.routing import introspect_view
+from mcp_django.routing import get_view_func
 
 
 def test_view_schema_function():
@@ -158,7 +159,11 @@ class DummyListView(ListView):
 
 
 def test_introspect_view_function():
-    schema = introspect_view(dummy_function_view)
+    view_func = get_view_func(dummy_function_view)
+    if inspect.isclass(view_func):
+        schema = ClassViewSchema.from_callback(dummy_function_view)
+    else:
+        schema = FunctionViewSchema.from_callback(dummy_function_view)
 
     assert isinstance(schema, FunctionViewSchema)
     assert schema.type == ViewType.FUNCTION
@@ -168,7 +173,11 @@ def test_introspect_view_function():
 
 
 def test_introspect_view_class():
-    schema = introspect_view(DummyClassView)
+    view_func = get_view_func(DummyClassView)
+    if inspect.isclass(view_func):
+        schema = ClassViewSchema.from_callback(DummyClassView)
+    else:
+        schema = FunctionViewSchema.from_callback(DummyClassView)
 
     assert isinstance(schema, ClassViewSchema)
     assert schema.type == ViewType.CLASS
@@ -179,7 +188,11 @@ def test_introspect_view_class():
 
 
 def test_introspect_view_generic():
-    schema = introspect_view(DummyListView)
+    view_func = get_view_func(DummyListView)
+    if inspect.isclass(view_func):
+        schema = ClassViewSchema.from_callback(DummyListView)
+    else:
+        schema = FunctionViewSchema.from_callback(DummyListView)
 
     assert isinstance(schema, ClassViewSchema)
     assert schema.type == ViewType.CLASS
@@ -190,7 +203,11 @@ def test_introspect_view_generic():
 def test_introspect_view_as_view_callback():
     """Test that .as_view() callbacks are correctly identified as CBVs."""
     callback = DummyClassView.as_view()
-    schema = introspect_view(callback)
+    view_func = get_view_func(callback)
+    if inspect.isclass(view_func):
+        schema = ClassViewSchema.from_callback(callback)
+    else:
+        schema = FunctionViewSchema.from_callback(callback)
 
     assert isinstance(schema, ClassViewSchema)
     assert schema.type == ViewType.CLASS
@@ -309,7 +326,11 @@ dummy_require_get_view = require_GET(dummy_require_get_view)
 
 def test_introspect_view_with_require_get_decorator():
     """Test that @require_GET decorator is detected."""
-    schema = introspect_view(dummy_require_get_view)
+    view_func = get_view_func(dummy_require_get_view)
+    if inspect.isclass(view_func):
+        schema = ClassViewSchema.from_callback(dummy_require_get_view)
+    else:
+        schema = FunctionViewSchema.from_callback(dummy_require_get_view)
 
     assert isinstance(schema, FunctionViewSchema)
     assert schema.methods == [ViewMethod.GET]
@@ -327,7 +348,11 @@ dummy_require_http_methods_view = require_http_methods(["GET", "POST"])(
 
 def test_introspect_view_with_require_http_methods_decorator():
     """Test that @require_http_methods decorator arguments are parsed."""
-    schema = introspect_view(dummy_require_http_methods_view)
+    view_func = get_view_func(dummy_require_http_methods_view)
+    if inspect.isclass(view_func):
+        schema = ClassViewSchema.from_callback(dummy_require_http_methods_view)
+    else:
+        schema = FunctionViewSchema.from_callback(dummy_require_http_methods_view)
 
     assert isinstance(schema, FunctionViewSchema)
     assert set(schema.methods) == {ViewMethod.GET, ViewMethod.POST}
@@ -335,7 +360,11 @@ def test_introspect_view_with_require_http_methods_decorator():
 
 def test_introspect_view_function_no_decorator():
     """Test that undecorated FBV returns empty methods list."""
-    schema = introspect_view(dummy_function_view)
+    view_func = get_view_func(dummy_function_view)
+    if inspect.isclass(view_func):
+        schema = ClassViewSchema.from_callback(dummy_function_view)
+    else:
+        schema = FunctionViewSchema.from_callback(dummy_function_view)
 
     assert isinstance(schema, FunctionViewSchema)
     assert schema.methods == []
@@ -356,7 +385,11 @@ def test_cbv_only_reports_implemented_methods():
     """CBVs should only report methods they actually implement."""
     from django.views.generic import DetailView
 
-    schema = introspect_view(DetailView)
+    view_func = get_view_func(DetailView)
+    if inspect.isclass(view_func):
+        schema = ClassViewSchema.from_callback(DetailView)
+    else:
+        schema = FunctionViewSchema.from_callback(DetailView)
 
     assert isinstance(schema, ClassViewSchema)
     assert ViewMethod.GET in schema.methods
