@@ -31,6 +31,18 @@ class ViewMethod(Enum):
 
 
 class FunctionViewSchema(BaseModel):
+    """Schema for function-based view.
+
+    Fields:
+        name: Fully qualified view name (module.function)
+        type: Always ViewType.FUNCTION
+        source_path: Path to source file, or Path("unknown")
+        methods: List of allowed HTTP methods. Empty list indicates methods
+                 could not be determined. Django's built-in method decorators
+                 (@require_GET, @require_POST, @require_http_methods) are
+                 automatically detected via closure inspection.
+    """
+
     name: str
     type: Literal[ViewType.FUNCTION]
     source_path: Path
@@ -76,8 +88,38 @@ def extract_url_parameters(pattern: str) -> list[str]:
     return re.findall(param_regex, pattern)
 
 
+def _extract_methods_from_closure(view_func: Any) -> list[ViewMethod] | None:
+    """Extract allowed HTTP methods from Django decorator closure.
+
+    Django's method decorators (@require_GET, @require_http_methods, etc.)
+    store the allowed methods in the function's closure. This extracts them.
+
+    Returns:
+        List of allowed ViewMethod enums if decorator found, None otherwise.
+    """
+    if not hasattr(view_func, "__closure__") or not view_func.__closure__:
+        return None
+
+    for cell in view_func.__closure__:
+        try:
+            content = cell.cell_contents
+            if isinstance(content, list) and content:
+                if all(isinstance(m, str) for m in content):
+                    methods = []
+                    for method_str in content:
+                        if method_str in ViewMethod.__members__:
+                            methods.append(ViewMethod[method_str])
+                    if methods:
+                        return methods
+        except (AttributeError, ValueError):
+            continue
+
+    return None
+
+
 def introspect_view(callback: Any) -> FunctionViewSchema | ClassViewSchema:
     """Introspect a Django view callback to extract metadata."""
+    original_callback = callback
     view_func = callback
 
     if hasattr(view_func, "view_class"):
@@ -115,13 +157,16 @@ def introspect_view(callback: Any) -> FunctionViewSchema | ClassViewSchema:
             methods=methods,
         )
     else:
-        methods = list(ViewMethod)
+        detected_methods = _extract_methods_from_closure(original_callback)
+
+        if detected_methods is None:
+            detected_methods = []
 
         return FunctionViewSchema(
             name=name,
             type=ViewType.FUNCTION,
             source_path=source_path,
-            methods=methods,
+            methods=detected_methods,
         )
 
 
@@ -203,7 +248,9 @@ def filter_routes(
     if method:
         try:
             method_enum = ViewMethod[method.upper()]
-            filtered = [r for r in filtered if method_enum in r.view.methods]
+            filtered = [
+                r for r in filtered if r.view.methods and method_enum in r.view.methods
+            ]
         except KeyError as exc:
             valid_methods = ", ".join(m.name for m in ViewMethod)
             raise ValueError(
