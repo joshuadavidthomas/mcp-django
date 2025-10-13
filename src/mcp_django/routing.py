@@ -318,23 +318,13 @@ def filter_routes(
     Raises:
         ValueError: If method is not a valid HTTP method name
     """
-    filtered = routes
-
     if method:
-        try:
-            filtered = [
-                r for r in filtered if not r.view.methods or method in r.view.methods
-            ]
-        except KeyError as exc:
-            valid_methods = ", ".join(m.name for m in ViewMethod)
-            raise ValueError(
-                f"Invalid HTTP method: {method!r}. Valid methods: {valid_methods}"
-            ) from exc
+        routes = [r for r in routes if not r.view.methods or method in r.view.methods]
 
     if name is not None:
-        filtered = [r for r in filtered if r.name and name in r.name]
+        routes = [r for r in routes if r.name and name in r.name]
 
     if pattern is not None:
-        filtered = [r for r in filtered if pattern in r.pattern]
+        routes = [r for r in routes if pattern in r.pattern]
 
-    return filtered
+    return routes
