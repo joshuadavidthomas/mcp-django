@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pytest
 from django.views import View
+from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_http_methods
 from django.views.generic import ListView
 
 from mcp_django.routing import ClassViewSchema
@@ -161,7 +163,7 @@ def test_introspect_view_function():
     assert isinstance(schema, FunctionViewSchema)
     assert schema.type == ViewType.FUNCTION
     assert schema.name.endswith("dummy_function_view")
-    assert ViewMethod.GET in schema.methods
+    assert schema.methods == []
     assert isinstance(schema.source_path, Path)
 
 
@@ -253,7 +255,9 @@ def test_filter_routes_by_method():
     filtered = filter_routes(routes, method="GET")
 
     assert len(filtered) > 0
-    assert all(ViewMethod.GET in route.view.methods for route in filtered)
+    for route in filtered:
+        if route.view.methods:
+            assert ViewMethod.GET in route.view.methods
 
 
 def test_filter_routes_multiple_filters():
@@ -262,7 +266,9 @@ def test_filter_routes_multiple_filters():
     if routes:
         filtered = filter_routes(routes, method="GET", pattern=routes[0].pattern[:3])
 
-        assert all(ViewMethod.GET in route.view.methods for route in filtered)
+        for route in filtered:
+            if route.view.methods:
+                assert ViewMethod.GET in route.view.methods
         assert all(routes[0].pattern[:3] in route.pattern for route in filtered)
 
 
@@ -291,3 +297,121 @@ def test_filter_routes_case_insensitive_method():
 
     assert upper_filtered == lower_filtered
     assert len(upper_filtered) > 0
+
+
+def dummy_require_get_view(request):
+    """Dummy view with @require_GET decorator."""
+    return None
+
+
+dummy_require_get_view = require_GET(dummy_require_get_view)
+
+
+def test_introspect_view_with_require_get_decorator():
+    """Test that @require_GET decorator is detected."""
+    schema = introspect_view(dummy_require_get_view)
+
+    assert isinstance(schema, FunctionViewSchema)
+    assert schema.methods == [ViewMethod.GET]
+
+
+def dummy_require_http_methods_view(request):
+    """Dummy view with @require_http_methods decorator."""
+    return None
+
+
+dummy_require_http_methods_view = require_http_methods(["GET", "POST"])(
+    dummy_require_http_methods_view
+)
+
+
+def test_introspect_view_with_require_http_methods_decorator():
+    """Test that @require_http_methods decorator arguments are parsed."""
+    schema = introspect_view(dummy_require_http_methods_view)
+
+    assert isinstance(schema, FunctionViewSchema)
+    assert set(schema.methods) == {ViewMethod.GET, ViewMethod.POST}
+
+
+def test_introspect_view_function_no_decorator():
+    """Test that undecorated FBV returns empty methods list."""
+    schema = introspect_view(dummy_function_view)
+
+    assert isinstance(schema, FunctionViewSchema)
+    assert schema.methods == []
+
+
+def test_filter_routes_empty_methods_included():
+    """Test that views with empty methods are included in method filtering."""
+    routes = get_all_routes()
+
+    filtered = filter_routes(routes, method="GET")
+
+    for route in filtered:
+        if route.view.methods:
+            assert ViewMethod.GET in route.view.methods
+
+
+def test_cbv_only_reports_implemented_methods():
+    """CBVs should only report methods they actually implement."""
+    from django.views.generic import DetailView
+
+    schema = introspect_view(DetailView)
+
+    assert isinstance(schema, ClassViewSchema)
+    assert ViewMethod.GET in schema.methods
+    assert ViewMethod.POST not in schema.methods
+    assert ViewMethod.PUT not in schema.methods
+    assert ViewMethod.DELETE not in schema.methods
+
+
+def test_filter_routes_method_and_name():
+    """Test filtering by method and name together."""
+    routes = get_all_routes()
+
+    filtered = filter_routes(routes, method="GET", name="get_only")
+
+    assert len(filtered) > 0
+    for route in filtered:
+        assert not route.view.methods or ViewMethod.GET in route.view.methods
+        assert route.name and "get_only" in route.name
+
+
+def test_filter_routes_all_three_filters():
+    """Test filtering by method, name, and pattern together."""
+    routes = get_all_routes()
+
+    filtered = filter_routes(routes, method="GET", name="get", pattern="get-only")
+
+    for route in filtered:
+        assert not route.view.methods or ViewMethod.GET in route.view.methods
+        assert route.name and "get" in route.name
+        assert "get-only" in route.pattern
+
+
+def test_filter_routes_invalid_name_type():
+    """Test that non-string name raises TypeError."""
+    routes = get_all_routes()
+
+    with pytest.raises(TypeError, match="name must be str"):
+        filter_routes(routes, name=123)
+
+
+def test_filter_routes_invalid_pattern_type():
+    """Test that non-string pattern raises TypeError."""
+    routes = get_all_routes()
+
+    with pytest.raises(TypeError, match="pattern must be str"):
+        filter_routes(routes, pattern=["admin"])
+
+
+def test_nested_namespaces():
+    """Test that nested URL namespaces are correctly composed."""
+    routes = get_all_routes()
+
+    blog_routes = [r for r in routes if r.namespace == "blog"]
+    assert len(blog_routes) > 0
+
+    post_list = next((r for r in blog_routes if r.name == "post-list"), None)
+    assert post_list is not None
+    assert post_list.namespace == "blog"

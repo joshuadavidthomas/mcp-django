@@ -50,6 +50,19 @@ class FunctionViewSchema(BaseModel):
 
 
 class ClassViewSchema(BaseModel):
+    """Schema for class-based view.
+
+    Fields:
+        name: Fully qualified view name (module.ClassName)
+        type: Always ViewType.CLASS
+        source_path: Path to source file, or Path("unknown")
+        methods: List of HTTP methods actually implemented by the view.
+                 Determined by checking which method handlers (get, post, etc.)
+                 are defined on the class.
+        class_bases: List of base class names, excluding 'object'.
+                     Example: ['ListView', 'LoginRequiredMixin']
+    """
+
     name: str
     type: Literal[ViewType.CLASS]
     source_path: Path
@@ -82,7 +95,22 @@ def get_source_file_path(obj: Any) -> Path:
 def extract_url_parameters(pattern: str) -> list[str]:
     """Extract parameter names from a URL pattern.
 
-    Example: "blog/<int:pk>/" returns ["pk"]
+    Supports Django's standard path converters (int, str, slug, uuid, path)
+    and any custom converter names using word characters (a-z, A-Z, 0-9, _).
+
+    Args:
+        pattern: Django URL pattern string
+
+    Returns:
+        List of parameter names extracted from the pattern
+
+    Examples:
+        >>> extract_url_parameters("blog/<int:pk>/")
+        ["pk"]
+        >>> extract_url_parameters("blog/<pk>/")
+        ["pk"]
+        >>> extract_url_parameters("api/<uuid:id>/posts/<int:post_id>/")
+        ["id", "post_id"]
     """
     param_regex = r"<(?:\w+:)?(\w+)>"
     return re.findall(param_regex, pattern)
@@ -118,7 +146,20 @@ def _extract_methods_from_closure(view_func: Any) -> list[ViewMethod] | None:
 
 
 def introspect_view(callback: Any) -> FunctionViewSchema | ClassViewSchema:
-    """Introspect a Django view callback to extract metadata."""
+    """Introspect a Django view callback to extract metadata.
+
+    Handles both function-based views (FBVs) and class-based views (CBVs),
+    including .as_view() callbacks. For FBVs, attempts to detect HTTP method
+    restrictions via closure inspection of Django decorators.
+
+    Args:
+        callback: View function, class, or .as_view() callback
+
+    Returns:
+        FunctionViewSchema for FBVs with method detection via decorators,
+        ClassViewSchema for CBVs with methods determined by checking which
+        method handlers (get, post, etc.) are actually implemented.
+    """
     original_callback = callback
     view_func = callback
 
@@ -144,10 +185,18 @@ def introspect_view(callback: Any) -> FunctionViewSchema | ClassViewSchema:
         ]
         class_bases = bases if bases else []
 
-        if hasattr(view_func, "http_method_names"):
-            methods = [ViewMethod[m.upper()] for m in view_func.http_method_names]
-        else:
-            methods = list(ViewMethod)
+        method_names = getattr(
+            view_func,
+            "http_method_names",
+            ["get", "post", "put", "patch", "delete", "head", "options", "trace"],
+        )
+
+        implemented_methods = []
+        for method_name in method_names:
+            if hasattr(view_func, method_name):
+                implemented_methods.append(ViewMethod[method_name.upper()])
+
+        methods = implemented_methods if implemented_methods else []
 
         return ClassViewSchema(
             name=name,
@@ -215,7 +264,18 @@ def extract_routes(
 
 
 def get_all_routes() -> list[RouteSchema]:
-    """Get all Django URL routes."""
+    """Get all Django URL routes by recursively walking URLconf.
+
+    Traverses the entire URL resolver tree starting from ROOT_URLCONF,
+    extracting route patterns, view metadata, namespaces, and parameters.
+
+    Returns:
+        List of RouteSchema objects, one per URL pattern
+
+    Note:
+        For projects with many routes (1000+), this may take a few seconds
+        on first call. Results are not cached.
+    """
     resolver = get_resolver()
     routes = extract_routes(resolver.url_patterns)
     return routes
@@ -242,6 +302,7 @@ def filter_routes(
 
     Raises:
         ValueError: If method is not a valid HTTP method name
+        TypeError: If name or pattern is not a string
     """
     filtered = routes
 
@@ -249,7 +310,9 @@ def filter_routes(
         try:
             method_enum = ViewMethod[method.upper()]
             filtered = [
-                r for r in filtered if r.view.methods and method_enum in r.view.methods
+                r
+                for r in filtered
+                if not r.view.methods or method_enum in r.view.methods
             ]
         except KeyError as exc:
             valid_methods = ", ".join(m.name for m in ViewMethod)
@@ -257,10 +320,14 @@ def filter_routes(
                 f"Invalid HTTP method: {method!r}. Valid methods: {valid_methods}"
             ) from exc
 
-    if name:
+    if name is not None:
+        if not isinstance(name, str):
+            raise TypeError(f"name must be str, not {type(name).__name__}")
         filtered = [r for r in filtered if r.name and name in r.name]
 
-    if pattern:
+    if pattern is not None:
+        if not isinstance(pattern, str):
+            raise TypeError(f"pattern must be str, not {type(pattern).__name__}")
         filtered = [r for r in filtered if pattern in r.pattern]
 
     return filtered

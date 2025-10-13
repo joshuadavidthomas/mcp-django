@@ -207,20 +207,13 @@ List all Django URL routes with comprehensive metadata and filtering.
 - HTTP methods supported
 - Class bases for class-based views
 
-**Examples:**
-```python
-# Get all routes
-list_routes()
+**Usage via MCP client:**
+- "List all routes in this Django project"
+- "Show me routes that handle POST requests"
+- "Find all admin routes" (filters by pattern="admin")
+- "What routes are named 'blog-detail'?" (filters by name="blog-detail")
 
-# Find all admin routes
-list_routes(pattern="admin")
-
-# Find routes accepting POST
-list_routes(method="POST")
-
-# Find blog detail route
-list_routes(name="blog-detail")
-```
+All filters use contains matching and are combined with AND logic.
 
 ## Development
 
