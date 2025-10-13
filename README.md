@@ -183,12 +183,44 @@ The idea is to give just enough information about the project to hopefully guide
 
 ### Tools
 
-Two tools handle shell operations and session management:
+Three tools provide shell operations, session management, and route introspection:
 
 - `shell` - Execute Python code in a persistent Django shell session
 - `shell_reset` - Reset the session, clearing all variables and imports
+- `list_routes` - List all Django URL routes with comprehensive metadata and filtering
 
 Imports and variables persist between calls within the shell tool, so the LLM can work iteratively - exploring your models, testing queries, debugging issues.
+
+#### list_routes
+
+List all Django URL routes with comprehensive metadata and filtering.
+
+**Parameters:**
+- `method` (optional): Filter by HTTP method (e.g., "GET", "POST")
+- `name` (optional): Filter by route name (contains matching)
+- `pattern` (optional): Filter by URL pattern (contains matching)
+
+**Returns:** List of routes with:
+- URL pattern and parameters
+- Route name and namespace
+- View information (name, type, source location)
+- HTTP methods supported
+- Class bases for class-based views
+
+**Examples:**
+```python
+# Get all routes
+list_routes()
+
+# Find all admin routes
+list_routes(pattern="admin")
+
+# Find routes accepting POST
+list_routes(method="POST")
+
+# Find blog detail route
+list_routes(name="blog-detail")
+```
 
 ## Development
 
