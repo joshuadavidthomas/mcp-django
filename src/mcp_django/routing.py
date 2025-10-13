@@ -3,9 +3,9 @@ from __future__ import annotations
 import inspect
 import re
 from collections.abc import Iterable
+from enum import Enum
 from pathlib import Path
 from typing import Any
-from typing import Literal
 
 from django.urls import get_resolver
 from django.urls.resolvers import URLPattern
@@ -13,12 +13,28 @@ from django.urls.resolvers import URLResolver
 from pydantic import BaseModel
 
 
+class ViewType(Enum):
+    CLASS = "class"
+    FUNCTION = "function"
+
+
+class ViewMethod(Enum):
+    DELETE = "DELETE"
+    GET = "GET"
+    HEAD = "HEAD"
+    PATCH = "PATCH"
+    POST = "POST"
+    PUT = "PUT"
+    OPTIONS = "OPTIONS"
+    TRACE = "TRACE"
+
+
 class ViewSchema(BaseModel):
     name: str
-    type: Literal["function", "class"]
+    type: ViewType
     source_path: Path
     class_bases: list[str] | None
-    methods: list[str]
+    methods: list[ViewMethod]
 
 
 class RouteSchema(BaseModel):
@@ -72,25 +88,16 @@ def introspect_view(callback: Any) -> ViewSchema:
         class_bases = bases if bases else None
 
         if hasattr(view_func, "http_method_names"):
-            methods = [m.upper() for m in view_func.http_method_names]
+            methods = [ViewMethod[m.upper()] for m in view_func.http_method_names]
         else:
-            methods = [
-                "GET",
-                "HEAD",
-                "POST",
-                "PUT",
-                "PATCH",
-                "DELETE",
-                "OPTIONS",
-                "TRACE",
-            ]
+            methods = list(ViewMethod)
     else:
         class_bases = None
-        methods = ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "TRACE"]
+        methods = list(ViewMethod)
 
     return ViewSchema(
         name=name,
-        type="class" if is_class else "function",
+        type=ViewType.CLASS if is_class else ViewType.FUNCTION,
         source_path=source_path,
         class_bases=class_bases,
         methods=methods,
@@ -161,8 +168,11 @@ def filter_routes(
     filtered = routes
 
     if method:
-        method_upper = method.upper()
-        filtered = [r for r in filtered if method_upper in r.view.methods]
+        try:
+            method_enum = ViewMethod[method.upper()]
+            filtered = [r for r in filtered if method_enum in r.view.methods]
+        except KeyError:
+            filtered = []
 
     if name:
         filtered = [r for r in filtered if r.name and name in r.name]

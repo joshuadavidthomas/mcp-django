@@ -6,7 +6,9 @@ from django.views import View
 from django.views.generic import ListView
 
 from mcp_django.routing import RouteSchema
+from mcp_django.routing import ViewMethod
 from mcp_django.routing import ViewSchema
+from mcp_django.routing import ViewType
 from mcp_django.routing import extract_url_parameters
 from mcp_django.routing import filter_routes
 from mcp_django.routing import get_all_routes
@@ -17,40 +19,40 @@ from mcp_django.routing import introspect_view
 def test_view_schema_function():
     schema = ViewSchema(
         name="myapp.views.home",
-        type="function",
+        type=ViewType.FUNCTION,
         source_path=Path("/path/to/views.py"),
         class_bases=None,
-        methods=["GET", "POST"],
+        methods=[ViewMethod.GET, ViewMethod.POST],
     )
 
     assert schema.name == "myapp.views.home"
-    assert schema.type == "function"
+    assert schema.type == ViewType.FUNCTION
     assert schema.source_path == Path("/path/to/views.py")
     assert schema.class_bases is None
-    assert schema.methods == ["GET", "POST"]
+    assert schema.methods == [ViewMethod.GET, ViewMethod.POST]
 
 
 def test_view_schema_class():
     schema = ViewSchema(
         name="myapp.views.HomeView",
-        type="class",
+        type=ViewType.CLASS,
         source_path=Path("/path/to/views.py"),
         class_bases=["ListView", "LoginRequiredMixin"],
-        methods=["GET"],
+        methods=[ViewMethod.GET],
     )
 
     assert schema.name == "myapp.views.HomeView"
-    assert schema.type == "class"
+    assert schema.type == ViewType.CLASS
     assert schema.class_bases == ["ListView", "LoginRequiredMixin"]
 
 
 def test_route_schema_basic():
     view = ViewSchema(
         name="myapp.views.home",
-        type="function",
+        type=ViewType.FUNCTION,
         source_path=Path("/path/to/views.py"),
         class_bases=None,
-        methods=["GET"],
+        methods=[ViewMethod.GET],
     )
 
     route = RouteSchema(
@@ -71,10 +73,10 @@ def test_route_schema_basic():
 def test_route_schema_with_params():
     view = ViewSchema(
         name="myapp.views.detail",
-        type="function",
+        type=ViewType.FUNCTION,
         source_path=Path("/path/to/views.py"),
         class_bases=None,
-        methods=["GET"],
+        methods=[ViewMethod.GET],
     )
 
     route = RouteSchema(
@@ -158,29 +160,29 @@ class DummyListView(ListView):
 def test_introspect_view_function():
     schema = introspect_view(dummy_function_view)
 
-    assert schema.type == "function"
+    assert schema.type == ViewType.FUNCTION
     assert schema.name.endswith("dummy_function_view")
     assert schema.class_bases is None
-    assert "GET" in schema.methods
+    assert ViewMethod.GET in schema.methods
     assert isinstance(schema.source_path, Path)
 
 
 def test_introspect_view_class():
     schema = introspect_view(DummyClassView)
 
-    assert schema.type == "class"
+    assert schema.type == ViewType.CLASS
     assert schema.name.endswith("DummyClassView")
     assert schema.class_bases == ["View"]
-    assert "GET" in schema.methods
+    assert ViewMethod.GET in schema.methods
     assert isinstance(schema.source_path, Path)
 
 
 def test_introspect_view_generic():
     schema = introspect_view(DummyListView)
 
-    assert schema.type == "class"
+    assert schema.type == ViewType.CLASS
     assert schema.class_bases == ["ListView"]
-    assert "GET" in schema.methods
+    assert ViewMethod.GET in schema.methods
 
 
 def test_get_all_routes_returns_list():
@@ -240,7 +242,7 @@ def test_filter_routes_by_method():
     filtered = filter_routes(routes, method="GET")
 
     assert len(filtered) > 0
-    assert all("GET" in route.view.methods for route in filtered)
+    assert all(ViewMethod.GET in route.view.methods for route in filtered)
 
 
 def test_filter_routes_multiple_filters():
@@ -249,7 +251,7 @@ def test_filter_routes_multiple_filters():
     if routes:
         filtered = filter_routes(routes, method="GET", pattern=routes[0].pattern[:3])
 
-        assert all("GET" in route.view.methods for route in filtered)
+        assert all(ViewMethod.GET in route.view.methods for route in filtered)
         assert all(routes[0].pattern[:3] in route.pattern for route in filtered)
 
 
