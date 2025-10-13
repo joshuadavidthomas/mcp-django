@@ -12,3 +12,11 @@ class ViewSchema(BaseModel):
     source_path: Path
     class_bases: list[str] | None
     methods: list[str]
+
+
+class RouteSchema(BaseModel):
+    pattern: str
+    name: str | None
+    namespace: str | None
+    parameters: list[str]
+    view: ViewSchema

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from mcp_django.routing import ViewSchema
+from mcp_django.routing import RouteSchema, ViewSchema
 
 
 def test_view_schema_function():
@@ -33,3 +33,50 @@ def test_view_schema_class():
     assert schema.name == "myapp.views.HomeView"
     assert schema.type == "class"
     assert schema.class_bases == ["ListView", "LoginRequiredMixin"]
+
+
+def test_route_schema_basic():
+    view = ViewSchema(
+        name="myapp.views.home",
+        type="function",
+        source_path=Path("/path/to/views.py"),
+        class_bases=None,
+        methods=["GET"],
+    )
+
+    route = RouteSchema(
+        pattern="home/",
+        name="home",
+        namespace=None,
+        parameters=[],
+        view=view,
+    )
+
+    assert route.pattern == "home/"
+    assert route.name == "home"
+    assert route.namespace is None
+    assert route.parameters == []
+    assert route.view == view
+
+
+def test_route_schema_with_params():
+    view = ViewSchema(
+        name="myapp.views.detail",
+        type="function",
+        source_path=Path("/path/to/views.py"),
+        class_bases=None,
+        methods=["GET"],
+    )
+
+    route = RouteSchema(
+        pattern="blog/<int:pk>/",
+        name="blog-detail",
+        namespace="blog",
+        parameters=["pk"],
+        view=view,
+    )
+
+    assert route.pattern == "blog/<int:pk>/"
+    assert route.name == "blog-detail"
+    assert route.namespace == "blog"
+    assert route.parameters == ["pk"]
