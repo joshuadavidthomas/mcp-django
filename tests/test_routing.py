@@ -269,7 +269,7 @@ def test_filter_routes_by_name():
 def test_filter_routes_by_method():
     routes = get_all_routes()
 
-    filtered = filter_routes(routes, method="GET")
+    filtered = filter_routes(routes, method=ViewMethod.GET)
 
     assert len(filtered) > 0
     for route in filtered:
@@ -281,7 +281,9 @@ def test_filter_routes_multiple_filters():
     routes = get_all_routes()
 
     if routes:
-        filtered = filter_routes(routes, method="GET", pattern=routes[0].pattern[:3])
+        filtered = filter_routes(
+            routes, method=ViewMethod.GET, pattern=routes[0].pattern[:3]
+        )
 
         for route in filtered:
             if route.view.methods:
@@ -295,25 +297,6 @@ def test_filter_routes_no_matches():
     filtered = filter_routes(routes, pattern="NONEXISTENT_PATTERN_XYZ123")
 
     assert filtered == []
-
-
-def test_filter_routes_invalid_method():
-    """Test that invalid method names raise ValueError."""
-    routes = get_all_routes()
-
-    with pytest.raises(ValueError, match="Invalid HTTP method"):
-        filter_routes(routes, method="INVALID")
-
-
-def test_filter_routes_case_insensitive_method():
-    """Test that method filtering is case-insensitive."""
-    routes = get_all_routes()
-
-    upper_filtered = filter_routes(routes, method="GET")
-    lower_filtered = filter_routes(routes, method="get")
-
-    assert upper_filtered == lower_filtered
-    assert len(upper_filtered) > 0
 
 
 def dummy_require_get_view(request):
@@ -374,7 +357,7 @@ def test_filter_routes_empty_methods_included():
     """Test that views with empty methods are included in method filtering."""
     routes = get_all_routes()
 
-    filtered = filter_routes(routes, method="GET")
+    filtered = filter_routes(routes, method=ViewMethod.GET)
 
     for route in filtered:
         if route.view.methods:
@@ -402,7 +385,7 @@ def test_filter_routes_method_and_name():
     """Test filtering by method and name together."""
     routes = get_all_routes()
 
-    filtered = filter_routes(routes, method="GET", name="get_only")
+    filtered = filter_routes(routes, method=ViewMethod.GET, name="get_only")
 
     assert len(filtered) > 0
     for route in filtered:
@@ -414,28 +397,14 @@ def test_filter_routes_all_three_filters():
     """Test filtering by method, name, and pattern together."""
     routes = get_all_routes()
 
-    filtered = filter_routes(routes, method="GET", name="get", pattern="get-only")
+    filtered = filter_routes(
+        routes, method=ViewMethod.GET, name="get", pattern="get-only"
+    )
 
     for route in filtered:
         assert not route.view.methods or ViewMethod.GET in route.view.methods
         assert route.name and "get" in route.name
         assert "get-only" in route.pattern
-
-
-def test_filter_routes_invalid_name_type():
-    """Test that non-string name raises TypeError."""
-    routes = get_all_routes()
-
-    with pytest.raises(TypeError, match="name must be str"):
-        filter_routes(routes, name=123)
-
-
-def test_filter_routes_invalid_pattern_type():
-    """Test that non-string pattern raises TypeError."""
-    routes = get_all_routes()
-
-    with pytest.raises(TypeError, match="pattern must be str"):
-        filter_routes(routes, pattern=["admin"])
 
 
 def test_nested_namespaces():

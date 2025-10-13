@@ -16,6 +16,7 @@ from .resources import AppResource
 from .resources import ModelResource
 from .resources import ProjectResource
 from .routing import RouteSchema
+from .routing import ViewMethod
 from .routing import filter_routes
 from .routing import get_all_routes
 from .shell import DjangoShell
@@ -38,9 +39,9 @@ TOOLS:
 The shell maintains state between calls - imports and variables persist. Use django_shell_reset to
 clear state when variables get messy or you need a fresh start.
 
+- list_routes - List all URL routes with filtering by method, name, or pattern
 - shell - Execute Python code in a stateful Django shell
 - shell_reset - Reset the shell session
-- list_routes - List all URL routes with filtering by method, name, or pattern
 
 EXAMPLES:
 The pattern: Resource → Import Path → Shell Operation. Resources provide coordinates, shell does
@@ -207,7 +208,7 @@ async def shell_reset(ctx: Context) -> str:
 async def list_routes(
     ctx: Context,
     method: Annotated[
-        str | None,
+        ViewMethod | None,
         "Filter routes by HTTP method (e.g., 'GET', 'POST'). Uses contains matching - returns routes that support this method.",
     ] = None,
     name: Annotated[

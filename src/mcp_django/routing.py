@@ -148,11 +148,11 @@ def extract_url_parameters(pattern: str) -> list[str]:
 
     Examples:
         >>> extract_url_parameters("blog/<int:pk>/")
-        ["pk"]
+        ['pk']
         >>> extract_url_parameters("blog/<pk>/")
-        ["pk"]
+        ['pk']
         >>> extract_url_parameters("api/<uuid:id>/posts/<int:post_id>/")
-        ["id", "post_id"]
+        ['id', 'post_id']
     """
     param_regex = r"<(?:\w+:)?(\w+)>"
     return re.findall(param_regex, pattern)
@@ -276,7 +276,7 @@ def get_all_routes() -> list[RouteSchema]:
 
 def filter_routes(
     routes: list[RouteSchema],
-    method: str | None = None,
+    method: ViewMethod | None = None,
     name: str | None = None,
     pattern: str | None = None,
 ) -> list[RouteSchema]:
@@ -295,17 +295,13 @@ def filter_routes(
 
     Raises:
         ValueError: If method is not a valid HTTP method name
-        TypeError: If name or pattern is not a string
     """
     filtered = routes
 
     if method:
         try:
-            method_enum = ViewMethod[method.upper()]
             filtered = [
-                r
-                for r in filtered
-                if not r.view.methods or method_enum in r.view.methods
+                r for r in filtered if not r.view.methods or method in r.view.methods
             ]
         except KeyError as exc:
             valid_methods = ", ".join(m.name for m in ViewMethod)
@@ -314,13 +310,9 @@ def filter_routes(
             ) from exc
 
     if name is not None:
-        if not isinstance(name, str):
-            raise TypeError(f"name must be str, not {type(name).__name__}")
         filtered = [r for r in filtered if r.name and name in r.name]
 
     if pattern is not None:
-        if not isinstance(pattern, str):
-            raise TypeError(f"pattern must be str, not {type(pattern).__name__}")
         filtered = [r for r in filtered if pattern in r.pattern]
 
     return filtered
