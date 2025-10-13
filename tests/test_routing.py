@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from mcp_django.routing import RouteSchema, ViewSchema
+from mcp_django.routing import RouteSchema, ViewSchema, get_source_file_path
 
 
 def test_view_schema_function():
@@ -80,3 +80,27 @@ def test_route_schema_with_params():
     assert route.name == "blog-detail"
     assert route.namespace == "blog"
     assert route.parameters == ["pk"]
+
+
+def test_get_source_file_path_with_function():
+    def dummy_view():
+        pass
+
+    result = get_source_file_path(dummy_view)
+    assert isinstance(result, Path)
+    assert result != Path("unknown")
+    assert "test_routing.py" in str(result)
+
+
+def test_get_source_file_path_with_class():
+    class DummyView:
+        pass
+
+    result = get_source_file_path(DummyView)
+    assert isinstance(result, Path)
+    assert result != Path("unknown")
+
+
+def test_get_source_file_path_builtin():
+    result = get_source_file_path(int)
+    assert result == Path("unknown")
