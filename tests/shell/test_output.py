@@ -81,9 +81,8 @@ def test_exception_output_serialization():
 
 
 def test_exception_output_with_real_traceback():
-    # Do something that actually raises an error
     try:
-        1 / 0
+        _ = 1 / 0
     except ZeroDivisionError as e:
         exc_output = ExceptionOutput(
             exc_type=type(e),
