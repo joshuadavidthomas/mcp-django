@@ -57,7 +57,7 @@ uv add mcp-django
 
 > [!WARNING]
 >
-> **Seriously, only enable in development!** 
+> **Seriously, only enable in development!**
 >
 > Look, it should go without saying, but I will say it anyway - **this gives full shell access to your Django project**. Only enable and use this in development and in a project that does not have access to any production data.
 >
@@ -183,12 +183,26 @@ The idea is to give just enough information about the project to hopefully guide
 
 ### Tools
 
-Two tools handle shell operations and session management:
+Three tools provide shell operations, session management, and route introspection:
 
+- `list_routes` - Introspect URL routes and view handlers with filtering support
 - `shell` - Execute Python code in a persistent Django shell session
 - `shell_reset` - Reset the session, clearing all variables and imports
 
 Imports and variables persist between calls within the shell tool, so the LLM can work iteratively - exploring your models, testing queries, debugging issues.
+
+#### list_routes
+
+Introspect all Django URL routes in your project. Able to filter by HTTP method, route name, or URL pattern to find specific endpoints.
+
+Examples:
+
+- "Where should I add the new password reset endpoint?"
+- "Which view handles user profile updates?"
+- "Show me the URL pattern for blog posts so I can add comments"
+- "What routes are protected by authentication?"
+
+Each route includes URL pattern, name, namespace, view details (name, type, source file), supported HTTP methods, and class bases for CBVs.
 
 ## Development
 

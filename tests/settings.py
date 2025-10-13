@@ -14,6 +14,8 @@ INSTALLED_APPS = [
     "tests",
 ]
 
+ROOT_URLCONF = "tests.urls"
+
 SECRET_KEY = "test-secret-key"
 
 USE_TZ = True

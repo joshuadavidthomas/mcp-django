@@ -21,6 +21,7 @@ pytestmark = pytest.mark.asyncio
 class Tool(str, Enum):
     SHELL = "shell"
     SHELL_RESET = "shell_reset"
+    LIST_ROUTES = "list_routes"
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -243,3 +244,37 @@ async def test_project_resource_with_auth():
     async with Client(mcp) as client:
         result = await client.read_resource("django://project")
         assert result is not None
+
+
+async def test_list_routes_tool_exists():
+    """Test that list_routes tool is registered."""
+    async with Client(mcp) as client:
+        tools = await client.list_tools()
+        tool_names = [tool.name for tool in tools]
+
+        assert "list_routes" in tool_names
+
+
+async def test_list_routes_tool_returns_routes():
+    """Test that list_routes returns RouteSchema list."""
+    async with Client(mcp) as client:
+        result = await client.call_tool("list_routes", {})
+
+        assert isinstance(result.data, list)
+        assert len(result.data) > 0
+
+
+async def test_list_routes_tool_with_filters():
+    """Test that list_routes accepts filter parameters."""
+    async with Client(mcp) as client:
+        all_routes = await client.call_tool("list_routes", {})
+
+        get_routes = await client.call_tool("list_routes", {"method": "GET"})
+        assert len(get_routes.data) > 0
+        assert len(get_routes.data) <= len(all_routes.data)
+
+        if all_routes.data:
+            pattern_routes = await client.call_tool(
+                "list_routes", {"pattern": all_routes.data[0]["pattern"][:3]}
+            )
+            assert isinstance(pattern_routes.data, list)

@@ -15,6 +15,10 @@ from .output import ErrorOutput
 from .resources import AppResource
 from .resources import ModelResource
 from .resources import ProjectResource
+from .routing import RouteSchema
+from .routing import ViewMethod
+from .routing import filter_routes
+from .routing import get_all_routes
 from .shell import DjangoShell
 
 logger = logging.getLogger(__name__)
@@ -35,6 +39,7 @@ TOOLS:
 The shell maintains state between calls - imports and variables persist. Use django_shell_reset to
 clear state when variables get messy or you need a fresh start.
 
+- list_routes - List all URL routes with filtering by method, name, or pattern
 - shell - Execute Python code in a stateful Django shell
 - shell_reset - Reset the shell session
 
@@ -47,6 +52,7 @@ the work.
   `from app.models import ModelName` in django_shell
 - Need app structure? → Check django://apps for app labels and paths → Use paths in django_shell
 - Need to query data? → Get model from django://models → Import in django_shell → Run queries
+- Need to find a URL route? → Use list_routes with filters to find specific routes
 """,
 )
 
@@ -192,3 +198,57 @@ async def shell_reset(ctx: Context) -> str:
     )
 
     return "Django shell session has been reset. All previously set variables and history cleared."
+
+
+@mcp.tool(
+    annotations=ToolAnnotations(
+        title="List Django Routes", readOnlyHint=True, idempotentHint=True
+    ),
+)
+async def list_routes(
+    ctx: Context,
+    method: Annotated[
+        ViewMethod | None,
+        "Filter routes by HTTP method (e.g., 'GET', 'POST'). Uses contains matching - returns routes that support this method.",
+    ] = None,
+    name: Annotated[
+        str | None,
+        "Filter routes by name. Uses contains matching - returns routes whose name contains this string.",
+    ] = None,
+    pattern: Annotated[
+        str | None,
+        "Filter routes by URL pattern. Uses contains matching - returns routes whose pattern contains this string.",
+    ] = None,
+) -> list[RouteSchema]:
+    """List all Django URL routes with optional filtering.
+
+    Returns comprehensive route information including URL patterns, view details,
+    HTTP methods, namespaces, and URL parameters. All filters use contains matching
+    and are AND'd together.
+
+    Examples:
+    - list_routes() - Get all routes
+    - list_routes(method="GET") - Get all routes accepting GET requests
+    - list_routes(pattern="admin") - Get all admin routes
+    - list_routes(name="blog") - Get all routes with "blog" in the name
+    """
+    logger.info(
+        "list_routes tool called - request_id: %s, client_id: %s, method: %s, name: %s, pattern: %s",
+        ctx.request_id,
+        ctx.client_id or "unknown",
+        method,
+        name,
+        pattern,
+    )
+
+    all_routes = get_all_routes()
+    filtered = filter_routes(all_routes, method=method, name=name, pattern=pattern)
+
+    logger.debug(
+        "list_routes completed - request_id: %s, total_routes: %d, filtered_routes: %d",
+        ctx.request_id,
+        len(all_routes),
+        len(filtered),
+    )
+
+    return filtered

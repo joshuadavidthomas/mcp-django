@@ -26,6 +26,10 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
+### Added
+
+- Added `list_routes` tool for comprehensive Django URL route introspection with filtering by HTTP method, route name, and URL pattern
+
 ### Removed
 
 - Deprecated mcp-django-shell package deleted from repository
@@ -67,9 +71,9 @@ The GitHub releases were previously using calendar versioning (e.g., v2025.8.1) 
 
 **🚨 BREAKING RELEASE 🚨**
 
-This release restructures the project from a single package to a workspace with multiple packages for better separation of concerns. 
+This release restructures the project from a single package to a workspace with multiple packages for better separation of concerns.
 
-The dev only shell functionality is now an optional extra that must be explicitly installed, while the read-only resources are available in the base package. 
+The dev only shell functionality is now an optional extra that must be explicitly installed, while the read-only resources are available in the base package.
 
 This should allow for safer production deployments where shell access can be completely excluded, as well as allow for future expansion with additional tool packages that can be selectively installed based on environment needs.
 
