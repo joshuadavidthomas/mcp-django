@@ -5,13 +5,13 @@ from pathlib import Path
 from django.views import View
 from django.views.generic import ListView
 
-from mcp_django.routing import (
-    RouteSchema,
-    ViewSchema,
-    extract_url_parameters,
-    get_source_file_path,
-    introspect_view,
-)
+from mcp_django.routing import RouteSchema
+from mcp_django.routing import ViewSchema
+from mcp_django.routing import extract_routes
+from mcp_django.routing import extract_url_parameters
+from mcp_django.routing import get_all_routes
+from mcp_django.routing import get_source_file_path
+from mcp_django.routing import introspect_view
 
 
 def test_view_schema_function():
@@ -181,3 +181,22 @@ def test_introspect_view_generic():
     assert schema.type == "class"
     assert schema.class_bases == ["ListView"]
     assert "GET" in schema.methods
+
+
+def test_get_all_routes_returns_list():
+    routes = get_all_routes()
+
+    assert isinstance(routes, list)
+    assert len(routes) > 0
+    assert all(isinstance(route, RouteSchema) for route in routes)
+
+
+def test_get_all_routes_has_expected_fields():
+    routes = get_all_routes()
+
+    route = routes[0]
+    assert isinstance(route.pattern, str)
+    assert route.name is None or isinstance(route.name, str)
+    assert route.namespace is None or isinstance(route.namespace, str)
+    assert isinstance(route.parameters, list)
+    assert isinstance(route.view, ViewSchema)

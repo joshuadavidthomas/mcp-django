@@ -2,9 +2,14 @@ from __future__ import annotations
 
 import inspect
 import re
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any
+from typing import Literal
 
+from django.urls import get_resolver
+from django.urls.resolvers import URLPattern
+from django.urls.resolvers import URLResolver
 from pydantic import BaseModel
 
 
@@ -90,3 +95,53 @@ def introspect_view(callback: Any) -> ViewSchema:
         class_bases=class_bases,
         methods=methods,
     )
+
+
+def extract_routes(
+    patterns: Iterable[URLPattern | URLResolver],
+    prefix: str = "",
+    namespace: str | None = None,
+) -> list[RouteSchema]:
+    """Recursively extract routes from URL patterns."""
+    routes = []
+
+    for pattern in patterns:
+        if isinstance(pattern, URLResolver):
+            current_namespace = pattern.namespace
+            if namespace and current_namespace:
+                full_namespace = f"{namespace}:{current_namespace}"
+            elif current_namespace:
+                full_namespace = current_namespace
+            else:
+                full_namespace = namespace
+
+            extracted_routes = extract_routes(
+                pattern.url_patterns,  # type: ignore[arg-type]
+                prefix + str(pattern.pattern),
+                full_namespace,
+            )
+            routes.extend(extracted_routes)
+
+        elif isinstance(pattern, URLPattern):
+            full_pattern = prefix + str(pattern.pattern)
+            parameters = extract_url_parameters(full_pattern)
+
+            view_schema = introspect_view(pattern.callback)
+
+            route = RouteSchema(
+                pattern=full_pattern,
+                name=pattern.name,
+                namespace=namespace,
+                parameters=parameters,
+                view=view_schema,
+            )
+            routes.append(route)
+
+    return routes
+
+
+def get_all_routes() -> list[RouteSchema]:
+    """Get all Django URL routes."""
+    resolver = get_resolver()
+    routes = extract_routes(resolver.url_patterns)  # type: ignore[arg-type]
+    return routes
