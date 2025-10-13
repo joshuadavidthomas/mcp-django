@@ -116,6 +116,16 @@ ViewSchema = FunctionViewSchema | ClassViewSchema
 
 
 class RouteSchema(BaseModel):
+    """Schema for a complete Django URL route.
+
+    Fields:
+        pattern: Full URL pattern string (e.g., "blog/<int:pk>/")
+        name: Route name for reverse URL lookup, or None if unnamed
+        namespace: URL namespace (e.g., "admin"), or None if not namespaced
+        parameters: List of URL parameter names extracted from pattern
+        view: View handler (FunctionViewSchema or ClassViewSchema)
+    """
+
     pattern: str
     name: str | None
     namespace: str | None
