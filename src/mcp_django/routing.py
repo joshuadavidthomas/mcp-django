@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import re
 from pathlib import Path
 from typing import Any, Literal
 
@@ -32,3 +33,12 @@ def get_source_file_path(obj: Any) -> Path:
         return Path(inspect.getfile(obj))
     except (TypeError, OSError):
         return Path("unknown")
+
+
+def extract_url_parameters(pattern: str) -> list[str]:
+    """Extract parameter names from a URL pattern.
+
+    Example: "blog/<int:pk>/" returns ["pk"]
+    """
+    param_regex = r"<(?:\w+:)?(\w+)>"
+    return re.findall(param_regex, pattern)

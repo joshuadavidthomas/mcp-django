@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from mcp_django.routing import RouteSchema, ViewSchema, get_source_file_path
+from mcp_django.routing import (
+    RouteSchema,
+    ViewSchema,
+    extract_url_parameters,
+    get_source_file_path,
+)
 
 
 def test_view_schema_function():
@@ -104,3 +109,30 @@ def test_get_source_file_path_with_class():
 def test_get_source_file_path_builtin():
     result = get_source_file_path(int)
     assert result == Path("unknown")
+
+
+def test_extract_url_parameters_empty():
+    assert extract_url_parameters("home/") == []
+    assert extract_url_parameters("about/contact/") == []
+
+
+def test_extract_url_parameters_single():
+    assert extract_url_parameters("blog/<int:pk>/") == ["pk"]
+    assert extract_url_parameters("user/<str:username>/") == ["username"]
+
+
+def test_extract_url_parameters_multiple():
+    assert extract_url_parameters("blog/<int:year>/<int:month>/<slug:slug>/") == [
+        "year",
+        "month",
+        "slug",
+    ]
+
+
+def test_extract_url_parameters_mixed():
+    assert extract_url_parameters(
+        "api/v1/users/<uuid:user_id>/posts/<int:post_id>/"
+    ) == [
+        "user_id",
+        "post_id",
+    ]
