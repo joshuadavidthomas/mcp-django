@@ -5,9 +5,10 @@ from pathlib import Path
 from django.views import View
 from django.views.generic import ListView
 
+from mcp_django.routing import ClassViewSchema
+from mcp_django.routing import FunctionViewSchema
 from mcp_django.routing import RouteSchema
 from mcp_django.routing import ViewMethod
-from mcp_django.routing import ViewSchema
 from mcp_django.routing import ViewType
 from mcp_django.routing import extract_url_parameters
 from mcp_django.routing import filter_routes
@@ -17,23 +18,21 @@ from mcp_django.routing import introspect_view
 
 
 def test_view_schema_function():
-    schema = ViewSchema(
+    schema = FunctionViewSchema(
         name="myapp.views.home",
         type=ViewType.FUNCTION,
         source_path=Path("/path/to/views.py"),
-        class_bases=None,
         methods=[ViewMethod.GET, ViewMethod.POST],
     )
 
     assert schema.name == "myapp.views.home"
     assert schema.type == ViewType.FUNCTION
     assert schema.source_path == Path("/path/to/views.py")
-    assert schema.class_bases is None
     assert schema.methods == [ViewMethod.GET, ViewMethod.POST]
 
 
 def test_view_schema_class():
-    schema = ViewSchema(
+    schema = ClassViewSchema(
         name="myapp.views.HomeView",
         type=ViewType.CLASS,
         source_path=Path("/path/to/views.py"),
@@ -47,11 +46,10 @@ def test_view_schema_class():
 
 
 def test_route_schema_basic():
-    view = ViewSchema(
+    view = FunctionViewSchema(
         name="myapp.views.home",
         type=ViewType.FUNCTION,
         source_path=Path("/path/to/views.py"),
-        class_bases=None,
         methods=[ViewMethod.GET],
     )
 
@@ -71,11 +69,10 @@ def test_route_schema_basic():
 
 
 def test_route_schema_with_params():
-    view = ViewSchema(
+    view = FunctionViewSchema(
         name="myapp.views.detail",
         type=ViewType.FUNCTION,
         source_path=Path("/path/to/views.py"),
-        class_bases=None,
         methods=[ViewMethod.GET],
     )
 
@@ -160,9 +157,9 @@ class DummyListView(ListView):
 def test_introspect_view_function():
     schema = introspect_view(dummy_function_view)
 
+    assert isinstance(schema, FunctionViewSchema)
     assert schema.type == ViewType.FUNCTION
     assert schema.name.endswith("dummy_function_view")
-    assert schema.class_bases is None
     assert ViewMethod.GET in schema.methods
     assert isinstance(schema.source_path, Path)
 
@@ -170,6 +167,7 @@ def test_introspect_view_function():
 def test_introspect_view_class():
     schema = introspect_view(DummyClassView)
 
+    assert isinstance(schema, ClassViewSchema)
     assert schema.type == ViewType.CLASS
     assert schema.name.endswith("DummyClassView")
     assert schema.class_bases == ["View"]
@@ -180,6 +178,7 @@ def test_introspect_view_class():
 def test_introspect_view_generic():
     schema = introspect_view(DummyListView)
 
+    assert isinstance(schema, ClassViewSchema)
     assert schema.type == ViewType.CLASS
     assert schema.class_bases == ["ListView"]
     assert ViewMethod.GET in schema.methods
@@ -201,7 +200,7 @@ def test_get_all_routes_has_expected_fields():
     assert route.name is None or isinstance(route.name, str)
     assert route.namespace is None or isinstance(route.namespace, str)
     assert isinstance(route.parameters, list)
-    assert isinstance(route.view, ViewSchema)
+    assert isinstance(route.view, FunctionViewSchema | ClassViewSchema)
 
 
 def test_filter_routes_no_filters():

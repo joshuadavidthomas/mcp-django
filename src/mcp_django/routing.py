@@ -6,6 +6,7 @@ from collections.abc import Iterable
 from enum import Enum
 from pathlib import Path
 from typing import Any
+from typing import Literal
 
 from django.urls import get_resolver
 from django.urls.resolvers import URLPattern
@@ -29,12 +30,22 @@ class ViewMethod(Enum):
     TRACE = "TRACE"
 
 
-class ViewSchema(BaseModel):
+class FunctionViewSchema(BaseModel):
     name: str
-    type: ViewType
+    type: Literal[ViewType.FUNCTION]
     source_path: Path
-    class_bases: list[str] | None
     methods: list[ViewMethod]
+
+
+class ClassViewSchema(BaseModel):
+    name: str
+    type: Literal[ViewType.CLASS]
+    source_path: Path
+    methods: list[ViewMethod]
+    class_bases: list[str]
+
+
+ViewSchema = FunctionViewSchema | ClassViewSchema
 
 
 class RouteSchema(BaseModel):
@@ -65,7 +76,7 @@ def extract_url_parameters(pattern: str) -> list[str]:
     return re.findall(param_regex, pattern)
 
 
-def introspect_view(callback: Any) -> ViewSchema:
+def introspect_view(callback: Any) -> FunctionViewSchema | ClassViewSchema:
     """Introspect a Django view callback to extract metadata."""
     view_func = callback
     while hasattr(view_func, "__wrapped__"):
@@ -85,23 +96,29 @@ def introspect_view(callback: Any) -> ViewSchema:
         bases = [
             base.__name__ for base in view_func.__bases__ if base.__name__ != "object"
         ]
-        class_bases = bases if bases else None
+        class_bases = bases if bases else []
 
         if hasattr(view_func, "http_method_names"):
             methods = [ViewMethod[m.upper()] for m in view_func.http_method_names]
         else:
             methods = list(ViewMethod)
+
+        return ClassViewSchema(
+            name=name,
+            type=ViewType.CLASS,
+            source_path=source_path,
+            class_bases=class_bases,
+            methods=methods,
+        )
     else:
-        class_bases = None
         methods = list(ViewMethod)
 
-    return ViewSchema(
-        name=name,
-        type=ViewType.CLASS if is_class else ViewType.FUNCTION,
-        source_path=source_path,
-        class_bases=class_bases,
-        methods=methods,
-    )
+        return FunctionViewSchema(
+            name=name,
+            type=ViewType.FUNCTION,
+            source_path=source_path,
+            methods=methods,
+        )
 
 
 def extract_routes(
