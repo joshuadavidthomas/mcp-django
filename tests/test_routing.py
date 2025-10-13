@@ -7,7 +7,6 @@ from django.views.generic import ListView
 
 from mcp_django.routing import RouteSchema
 from mcp_django.routing import ViewSchema
-from mcp_django.routing import extract_routes
 from mcp_django.routing import extract_url_parameters
 from mcp_django.routing import filter_routes
 from mcp_django.routing import get_all_routes

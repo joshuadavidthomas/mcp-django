@@ -108,6 +108,7 @@ def extract_routes(
     for pattern in patterns:
         if isinstance(pattern, URLResolver):
             current_namespace = pattern.namespace
+            full_namespace: str | None
             if namespace and current_namespace:
                 full_namespace = f"{namespace}:{current_namespace}"
             elif current_namespace:
@@ -116,7 +117,7 @@ def extract_routes(
                 full_namespace = namespace
 
             extracted_routes = extract_routes(
-                pattern.url_patterns,  # type: ignore[arg-type]
+                pattern.url_patterns,
                 prefix + str(pattern.pattern),
                 full_namespace,
             )
@@ -143,7 +144,7 @@ def extract_routes(
 def get_all_routes() -> list[RouteSchema]:
     """Get all Django URL routes."""
     resolver = get_resolver()
-    routes = extract_routes(resolver.url_patterns)  # type: ignore[arg-type]
+    routes = extract_routes(resolver.url_patterns)
     return routes
 
 
