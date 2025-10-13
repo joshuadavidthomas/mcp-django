@@ -192,7 +192,7 @@ def _extract_methods_from_closure(view_func: Any) -> list[ViewMethod] | None:
                             methods.append(ViewMethod[method_str])
                     if methods:
                         return methods
-        except (AttributeError, ValueError):
+        except ValueError:  # pragma: no cover
             continue
 
     return None
@@ -221,14 +221,11 @@ def get_view_name(view_func: Any):
     """Get the fully qualified name of a view function or class.
 
     Returns:
-        Fully qualified name (module.name) if module is found, otherwise just the name
+        Fully qualified name (module.name)
     """
     module = inspect.getmodule(view_func)
-    if module:
-        name = f"{module.__name__}.{view_func.__name__}"
-    else:
-        name = view_func.__name__
-    return name
+    assert module is not None, f"Could not determine module for {view_func}"
+    return f"{module.__name__}.{view_func.__name__}"
 
 
 def extract_routes(
@@ -248,7 +245,7 @@ def extract_routes(
             elif current_namespace:
                 full_namespace = current_namespace
             else:
-                full_namespace = namespace
+                full_namespace = None
 
             extracted_routes = extract_routes(
                 pattern.url_patterns,

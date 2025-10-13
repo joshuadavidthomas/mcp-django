@@ -60,8 +60,13 @@ api_v1_users_patterns = [
     path("<int:user_id>/posts/", dummy_view, name="user-posts"),
 ]
 
+extra_patterns = [
+    path("extra/", dummy_view, name="extra"),
+]
+
 api_v1_patterns = [
     path("users/", include((api_v1_users_patterns, "users"), namespace="users")),
+    path("internal/", include(extra_patterns)),
 ]
 
 urlpatterns = [
