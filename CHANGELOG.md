@@ -26,6 +26,10 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
+### Added
+
+- Added `list_routes` tool for comprehensive Django URL route introspection with filtering by HTTP method, route name, and URL pattern
+
 ### Removed
 
 - Deprecated mcp-django-shell package deleted from repository

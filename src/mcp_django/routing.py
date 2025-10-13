@@ -79,6 +79,10 @@ def extract_url_parameters(pattern: str) -> list[str]:
 def introspect_view(callback: Any) -> FunctionViewSchema | ClassViewSchema:
     """Introspect a Django view callback to extract metadata."""
     view_func = callback
+
+    if hasattr(view_func, "view_class"):
+        view_func = view_func.view_class
+
     while hasattr(view_func, "__wrapped__"):
         view_func = view_func.__wrapped__
 
@@ -181,6 +185,18 @@ def filter_routes(
     """Filter routes using contains matching on each parameter.
 
     All filters are AND'd together - routes must match all provided filters.
+
+    Args:
+        method: HTTP method name (case-insensitive). Valid values: GET, POST, PUT,
+                PATCH, DELETE, HEAD, OPTIONS, TRACE
+        name: Route name substring for filtering (case-sensitive)
+        pattern: URL pattern substring for filtering (case-sensitive)
+
+    Returns:
+        Filtered list of routes matching all provided criteria
+
+    Raises:
+        ValueError: If method is not a valid HTTP method name
     """
     filtered = routes
 
@@ -188,8 +204,11 @@ def filter_routes(
         try:
             method_enum = ViewMethod[method.upper()]
             filtered = [r for r in filtered if method_enum in r.view.methods]
-        except KeyError:
-            filtered = []
+        except KeyError as exc:
+            valid_methods = ", ".join(m.name for m in ViewMethod)
+            raise ValueError(
+                f"Invalid HTTP method: {method!r}. Valid methods: {valid_methods}"
+            ) from exc
 
     if name:
         filtered = [r for r in filtered if r.name and name in r.name]

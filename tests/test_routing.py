@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from django.views import View
 from django.views.generic import ListView
 
@@ -184,6 +185,17 @@ def test_introspect_view_generic():
     assert ViewMethod.GET in schema.methods
 
 
+def test_introspect_view_as_view_callback():
+    """Test that .as_view() callbacks are correctly identified as CBVs."""
+    callback = DummyClassView.as_view()
+    schema = introspect_view(callback)
+
+    assert isinstance(schema, ClassViewSchema)
+    assert schema.type == ViewType.CLASS
+    assert "DummyClassView" in schema.name
+    assert schema.class_bases == ["View"]
+
+
 def test_get_all_routes_returns_list():
     routes = get_all_routes()
 
@@ -260,3 +272,22 @@ def test_filter_routes_no_matches():
     filtered = filter_routes(routes, pattern="NONEXISTENT_PATTERN_XYZ123")
 
     assert filtered == []
+
+
+def test_filter_routes_invalid_method():
+    """Test that invalid method names raise ValueError."""
+    routes = get_all_routes()
+
+    with pytest.raises(ValueError, match="Invalid HTTP method"):
+        filter_routes(routes, method="INVALID")
+
+
+def test_filter_routes_case_insensitive_method():
+    """Test that method filtering is case-insensitive."""
+    routes = get_all_routes()
+
+    upper_filtered = filter_routes(routes, method="GET")
+    lower_filtered = filter_routes(routes, method="get")
+
+    assert upper_filtered == lower_filtered
+    assert len(upper_filtered) > 0
