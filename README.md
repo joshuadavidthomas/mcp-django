@@ -185,35 +185,24 @@ The idea is to give just enough information about the project to hopefully guide
 
 Three tools provide shell operations, session management, and route introspection:
 
+- `list_routes` - Introspect URL routes and view handlers with filtering support
 - `shell` - Execute Python code in a persistent Django shell session
 - `shell_reset` - Reset the session, clearing all variables and imports
-- `list_routes` - List all Django URL routes with comprehensive metadata and filtering
 
 Imports and variables persist between calls within the shell tool, so the LLM can work iteratively - exploring your models, testing queries, debugging issues.
 
 #### list_routes
 
-List all Django URL routes with comprehensive metadata and filtering.
+Introspect all Django URL routes in your project. Able to filter by HTTP method, route name, or URL pattern to find specific endpoints.
 
-**Parameters:**
-- `method` (optional): Filter by HTTP method (e.g., "GET", "POST")
-- `name` (optional): Filter by route name substring (case-sensitive, uses contains matching)
-- `pattern` (optional): Filter by URL pattern substring (case-sensitive, uses contains matching)
+Examples:
 
-**Returns:** List of routes with:
-- URL pattern and parameters
-- Route name and namespace
-- View information (name, type, source location)
-- HTTP methods supported
-- Class bases for class-based views
+- "Where should I add the new password reset endpoint?"
+- "Which view handles user profile updates?"
+- "Show me the URL pattern for blog posts so I can add comments"
+- "What routes are protected by authentication?"
 
-**Usage via MCP client:**
-- "List all routes in this Django project"
-- "Show me routes that handle POST requests"
-- "Find all admin routes" (filters by pattern containing "admin")
-- "What routes are named 'blog-detail'?" (filters by name containing "blog-detail")
-
-All filters use substring matching (contains) and are combined with AND logic.
+Each route includes URL pattern, name, namespace, view details (name, type, source file), supported HTTP methods, and class bases for CBVs.
 
 ## Development
 
