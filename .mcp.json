@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "django": {
+      "command": "uv",
+      "args": [
+        "run",
+        "-m",
+        "mcp_django"
+      ],
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "tests.settings"
+      }
+    }
+  }
+}
