@@ -214,6 +214,17 @@ async def test_django_shell_tool_execute_without_code():
         assert "Code parameter is required" in str(exc_info.value)
 
 
+async def test_django_shell_tool_reset_with_code():
+    async with Client(mcp) as client:
+        with pytest.raises(ToolError) as exc_info:
+            await client.call_tool(
+                Tool.SHELL, {"action": "reset", "code": "print('test')"}
+            )
+
+        assert "Code parameter cannot be used with" in str(exc_info.value)
+        assert "reset" in str(exc_info.value)
+
+
 async def test_django_shell_tool_unexpected_error(monkeypatch):
     monkeypatch.setattr(
         django_shell, "execute", AsyncMock(side_effect=RuntimeError("Unexpected error"))

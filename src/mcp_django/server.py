@@ -141,6 +141,11 @@ async def shell(
 
     match action:
         case "reset":
+            if code is not None:
+                raise ValueError(
+                    "Code parameter cannot be used with `'reset'` action. Use `action='execute'` to run code or omit the code parameter when resetting."
+                )
+
             logger.info(
                 "django_shell reset action called - request_id: %s, client_id: %s",
                 ctx.request_id,
