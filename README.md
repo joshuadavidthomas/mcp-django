@@ -163,7 +163,7 @@ It wouldn't be an MCP server README without a gratuitous list of features punctu
 - 🚀 **Zero configuration** - No schemas, no settings, just Django
 - 🐚 **Stateful shell** - `django_shell` executes Python code in your Django environment
 - 🔄 **Persistent state** - Imports and variables stick around between calls
-- 🧹 **Reset when needed** - `django_shell_reset` clears the session when things get weird
+- 🧹 **Reset when needed** - `shell(action="reset")` clears the session when things get weird
 - 🤖 **LLM-friendly** - Designed for LLM assistants that already know Python
 - 📦 **Minimal dependencies** - Just FastMCP and Django (you already have Django)
 - 🎯 **Does one thing well** - Runs code. That's it. That's the feature.
@@ -183,11 +183,10 @@ The idea is to give just enough information about the project to hopefully guide
 
 ### Tools
 
-Three tools provide shell operations, session management, and route introspection:
+Two tools provide shell operations and route introspection:
 
 - `list_routes` - Introspect URL routes and view handlers with filtering support
-- `shell` - Execute Python code in a persistent Django shell session
-- `shell_reset` - Reset the session, clearing all variables and imports
+- `shell` - Execute Python code in a persistent Django shell session or reset the session
 
 Imports and variables persist between calls within the shell tool, so the LLM can work iteratively - exploring your models, testing queries, debugging issues.
 

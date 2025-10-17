@@ -205,3 +205,5 @@ class ErrorResult:
 
 
 Result = ExpressionResult | StatementResult | ErrorResult
+
+django_shell = DjangoShell()

@@ -26,6 +26,10 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
+### Changed
+
+- Consolidated `shell_reset` tool into `shell` tool with new `action` parameter
+
 ### Added
 
 - Added `list_routes` tool for comprehensive Django URL route introspection with filtering by HTTP method, route name, and URL pattern
@@ -33,6 +37,7 @@ For multi-package releases, use package names as subsections:
 ### Removed
 
 - Deprecated mcp-django-shell package deleted from repository
+- Removed `shell_reset` tool
 
 ## [0.10.0]
 
