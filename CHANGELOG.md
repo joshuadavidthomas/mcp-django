@@ -26,13 +26,15 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
-### Changed
-
-- Consolidated `shell_reset` tool into `shell` tool with new `action` parameter
-
 ### Added
 
 - Added `list_routes` tool for comprehensive Django URL route introspection with filtering by HTTP method, route name, and URL pattern
+- Added Django Packages integration: 5 resources for browsing packages/grids/categories, `search_djangopackages` tool for package discovery, and HTTP client with file-based caching
+- Added dependencies: `httpx` and `platformdirs`
+
+### Changed
+
+- Consolidated `shell_reset` tool into `shell` tool with new `action` parameter
 
 ### Removed
 

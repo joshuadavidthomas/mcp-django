@@ -4,12 +4,14 @@ import re
 from enum import Enum
 from unittest.mock import AsyncMock
 
+import httpx
 import pytest
 import pytest_asyncio
 from django.conf import settings
 from django.test import override_settings
 from fastmcp import Client
 from fastmcp.exceptions import ToolError
+from respx import MockRouter
 
 from mcp_django.output import ExecutionStatus
 from mcp_django.server import mcp
@@ -21,6 +23,7 @@ pytestmark = pytest.mark.asyncio
 class Tool(str, Enum):
     SHELL = "shell"
     LIST_ROUTES = "list_routes"
+    SEARCH_DJANGOPACKAGES = "search_djangopackages"
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -283,3 +286,108 @@ async def test_list_routes_tool_with_filters():
                 "list_routes", {"pattern": all_routes.data[0]["pattern"][:3]}
             )
             assert isinstance(pattern_routes.data, list)
+
+
+async def test_get_package_detail_resource(mock_packages_package_detail_api):
+    """Test djangopackages.org://packages/{slug} resource"""
+    async with Client(mcp) as client:
+        result = await client.read_resource(
+            "djangopackages.org://packages/django-debug-toolbar"
+        )
+        assert result is not None
+        assert len(result) > 0
+
+
+async def test_get_grids_resource(mock_packages_grids_api):
+    """Test djangopackages.org://grids resource"""
+    async with Client(mcp) as client:
+        result = await client.read_resource("djangopackages.org://grids")
+        assert result is not None
+        assert len(result) > 0
+
+
+async def test_get_grid_detail_resource(mock_packages_grid_detail_api):
+    """Test djangopackages.org://grids/{slug} resource"""
+    async with Client(mcp) as client:
+        result = await client.read_resource(
+            "djangopackages.org://grids/rest-frameworks"
+        )
+        assert result is not None
+        assert len(result) > 0
+
+
+async def test_get_categories_resource(mock_packages_categories_api):
+    """Test djangopackages.org://categories resource"""
+    async with Client(mcp) as client:
+        result = await client.read_resource("djangopackages.org://categories")
+        assert result is not None
+        assert len(result) > 0
+
+
+async def test_get_category_detail_resource(mock_packages_category_detail_api):
+    """Test djangopackages.org://categories/{slug} resource"""
+    async with Client(mcp) as client:
+        result = await client.read_resource("djangopackages.org://categories/apps")
+        assert result is not None
+        assert len(result) > 0
+
+
+async def test_search_djangopackages_tool(mock_packages_search_single_api):
+    """Test search_djangopackages tool"""
+    async with Client(mcp) as client:
+        result = await client.call_tool(
+            Tool.SEARCH_DJANGOPACKAGES, {"query": "authentication"}
+        )
+
+        assert result.data is not None
+        assert len(result.data.results) > 0
+        assert result.data.count > 0
+        assert result.data.has_more is False
+
+
+async def test_search_djangopackages_tool_with_pagination(respx_mock: MockRouter):
+    mock_search_response = [
+        {
+            "id": i,
+            "title": f"package-{i}",
+            "slug": f"package-{i}",
+            "description": "Test package",
+            "category": "App",
+            "item_type": "package",
+            "repo_watchers": 100,
+            "last_committed": None,
+        }
+        for i in range(1, 16)
+    ]
+
+    respx_mock.get("https://djangopackages.org/api/v4/search/").mock(
+        return_value=httpx.Response(200, json=mock_search_response)
+    )
+
+    for i in range(1, 6):
+        respx_mock.get(f"https://djangopackages.org/api/v4/packages/package-{i}/").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "id": i,
+                    "title": f"package-{i}",
+                    "slug": f"package-{i}",
+                    "category": "https://djangopackages.org/api/v4/categories/1/",
+                    "grids": [],
+                    "repo_description": "Test package",
+                    "repo_watchers": 100,
+                },
+            )
+        )
+
+    async with Client(mcp) as client:
+        result = await client.call_tool(
+            Tool.SEARCH_DJANGOPACKAGES,
+            {"query": "test", "max_results": 5, "offset": 0},
+        )
+
+        assert result.data is not None
+        assert len(result.data.results) == 5
+        assert result.data.count == 15
+        assert result.data.has_more is True
+        assert result.data.next_offset == 5

@@ -160,13 +160,12 @@ mcp-django provides an MCP server with Django project exploration resources and 
 It wouldn't be an MCP server README without a gratuitous list of features punctuated by emojis, so:
 
 - 🔍 **Project exploration** - MCP resources for discovering apps, models, and configuration
+- 📦 **Package discovery** - Search and browse Django Packages for third-party packages
 - 🚀 **Zero configuration** - No schemas, no settings, just Django
 - 🐚 **Stateful shell** - `django_shell` executes Python code in your Django environment
 - 🔄 **Persistent state** - Imports and variables stick around between calls
 - 🧹 **Reset when needed** - `shell(action="reset")` clears the session when things get weird
 - 🤖 **LLM-friendly** - Designed for LLM assistants that already know Python
-- 📦 **Minimal dependencies** - Just FastMCP and Django (you already have Django)
-- 🎯 **Does one thing well** - Runs code. That's it. That's the feature.
 - 🌐 **Multiple transports** - STDIO, HTTP, SSE support
 
 Inspired by Armin Ronacher's [Your MCP Doesn't Need 30 Tools: It Needs Code](https://lucumr.pocoo.org/2025/8/18/code-mcps/).
@@ -175,17 +174,26 @@ Inspired by Armin Ronacher's [Your MCP Doesn't Need 30 Tools: It Needs Code](htt
 
 Read-only resources are provided for project exploration without executing code (note that resource support varies across MCP clients):
 
+**Django Project Resources:**
 - `django://project` - Python environment and Django configuration details
 - `django://apps` - All installed Django applications with their models
 - `django://models` - Detailed model information with import paths and field types
+
+**Django Packages Resources:**
+- `djangopackages.org://packages/{slug}` - Detailed information about a specific package
+- `djangopackages.org://grids` - List all package comparison grids
+- `djangopackages.org://grids/{slug}` - Specific grid with packages (e.g., "rest-frameworks")
+- `djangopackages.org://categories` - List all package categories
+- `djangopackages.org://categories/{slug}` - Specific category details
 
 The idea is to give just enough information about the project to hopefully guide the LLM assistant and prevent needless shell exploration, allowing it to get straight to work.
 
 ### Tools
 
-Two tools provide shell operations and route introspection:
+Three tools provide shell operations, route introspection, and package discovery:
 
 - `list_routes` - Introspect URL routes and view handlers with filtering support
+- `search_djangopackages` - Search Django Packages for third-party packages
 - `shell` - Execute Python code in a persistent Django shell session or reset the session
 
 Imports and variables persist between calls within the shell tool, so the LLM can work iteratively - exploring your models, testing queries, debugging issues.
@@ -202,6 +210,21 @@ Examples:
 - "What routes are protected by authentication?"
 
 Each route includes URL pattern, name, namespace, view details (name, type, source file), supported HTTP methods, and class bases for CBVs.
+
+#### search_djangopackages
+
+Search [Django Packages](https://djangopackages.org) for third-party packages when you need to discover packages for common Django tasks.
+
+Examples:
+
+- "Find me a good authentication package for social logins"
+- "What are the popular REST API frameworks for Django?"
+- "I need a package for handling async tasks"
+- "Show me admin interface packages"
+
+Results include package metadata like GitHub stars, PyPI info, documentation links, and comparison grid memberships. The search tool supports pagination for large result sets.
+
+Responses are cached locally using Django's file-based cache to minimize requests to the Django Packages API.
 
 ## Development
 

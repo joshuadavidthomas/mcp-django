@@ -13,6 +13,7 @@ dev = [
   "pytest-django>=4.10.0",
   "pytest-randomly>=3.16.0",
   "pytest-xdist>=3.8.0",
+  "respx>=0.21.1",
   "ruff>=0.12.9",
 ]
 types = [
@@ -70,6 +71,8 @@ classifiers = [
 dependencies = [
   "django>4.2",
   "fastmcp>=2.11.3",
+  "httpx>=0.28.1",
+  "platformdirs>=4.5.0",
   "pydantic[email]>=2.11.7",
 ]
 description = "A Model Context Protocol (MCP) server for Django integration with LLM assistants."
