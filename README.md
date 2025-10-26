@@ -162,7 +162,7 @@ It wouldn't be an MCP server README without a gratuitous list of features punctu
 - 🔍 **Project exploration** - MCP resources for discovering apps, models, and configuration
 - 📦 **Package discovery** - Search and browse Django Packages for third-party packages
 - 🚀 **Zero configuration** - No schemas, no settings, just Django
-- 🐚 **Stateful shell** - `django_shell` executes Python code in your Django environment
+- 🐚 **Stateful shell** - `shell` executes Python code in your Django environment
 - 🔄 **Persistent state** - Imports and variables stick around between calls
 - 🧹 **Reset when needed** - `shell(action="reset")` clears the session when things get weird
 - 🤖 **LLM-friendly** - Designed for LLM assistants that already know Python
@@ -172,37 +172,39 @@ Inspired by Armin Ronacher's [Your MCP Doesn't Need 30 Tools: It Needs Code](htt
 
 ### Resources
 
-Read-only resources are provided for project exploration without executing code (note that resource support varies across MCP clients):
+Read-only resources for project exploration without executing code (note that resource support varies across MCP clients):
 
 **Django Project Resources:**
-- `django://project` - Python environment and Django configuration details
-- `django://apps` - All installed Django applications with their models
-- `django://models` - Detailed model information with import paths and field types
+
+| Resource | Description |
+|----------|-------------|
+| `django://project` | Python environment and Django configuration details |
+| `django://apps` | All installed Django applications with their models |
+| `django://models` | Detailed model information with import paths and field types |
 
 **Django Packages Resources:**
-- `djangopackages.org://packages/{slug}` - Detailed information about a specific package
-- `djangopackages.org://grids` - List all package comparison grids
-- `djangopackages.org://grids/{slug}` - Specific grid with packages (e.g., "rest-frameworks")
-- `djangopackages.org://categories` - List all package categories
-- `djangopackages.org://categories/{slug}` - Specific category details
 
-The idea is to give just enough information about the project to hopefully guide the LLM assistant and prevent needless shell exploration, allowing it to get straight to work.
+| Resource | Description |
+|----------|-------------|
+| `djangopackages.org://packages/{slug}` | Detailed information about a specific package |
+| `djangopackages.org://grids` | List all package comparison grids |
+| `djangopackages.org://grids/{slug}` | Specific grid with packages (e.g., "rest-frameworks") |
+| `djangopackages.org://categories` | List all package categories |
+| `djangopackages.org://categories/{slug}` | Specific category details |
 
 ### Tools
 
-Three tools provide shell operations, route introspection, and package discovery:
+| Tool | Description |
+|------|-------------|
+| [`list_routes`](#list_routes) | Introspect Django URL routes with filtering support for HTTP method, route name, or URL pattern |
+| [`search_djangopackages`](#search_djangopackages) | Search Django Packages for third-party packages with pagination support |
+| [`shell`](#shell) | Execute Python code in a persistent Django shell session with imports and variables that persist between calls |
 
-- `list_routes` - Introspect URL routes and view handlers with filtering support
-- `search_djangopackages` - Search Django Packages for third-party packages
-- `shell` - Execute Python code in a persistent Django shell session or reset the session
+#### `list_routes`
 
-Imports and variables persist between calls within the shell tool, so the LLM can work iteratively - exploring your models, testing queries, debugging issues.
+Introspect all Django URL routes in your project. Filter by HTTP method, route name, or URL pattern to find specific endpoints.
 
-#### list_routes
-
-Introspect all Django URL routes in your project. Able to filter by HTTP method, route name, or URL pattern to find specific endpoints.
-
-Examples:
+**Example prompts:**
 
 - "Where should I add the new password reset endpoint?"
 - "Which view handles user profile updates?"
@@ -211,11 +213,11 @@ Examples:
 
 Each route includes URL pattern, name, namespace, view details (name, type, source file), supported HTTP methods, and class bases for CBVs.
 
-#### search_djangopackages
+#### `search_djangopackages`
 
 Search [Django Packages](https://djangopackages.org) for third-party packages when you need to discover packages for common Django tasks.
 
-Examples:
+**Example prompts:**
 
 - "Find me a good authentication package for social logins"
 - "What are the popular REST API frameworks for Django?"
@@ -225,6 +227,19 @@ Examples:
 Results include package metadata like GitHub stars, PyPI info, documentation links, and comparison grid memberships. The search tool supports pagination for large result sets.
 
 Responses are cached locally using Django's file-based cache to minimize requests to the Django Packages API.
+
+#### `shell`
+
+Execute Python code in a persistent Django shell session or reset the session.
+
+Imports and variables persist between calls, allowing the LLM to work iteratively - exploring your models, testing queries, debugging issues. Reset the session with `shell(action="reset")` when things get weird.
+
+**Example prompts:**
+
+- "Show me all users created in the last week"
+- "Create a test blog post with some sample data"
+- "What's the average order value for premium customers?"
+- "Run a migration status check"
 
 ## Development
 
