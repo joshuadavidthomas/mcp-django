@@ -234,11 +234,12 @@ Execute Python code in a persistent Django shell session or reset the session.
 
 Imports and variables persist between calls, allowing the LLM to work iteratively - exploring your models, testing queries, debugging issues. Reset the session with `shell(action="reset")` when things get weird.
 
-**Key features:**
+**Example prompts:**
 
-- Stateful shell executes Python code in your Django environment
-- Persistent state - imports and variables stick around between calls
-- LLM-friendly - designed for LLM assistants that already know Python
+- "Show me all users created in the last week"
+- "Create a test blog post with some sample data"
+- "What's the average order value for premium customers?"
+- "Run a migration status check"
 
 ## Development
 
