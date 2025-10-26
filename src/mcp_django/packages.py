@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 from django.core.cache.backends.filebased import FileBasedCache
@@ -114,16 +115,14 @@ def normalize_category(category: str | None) -> str:
     if not category:
         return ""
 
-    if category.startswith("http"):
-        # Extract ID from URL like "https://.../categories/1/"
-        category_id = category.rstrip("/").split("/")[-1]
+    parsed = urlparse(category)
+    if parsed.scheme and parsed.netloc:
+        category_id = parsed.path.rstrip("/").split("/")[-1]
         return CATEGORY_ID_TO_SLUG.get(category_id, "")
 
-    # Handle title format: map to slug
     if category in CATEGORY_TITLE_TO_SLUG:
         return CATEGORY_TITLE_TO_SLUG[category]
 
-    # Assume it's already a slug or return lowercase version
     return category.lower()
 
 
