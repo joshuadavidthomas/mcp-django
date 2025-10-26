@@ -174,11 +174,18 @@ Inspired by Armin Ronacher's [Your MCP Doesn't Need 30 Tools: It Needs Code](htt
 
 Read-only resources for project exploration without executing code (note that resource support varies across MCP clients):
 
+**Django Project Resources:**
+
 | Resource | Description |
 |----------|-------------|
 | `django://project` | Python environment and Django configuration details |
 | `django://apps` | All installed Django applications with their models |
 | `django://models` | Detailed model information with import paths and field types |
+
+**Django Packages Resources:**
+
+| Resource | Description |
+|----------|-------------|
 | `djangopackages.org://packages/{slug}` | Detailed information about a specific package |
 | `djangopackages.org://grids` | List all package comparison grids |
 | `djangopackages.org://grids/{slug}` | Specific grid with packages (e.g., "rest-frameworks") |
@@ -193,13 +200,12 @@ Read-only resources for project exploration without executing code (note that re
 | [`search_djangopackages`](#search_djangopackages) | Search Django Packages for third-party packages with pagination support |
 | [`shell`](#shell) | Execute Python code in a persistent Django shell session with imports and variables that persist between calls |
 
----
-
-#### list_routes
+#### `list_routes`
 
 Introspect all Django URL routes in your project. Filter by HTTP method, route name, or URL pattern to find specific endpoints.
 
 **Example prompts:**
+
 - "Where should I add the new password reset endpoint?"
 - "Which view handles user profile updates?"
 - "Show me the URL pattern for blog posts so I can add comments"
@@ -207,11 +213,12 @@ Introspect all Django URL routes in your project. Filter by HTTP method, route n
 
 Each route includes URL pattern, name, namespace, view details (name, type, source file), supported HTTP methods, and class bases for CBVs.
 
-#### search_djangopackages
+#### `search_djangopackages`
 
 Search [Django Packages](https://djangopackages.org) for third-party packages when you need to discover packages for common Django tasks.
 
 **Example prompts:**
+
 - "Find me a good authentication package for social logins"
 - "What are the popular REST API frameworks for Django?"
 - "I need a package for handling async tasks"
@@ -221,13 +228,14 @@ Results include package metadata like GitHub stars, PyPI info, documentation lin
 
 Responses are cached locally using Django's file-based cache to minimize requests to the Django Packages API.
 
-#### shell
+#### `shell`
 
 Execute Python code in a persistent Django shell session or reset the session.
 
 Imports and variables persist between calls, allowing the LLM to work iteratively - exploring your models, testing queries, debugging issues. Reset the session with `shell(action="reset")` when things get weird.
 
 **Key features:**
+
 - Stateful shell executes Python code in your Django environment
 - Persistent state - imports and variables stick around between calls
 - LLM-friendly - designed for LLM assistants that already know Python
