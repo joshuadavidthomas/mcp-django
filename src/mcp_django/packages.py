@@ -13,20 +13,6 @@ from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
-CATEGORY_ID_TO_SLUG = {
-    "1": "apps",
-    "2": "frameworks",
-    "3": "projects",
-    "4": "other",
-}
-
-CATEGORY_TITLE_TO_SLUG = {
-    "App": "apps",
-    "Framework": "frameworks",
-    "Project": "projects",
-    "Other": "other",
-}
-
 
 class PackageResource(BaseModel):
     id: int
@@ -97,35 +83,6 @@ class PackageResource(BaseModel):
         )
 
 
-def normalize_category(category: str | None) -> str:
-    """Normalize category to slug format.
-
-    Handles three formats:
-    - URL: "https://djangopackages.org/api/v4/categories/1/" -> "apps"
-    - Title: "App" -> "apps"
-    - Slug: "apps" -> "apps"
-    - None/empty: "" -> ""
-
-    Args:
-        category: Category string in any format
-
-    Returns:
-        Category slug (e.g., "apps", "frameworks", "projects", "other")
-    """
-    if not category:
-        return ""
-
-    parsed = urlparse(category)
-    if parsed.scheme and parsed.netloc:
-        category_id = parsed.path.rstrip("/").split("/")[-1]
-        return CATEGORY_ID_TO_SLUG.get(category_id, "")
-
-    if category in CATEGORY_TITLE_TO_SLUG:
-        return CATEGORY_TITLE_TO_SLUG[category]
-
-    return category.lower()
-
-
 class PackageDetailResource(BaseModel):
     id: int
     title: str
@@ -168,6 +125,50 @@ class CategoryResource(BaseModel):
     show_pypi: bool
     created: str
     modified: str
+
+
+CATEGORY_ID_TO_SLUG = {
+    "1": "apps",
+    "2": "frameworks",
+    "3": "projects",
+    "4": "other",
+}
+
+CATEGORY_TITLE_TO_SLUG = {
+    "App": "apps",
+    "Framework": "frameworks",
+    "Project": "projects",
+    "Other": "other",
+}
+
+
+def normalize_category(category: str | None) -> str:
+    """Normalize category to slug format.
+
+    Handles three formats:
+    - URL: "https://djangopackages.org/api/v4/categories/1/" -> "apps"
+    - Title: "App" -> "apps"
+    - Slug: "apps" -> "apps"
+    - None/empty: "" -> ""
+
+    Args:
+        category: Category string in any format
+
+    Returns:
+        Category slug (e.g., "apps", "frameworks", "projects", "other")
+    """
+    if not category:
+        return ""
+
+    parsed = urlparse(category)
+    if parsed.scheme and parsed.netloc:
+        category_id = parsed.path.rstrip("/").split("/")[-1]
+        return CATEGORY_ID_TO_SLUG.get(category_id, "")
+
+    if category in CATEGORY_TITLE_TO_SLUG:
+        return CATEGORY_TITLE_TO_SLUG[category]
+
+    return category.lower()
 
 
 class SearchResultsResource(BaseModel):
