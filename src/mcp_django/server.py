@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Annotated
+from typing import Any
 from typing import Literal
 
 from django.apps import apps
@@ -13,11 +15,6 @@ from .code import filter_existing_imports
 from .code import parse_code
 from .output import DjangoShellOutput
 from .output import ErrorOutput
-from .packages import CategoryResource
-from .packages import DjangoPackagesClient
-from .packages import GridResource
-from .packages import PackageDetailResource
-from .packages import SearchResultsResource
 from .resources import AppResource
 from .resources import ModelResource
 from .resources import ProjectResource
@@ -26,76 +23,68 @@ from .routing import ViewMethod
 from .routing import filter_routes
 from .routing import get_all_routes
 from .shell import django_shell
+from .toolsets import TOOLSETS
 
 logger = logging.getLogger(__name__)
 
-mcp = FastMCP(
-    name="Django",
-    instructions="""Provides Django resource endpoints for project exploration and a stateful shell environment for executing Python code.
 
-RESOURCES:
-Use resources for orientation. Resources provide precise coordinates (import paths, file
-locations) to avoid exploration overhead.
+class DjangoMCP:
+    NAME = "Django"
+    INSTRUCTIONS = "Provides Django project exploration and management tools, including a stateful shell environment for executing Python code."
 
-- django://project - Python/Django environment metadata (versions, settings, database config)
-- django://apps - All Django apps with their file paths
-- django://models - All models with import paths and source locations
-- djangopackages.org://packages/{slug} - Detailed info about a specific package
-- djangopackages.org://grids - List all package comparison grids
-- djangopackages.org://grids/{slug} - Specific grid with packages (e.g., "rest-frameworks")
-- djangopackages.org://categories - List all package categories
-- djangopackages.org://categories/{slug} - Specific category details
+    def __init__(self) -> None:
+        instructions = [self.INSTRUCTIONS]
 
-TOOLS:
-- list_routes - List all URL routes with filtering by method, name, or pattern
-- search_djangopackages - Search Django Packages (djangopackages.org) for third-party packages.
-  Use when discovering packages for authentication, admin, REST APIs, forms, caching, testing,
-  deployment, etc. Supports pagination via offset parameter.
-- shell - Execute Python code in a stateful Django shell or reset the session. The shell maintains
-  state between calls - imports and variables persist. Use shell with action='reset' to clear
-  state when variables get messy or you need a fresh start.
+        instructions.append("## Available Toolsets")
+        for toolset_server in TOOLSETS.values():
+            instructions.append(f"### {toolset_server.name}")
+            if toolset_server.instructions:
+                instructions.append(toolset_server.instructions)
 
-EXAMPLES:
-The pattern: Resource → Import Path → Shell Operation.
+        self._server = mcp = FastMCP(
+            name=self.NAME, instructions="\n\n".join(instructions)
+        )
 
-Resources provide coordinates, shell does the work.
+    @property
+    def server(self) -> FastMCP:
+        return self._server
 
-- Starting fresh? → Check django://project to understand environment and available apps
-- Need information about a model? → Check django://models → Get import path →
-  `from app.models import ModelName` in django_shell
-- Need app structure? → Check django://apps for app labels and paths → Use paths in django_shell
-- Need to query data? → Get model from django://models → Import in django_shell → Run queries
-- Need to find a URL route? → Use list_routes with filters to find specific routes
-- Need to reset the shell? → Use shell with action='reset' to clear all variables and imports
-- Looking for auth packages? → search_djangopackages(query="authentication")
-- Comparing REST frameworks? → Get djangopackages.org://grids/rest-frameworks
-- Need package details? → Get djangopackages.org://packages/django-debug-toolbar
-""",
+    async def initialize(self):
+        for toolset_prefix, toolset_server in TOOLSETS.items():
+            await self._server.import_server(toolset_server, prefix=toolset_prefix)
+
+    def run(self, **kwargs: Any):
+        asyncio.run(self.initialize())
+        self._server.run(**kwargs)
+
+
+mcp = DjangoMCP()
+
+
+@mcp.server.tool(
+    annotations=ToolAnnotations(
+        title="Get Django Project Information",
+        readOnlyHint=True,
+        idempotentHint=True,
+    ),
 )
-
-
-@mcp.resource(
-    "django://project",
-    name="Django Project Information",
-    mime_type="application/json",
-    annotations={"readOnlyHint": True, "idempotentHint": True},
-)
-def get_project() -> ProjectResource:
+async def get_project(ctx: Context) -> ProjectResource:
     """Get comprehensive project information including Python environment and Django configuration.
 
-    Use this to understand the project's runtime environment, installed apps, and database
+    Returns metadata about the project's runtime environment, installed apps, and database
     configuration.
     """
     return ProjectResource.from_env()
 
 
-@mcp.resource(
-    "django://apps",
-    name="Installed Django Apps",
-    mime_type="application/json",
-    annotations={"readOnlyHint": True, "idempotentHint": True},
+@mcp.server.tool(
+    annotations=ToolAnnotations(
+        title="Get Installed Django Apps",
+        readOnlyHint=True,
+        idempotentHint=True,
+    ),
 )
-def get_apps() -> list[AppResource]:
+async def get_apps(ctx: Context) -> list[AppResource]:
     """Get a list of all installed Django applications with their models.
 
     Use this to explore the project structure and available models without executing code.
@@ -103,98 +92,23 @@ def get_apps() -> list[AppResource]:
     return [AppResource.from_app(app) for app in apps.get_app_configs()]
 
 
-@mcp.resource(
-    "django://models",
-    name="Django Models",
-    mime_type="application/json",
-    annotations={"readOnlyHint": True, "idempotentHint": True},
+@mcp.server.tool(
+    annotations=ToolAnnotations(
+        title="Get Django Models",
+        readOnlyHint=True,
+        idempotentHint=True,
+    ),
 )
-def get_models() -> list[ModelResource]:
+async def get_models(ctx: Context) -> list[ModelResource]:
     """Get detailed information about all Django models in the project.
 
-    Use this for quick model introspection without shell access.
+    Returns comprehensive model information including import paths, source locations,
+    and field definitions.
     """
     return [ModelResource.from_model(model) for model in apps.get_models()]
 
 
-@mcp.resource(
-    "djangopackages.org://packages/{slug}",
-    name="Django Package Details",
-    mime_type="application/json",
-    annotations={"readOnlyHint": True, "idempotentHint": True},
-)
-async def get_package_detail(slug: str) -> PackageDetailResource:
-    """Get detailed information about a specific Django package.
-
-    Provides comprehensive package metadata including repository stats,
-    PyPI information, documentation links, and grid memberships.
-    """
-    async with DjangoPackagesClient() as client:
-        return await client.get_package(slug)
-
-
-@mcp.resource(
-    "djangopackages.org://grids",
-    name="Django Package Grids",
-    mime_type="application/json",
-    annotations={"readOnlyHint": True, "idempotentHint": True},
-)
-async def get_grids() -> list[GridResource]:
-    """List all Django Packages comparison grids.
-
-    Grids are curated comparisons of packages in specific categories like
-    "REST frameworks", "Admin interfaces", "Authentication", etc. Use these
-    to explore and compare related packages.
-    """
-    async with DjangoPackagesClient() as client:
-        return await client.list_grids()
-
-
-@mcp.resource(
-    "djangopackages.org://grids/{slug}",
-    name="Django Package Grid Details",
-    mime_type="application/json",
-    annotations={"readOnlyHint": True, "idempotentHint": True},
-)
-async def get_grid_detail(slug: str) -> GridResource:
-    """Get a specific comparison grid with all its packages.
-
-    Returns detailed information about a grid including all packages
-    that belong to it, allowing for easy comparison of similar tools.
-    """
-    async with DjangoPackagesClient() as client:
-        return await client.get_grid(slug)
-
-
-@mcp.resource(
-    "djangopackages.org://categories",
-    name="Django Package Categories",
-    mime_type="application/json",
-    annotations={"readOnlyHint": True, "idempotentHint": True},
-)
-async def get_categories() -> list[CategoryResource]:
-    """List all Django Packages categories.
-
-    Categories organize packages into broad types like "Apps" (installable
-    Django applications) and "Projects" (complete Django projects).
-    """
-    async with DjangoPackagesClient() as client:
-        return await client.list_categories()
-
-
-@mcp.resource(
-    "djangopackages.org://categories/{slug}",
-    name="Django Package Category Details",
-    mime_type="application/json",
-    annotations={"readOnlyHint": True, "idempotentHint": True},
-)
-async def get_category_detail(slug: str) -> CategoryResource:
-    """Get details about a specific package category."""
-    async with DjangoPackagesClient() as client:
-        return await client.get_category(slug)
-
-
-@mcp.tool(
+@mcp.server.tool(
     annotations=ToolAnnotations(
         title="Django Shell", destructiveHint=True, openWorldHint=True
     ),
@@ -313,7 +227,7 @@ async def shell(
                 raise
 
 
-@mcp.tool(
+@mcp.server.tool(
     annotations=ToolAnnotations(
         title="List Django Routes", readOnlyHint=True, idempotentHint=True
     ),
@@ -365,67 +279,3 @@ async def list_routes(
     )
 
     return filtered
-
-
-@mcp.tool(
-    annotations=ToolAnnotations(
-        title="Search Django Packages",
-        readOnlyHint=True,
-        idempotentHint=True,
-    ),
-)
-async def search_djangopackages(
-    ctx: Context,
-    query: Annotated[
-        str,
-        "Search term for packages (e.g., 'authentication', 'REST API', 'admin')",
-    ],
-    max_results: Annotated[
-        int, "Maximum number of results to return (default: 10)"
-    ] = 10,
-    offset: Annotated[
-        int,
-        "Offset for pagination, use next_offset from previous response (default: 0)",
-    ] = 0,
-) -> SearchResultsResource:
-    """Search Django Packages for third-party packages.
-
-    Use this when you need packages for common Django tasks like authentication,
-    admin interfaces, REST APIs, forms, caching, testing, deployment, etc.
-
-    Django Packages (djangopackages.org) is a curated directory of reusable Django
-    apps, sites, and tools. Each package includes metadata like GitHub stars, PyPI
-    info, documentation links, and which comparison grids it appears in.
-
-    For browsing by category or grid, use the djangopackages.org:// resources:
-    - djangopackages.org://grids - Browse comparison grids like "REST frameworks"
-    - djangopackages.org://categories - Browse categories like "Apps"
-
-    Examples:
-    - search_djangopackages(query="authentication") - Find auth packages
-    - search_djangopackages(query="REST API") - Find REST framework packages
-    - search_djangopackages(query="admin", max_results=5) - Find admin tools
-    - search_djangopackages(query="forms", offset=10) - Get next page of results
-    """
-    logger.info(
-        "search_djangopackages called - request_id: %s, query: %s, max_results: %d, offset: %d",
-        ctx.request_id,
-        query,
-        max_results,
-        offset,
-    )
-
-    async with DjangoPackagesClient() as client:
-        results = await client.search_packages(
-            query=query,
-            limit=max_results,
-            offset=offset,
-        )
-
-    logger.debug(
-        "search_djangopackages completed - request_id: %s, results: %d",
-        ctx.request_id,
-        len(results.results),
-    )
-
-    return results

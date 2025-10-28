@@ -32,31 +32,13 @@ async def reset_client_session():
         await client.call_tool(Tool.SHELL, {"action": "reset"})
 
 
-async def test_instructions_match_registered_items():
+async def test_instructions_match_registered_tools():
     async with Client(mcp) as client:
-        resources = await client.list_resources()
-        templates = await client.list_resource_templates()
         tools = await client.list_tools()
 
         instructions = mcp.instructions
 
         assert instructions is not None
-
-        for resource in resources:
-            uri = str(resource.uri)
-            pattern = rf"\b{re.escape(uri)}\b"
-            assert re.search(pattern, instructions), (
-                f"Resource {uri} not found in instructions"
-            )
-
-        for template in templates:
-            uri = template.uriTemplate
-            # Escape the template but keep the placeholders as wildcards
-            # django://apps/{app_label} -> django://apps/\{app_label\}
-            pattern = re.escape(uri)
-            assert re.search(pattern, instructions), (
-                f"Resource template {uri} not found in instructions"
-            )
 
         for tool in tools:
             pattern = rf"\b{re.escape(tool.name)}\b"
@@ -78,24 +60,24 @@ async def test_tool_listing():
         assert "Useful exploration commands:" in django_shell_tool.description
 
 
-async def test_get_apps_resource():
+async def test_get_apps_tool():
     async with Client(mcp) as client:
-        result = await client.read_resource("django://apps")
-        assert result is not None
-        assert len(result) > 0
+        result = await client.call_tool("get_apps", {})
+        assert result.data is not None
+        assert len(result.data) > 0
 
 
-async def test_get_models_resource():
+async def test_get_models_tool():
     async with Client(mcp) as client:
-        result = await client.read_resource("django://models")
-        assert result is not None
-        assert len(result) > 0
+        result = await client.call_tool("get_models", {})
+        assert result.data is not None
+        assert len(result.data) > 0
 
 
-async def test_get_project_resource_no_auth():
+async def test_get_project_tool_no_auth():
     async with Client(mcp) as client:
-        result = await client.read_resource("django://project")
-        assert result is not None
+        result = await client.call_tool("get_project", {})
+        assert result.data is not None
 
 
 async def test_django_shell_tool():
@@ -259,10 +241,10 @@ async def test_django_reset_session():
         "django.contrib.contenttypes",
     ]
 )
-async def test_project_resource_with_auth():
+async def test_project_tool_with_auth():
     async with Client(mcp) as client:
-        result = await client.read_resource("django://project")
-        assert result is not None
+        result = await client.call_tool("get_project", {})
+        assert result.data is not None
 
 
 async def test_list_routes_tool_returns_routes():
@@ -288,48 +270,43 @@ async def test_list_routes_tool_with_filters():
             assert isinstance(pattern_routes.data, list)
 
 
-async def test_get_package_detail_resource(mock_packages_package_detail_api):
-    """Test djangopackages.org://packages/{slug} resource"""
+async def test_get_package_detail_tool(mock_packages_package_detail_api):
+    """Test get_package_detail tool"""
     async with Client(mcp) as client:
-        result = await client.read_resource(
-            "djangopackages.org://packages/django-debug-toolbar"
+        result = await client.call_tool(
+            "get_package_detail", {"slug": "django-debug-toolbar"}
         )
-        assert result is not None
-        assert len(result) > 0
+        assert result.data is not None
 
 
-async def test_get_grids_resource(mock_packages_grids_api):
-    """Test djangopackages.org://grids resource"""
+async def test_get_grids_tool(mock_packages_grids_api):
+    """Test get_grids tool"""
     async with Client(mcp) as client:
-        result = await client.read_resource("djangopackages.org://grids")
-        assert result is not None
-        assert len(result) > 0
+        result = await client.call_tool("get_grids", {})
+        assert result.data is not None
+        assert len(result.data) > 0
 
 
-async def test_get_grid_detail_resource(mock_packages_grid_detail_api):
-    """Test djangopackages.org://grids/{slug} resource"""
+async def test_get_grid_detail_tool(mock_packages_grid_detail_api):
+    """Test get_grid_detail tool"""
     async with Client(mcp) as client:
-        result = await client.read_resource(
-            "djangopackages.org://grids/rest-frameworks"
-        )
-        assert result is not None
-        assert len(result) > 0
+        result = await client.call_tool("get_grid_detail", {"slug": "rest-frameworks"})
+        assert result.data is not None
 
 
-async def test_get_categories_resource(mock_packages_categories_api):
-    """Test djangopackages.org://categories resource"""
+async def test_get_categories_tool(mock_packages_categories_api):
+    """Test get_categories tool"""
     async with Client(mcp) as client:
-        result = await client.read_resource("djangopackages.org://categories")
-        assert result is not None
-        assert len(result) > 0
+        result = await client.call_tool("get_categories", {})
+        assert result.data is not None
+        assert len(result.data) > 0
 
 
-async def test_get_category_detail_resource(mock_packages_category_detail_api):
-    """Test djangopackages.org://categories/{slug} resource"""
+async def test_get_category_detail_tool(mock_packages_category_detail_api):
+    """Test get_category_detail tool"""
     async with Client(mcp) as client:
-        result = await client.read_resource("djangopackages.org://categories/apps")
-        assert result is not None
-        assert len(result) > 0
+        result = await client.call_tool("get_category_detail", {"slug": "apps"})
+        assert result.data is not None
 
 
 async def test_search_djangopackages_tool(mock_packages_search_single_api):

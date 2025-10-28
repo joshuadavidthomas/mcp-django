@@ -19,7 +19,7 @@ cog.outl(f"![Django Version](https://img.shields.io/badge/django-{'%20%7C%20'.jo
 ![Django Version](https://img.shields.io/badge/django-4.2%20%7C%205.1%20%7C%205.2%20%7C%206.0%20%7C%20main-%2344B78B?labelColor=%23092E20)
 <!-- [[[end]]] -->
 
-A Model Context Protocol (MCP) server providing Django project exploration resources and optional stateful shell access for LLM assistants to interact with Django projects.
+A Model Context Protocol (MCP) server providing Django project exploration tools and stateful shell access for LLM assistants to interact with Django projects.
 
 ## Requirements
 
@@ -155,11 +155,11 @@ Don't see your client? [Submit a PR](CONTRIBUTING.md) with setup instructions.
 
 ## Features
 
-mcp-django provides an MCP server with Django project exploration resources and stateful shell access for LLM assistants.
+mcp-django provides an MCP server with Django project exploration tools and stateful shell access for LLM assistants.
 
 It wouldn't be an MCP server README without a gratuitous list of features punctuated by emojis, so:
 
-- 🔍 **Project exploration** - MCP resources for discovering apps, models, and configuration
+- 🔍 **Project exploration** - Tools for discovering apps, models, and configuration
 - 📦 **Package discovery** - Search and browse Django Packages for third-party packages
 - 🚀 **Zero configuration** - No schemas, no settings, just Django
 - 🐚 **Stateful shell** - `shell` executes Python code in your Django environment
@@ -170,34 +170,24 @@ It wouldn't be an MCP server README without a gratuitous list of features punctu
 
 Inspired by Armin Ronacher's [Your MCP Doesn't Need 30 Tools: It Needs Code](https://lucumr.pocoo.org/2025/8/18/code-mcps/).
 
-### Resources
-
-Read-only resources for project exploration without executing code (note that resource support varies across MCP clients):
-
-**Django Project Resources:**
-
-| Resource | Description |
-|----------|-------------|
-| `django://project` | Python environment and Django configuration details |
-| `django://apps` | All installed Django applications with their models |
-| `django://models` | Detailed model information with import paths and field types |
-
-**Django Packages Resources:**
-
-| Resource | Description |
-|----------|-------------|
-| `djangopackages.org://packages/{slug}` | Detailed information about a specific package |
-| `djangopackages.org://grids` | List all package comparison grids |
-| `djangopackages.org://grids/{slug}` | Specific grid with packages (e.g., "rest-frameworks") |
-| `djangopackages.org://categories` | List all package categories |
-| `djangopackages.org://categories/{slug}` | Specific category details |
-
 ### Tools
 
 | Tool | Description |
 |------|-------------|
+| **Project Information** | |
+| [`get_project`](#get_project) | Get Python environment and Django configuration details |
+| [`get_apps`](#get_apps) | Get all installed Django applications with their models |
+| [`get_models`](#get_models) | Get detailed model information with import paths and field types |
+| **URL Routing** | |
 | [`list_routes`](#list_routes) | Introspect Django URL routes with filtering support for HTTP method, route name, or URL pattern |
+| **Django Packages** | |
 | [`search_djangopackages`](#search_djangopackages) | Search Django Packages for third-party packages with pagination support |
+| [`get_package_detail`](#get_package_detail) | Get detailed information about a specific package |
+| [`get_grids`](#get_grids) | List all package comparison grids |
+| [`get_grid_detail`](#get_grid_detail) | Get specific grid with packages (e.g., "rest-frameworks") |
+| [`get_categories`](#get_categories) | List all package categories |
+| [`get_category_detail`](#get_category_detail) | Get specific category details |
+| **Shell** | |
 | [`shell`](#shell) | Execute Python code in a persistent Django shell session with imports and variables that persist between calls |
 
 #### `list_routes`
@@ -227,6 +217,99 @@ Search [Django Packages](https://djangopackages.org) for third-party packages wh
 Results include package metadata like GitHub stars, PyPI info, documentation links, and comparison grid memberships. The search tool supports pagination for large result sets.
 
 Responses are cached locally using Django's file-based cache to minimize requests to the Django Packages API.
+
+#### `get_project`
+
+Get comprehensive information about your Python environment and Django configuration.
+
+**Example prompts:**
+
+- "What version of Django is this project using?"
+- "Show me the database configuration"
+- "What's the Python version and installed apps?"
+
+Returns Python version, Django version, installed apps, database settings, and debug mode status.
+
+#### `get_apps`
+
+Get all installed Django applications with their models.
+
+**Example prompts:**
+
+- "What apps are installed in this project?"
+- "Show me all the models in the blog app"
+- "List all custom apps (not Django contrib)"
+
+Returns app labels, names, paths, and associated models for each installed application.
+
+#### `get_models`
+
+Get detailed information about all Django models in the project.
+
+**Example prompts:**
+
+- "What models are available?"
+- "Show me the fields for the User model"
+- "What's the import path for the BlogPost model?"
+
+Returns model names, import paths, source file locations, and field type information.
+
+#### `get_package_detail`
+
+Get detailed information about a specific Django package from Django Packages.
+
+**Example prompts:**
+
+- "Tell me about django-debug-toolbar"
+- "Show me the stats for django-rest-framework"
+- "What grids is django-allauth part of?"
+
+Returns package metadata including repository stats, PyPI info, documentation links, and grid memberships.
+
+#### `get_grids`
+
+List all package comparison grids from Django Packages.
+
+**Example prompts:**
+
+- "What package comparison grids are available?"
+- "Show me all the grid categories"
+
+Grids are curated comparisons of packages in specific categories like "REST frameworks", "Admin interfaces", etc.
+
+#### `get_grid_detail`
+
+Get a specific comparison grid with all its packages.
+
+**Example prompts:**
+
+- "Show me all REST framework packages"
+- "What's in the admin interfaces grid?"
+- "Compare authentication packages"
+
+Returns detailed grid information including all member packages for easy comparison.
+
+#### `get_categories`
+
+List all package categories from Django Packages.
+
+**Example prompts:**
+
+- "What package categories exist?"
+- "Show me all category types"
+
+Categories organize packages into broad types like "Apps" (installable applications) and "Projects" (complete Django projects).
+
+#### `get_category_detail`
+
+Get details about a specific package category.
+
+**Example prompts:**
+
+- "Tell me about the Apps category"
+- "What's in the Projects category?"
+
+Returns category description, metadata, and details about the types of packages it contains.
 
 #### `shell`
 
