@@ -5,11 +5,11 @@ import logging
 import pytest
 from django.apps import apps
 
-from mcp_django.code import parse_code
-from mcp_django.shell import DjangoShell
-from mcp_django.shell import ErrorResult
-from mcp_django.shell import ExpressionResult
-from mcp_django.shell import StatementResult
+from mcp_django.shell.code import parse_code
+from mcp_django.shell.core import DjangoShell
+from mcp_django.shell.core import ErrorResult
+from mcp_django.shell.core import ExpressionResult
+from mcp_django.shell.core import StatementResult
 
 
 @pytest.fixture

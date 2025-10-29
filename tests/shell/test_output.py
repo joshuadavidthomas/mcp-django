@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import traceback
 
-from mcp_django.output import DjangoShellOutput
-from mcp_django.output import ErrorOutput
-from mcp_django.output import ExceptionOutput
-from mcp_django.output import ExecutionStatus
-from mcp_django.output import ExpressionOutput
-from mcp_django.shell import ErrorResult
-from mcp_django.shell import ExpressionResult
+from mcp_django.shell.core import ErrorResult
+from mcp_django.shell.core import ExpressionResult
+from mcp_django.shell.output import DjangoShellOutput
+from mcp_django.shell.output import ErrorOutput
+from mcp_django.shell.output import ExceptionOutput
+from mcp_django.shell.output import ExecutionStatus
+from mcp_django.shell.output import ExpressionOutput
 
 
 def test_django_shell_output_from_expression_result():
