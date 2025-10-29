@@ -34,12 +34,11 @@ For multi-package releases, use package names as subsections:
 
 ### Changed
 
-- Consolidated `shell_reset` tool into `shell` tool with new `action` parameter
+- Refactored shell tools into mounted toolset with `shell_` prefix
 
 ### Removed
 
 - Deprecated mcp-django-shell package deleted from repository
-- Removed `shell_reset` tool
 
 ## [0.10.0]
 
