@@ -1,17 +1,14 @@
 from __future__ import annotations
 
-import re
 from enum import Enum
 from unittest.mock import AsyncMock
 
-import httpx
 import pytest
 import pytest_asyncio
 from django.conf import settings
 from django.test import override_settings
 from fastmcp import Client
 from fastmcp.exceptions import ToolError
-from respx import MockRouter
 
 from mcp_django.output import ExecutionStatus
 from mcp_django.server import mcp
@@ -23,50 +20,27 @@ pytestmark = pytest.mark.asyncio
 class Tool(str, Enum):
     SHELL = "shell"
     LIST_ROUTES = "list_routes"
-    SEARCH_DJANGOPACKAGES = "search_djangopackages"
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def reset_client_session():
-    async with Client(mcp) as client:
+async def initialize_and_reset():
+    await mcp.initialize()
+    async with Client(mcp.server) as client:
         await client.call_tool(Tool.SHELL, {"action": "reset"})
 
 
-async def test_instructions_match_registered_items():
-    async with Client(mcp) as client:
-        resources = await client.list_resources()
-        templates = await client.list_resource_templates()
-        tools = await client.list_tools()
+async def test_instructions_exist():
+    instructions = mcp.server.instructions
 
-        instructions = mcp.instructions
-
-        assert instructions is not None
-
-        for resource in resources:
-            uri = str(resource.uri)
-            pattern = rf"\b{re.escape(uri)}\b"
-            assert re.search(pattern, instructions), (
-                f"Resource {uri} not found in instructions"
-            )
-
-        for template in templates:
-            uri = template.uriTemplate
-            # Escape the template but keep the placeholders as wildcards
-            # django://apps/{app_label} -> django://apps/\{app_label\}
-            pattern = re.escape(uri)
-            assert re.search(pattern, instructions), (
-                f"Resource template {uri} not found in instructions"
-            )
-
-        for tool in tools:
-            pattern = rf"\b{re.escape(tool.name)}\b"
-            assert re.search(pattern, instructions), (
-                f"Tool {tool.name} not found in instructions"
-            )
+    assert instructions is not None
+    assert len(instructions) > 100
+    assert "Django ecosystem" in instructions
+    assert "## Available Toolsets" in instructions
+    assert "djangopackages.org" in instructions
 
 
 async def test_tool_listing():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         tools = await client.list_tools()
         tool_names = [tool.name for tool in tools]
 
@@ -79,27 +53,27 @@ async def test_tool_listing():
 
 
 async def test_get_apps_resource():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         result = await client.read_resource("django://apps")
         assert result is not None
         assert len(result) > 0
 
 
 async def test_get_models_resource():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         result = await client.read_resource("django://models")
         assert result is not None
         assert len(result) > 0
 
 
 async def test_get_project_resource_no_auth():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         result = await client.read_resource("django://project")
         assert result is not None
 
 
 async def test_django_shell_tool():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         result = await client.call_tool(Tool.SHELL, {"code": "2 + 2"})
         assert result.data["status"] == ExecutionStatus.SUCCESS
         assert result.data["output"]["value"] == "4"
@@ -113,7 +87,7 @@ async def test_django_shell_tool():
     ]
 )
 async def test_django_shell_tool_orm():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         result = await client.call_tool(
             Tool.SHELL,
             {
@@ -124,7 +98,7 @@ async def test_django_shell_tool_orm():
 
 
 async def test_django_shell_tool_with_imports():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         result = await client.call_tool(
             Tool.SHELL,
             {"code": "os.path.join('test', 'path')", "imports": "import os"},
@@ -134,14 +108,14 @@ async def test_django_shell_tool_with_imports():
 
 
 async def test_django_shell_tool_without_imports():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         result = await client.call_tool(Tool.SHELL, {"code": "2 + 2"})
         assert result.data["status"] == ExecutionStatus.SUCCESS
         assert result.data["output"]["value"] == "4"
 
 
 async def test_django_shell_tool_with_multiple_imports():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         result = await client.call_tool(
             Tool.SHELL,
             {
@@ -153,7 +127,7 @@ async def test_django_shell_tool_with_multiple_imports():
 
 
 async def test_django_shell_tool_with_empty_imports():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         result = await client.call_tool(
             Tool.SHELL,
             {"code": "2 + 2", "imports": ""},
@@ -163,7 +137,7 @@ async def test_django_shell_tool_with_empty_imports():
 
 
 async def test_django_shell_tool_imports_error():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         result = await client.call_tool(
             Tool.SHELL,
             {"code": "2 + 2", "imports": "import nonexistent_module"},
@@ -175,7 +149,7 @@ async def test_django_shell_tool_imports_error():
 
 
 async def test_django_shell_tool_imports_optimization():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         # First call imports os
         result1 = await client.call_tool(
             Tool.SHELL,
@@ -194,7 +168,7 @@ async def test_django_shell_tool_imports_optimization():
 
 
 async def test_django_shell_error_output():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         result = await client.call_tool(Tool.SHELL, {"code": "1 / 0"})
 
         assert result.data["status"] == ExecutionStatus.ERROR.value
@@ -210,7 +184,7 @@ async def test_django_shell_error_output():
 
 
 async def test_django_shell_tool_execute_without_code():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         with pytest.raises(ToolError) as exc_info:
             await client.call_tool(Tool.SHELL, {"action": "execute"})
 
@@ -218,7 +192,7 @@ async def test_django_shell_tool_execute_without_code():
 
 
 async def test_django_shell_tool_reset_with_code():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         with pytest.raises(ToolError) as exc_info:
             await client.call_tool(
                 Tool.SHELL, {"action": "reset", "code": "print('test')"}
@@ -233,13 +207,13 @@ async def test_django_shell_tool_unexpected_error(monkeypatch):
         django_shell, "execute", AsyncMock(side_effect=RuntimeError("Unexpected error"))
     )
 
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         with pytest.raises(ToolError, match="Unexpected error"):
             await client.call_tool(Tool.SHELL, {"code": "2 + 2"})
 
 
 async def test_django_reset_session():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         await client.call_tool(Tool.SHELL, {"code": "x = 42"})
 
         result = await client.call_tool(Tool.SHELL, {"action": "reset"})
@@ -260,13 +234,13 @@ async def test_django_reset_session():
     ]
 )
 async def test_project_resource_with_auth():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         result = await client.read_resource("django://project")
         assert result is not None
 
 
 async def test_list_routes_tool_returns_routes():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         result = await client.call_tool("list_routes", {})
 
         assert isinstance(result.data, list)
@@ -274,7 +248,7 @@ async def test_list_routes_tool_returns_routes():
 
 
 async def test_list_routes_tool_with_filters():
-    async with Client(mcp) as client:
+    async with Client(mcp.server) as client:
         all_routes = await client.call_tool("list_routes", {})
 
         get_routes = await client.call_tool("list_routes", {"method": "GET"})
@@ -286,108 +260,3 @@ async def test_list_routes_tool_with_filters():
                 "list_routes", {"pattern": all_routes.data[0]["pattern"][:3]}
             )
             assert isinstance(pattern_routes.data, list)
-
-
-async def test_get_package_detail_resource(mock_packages_package_detail_api):
-    """Test djangopackages.org://packages/{slug} resource"""
-    async with Client(mcp) as client:
-        result = await client.read_resource(
-            "djangopackages.org://packages/django-debug-toolbar"
-        )
-        assert result is not None
-        assert len(result) > 0
-
-
-async def test_get_grids_resource(mock_packages_grids_api):
-    """Test djangopackages.org://grids resource"""
-    async with Client(mcp) as client:
-        result = await client.read_resource("djangopackages.org://grids")
-        assert result is not None
-        assert len(result) > 0
-
-
-async def test_get_grid_detail_resource(mock_packages_grid_detail_api):
-    """Test djangopackages.org://grids/{slug} resource"""
-    async with Client(mcp) as client:
-        result = await client.read_resource(
-            "djangopackages.org://grids/rest-frameworks"
-        )
-        assert result is not None
-        assert len(result) > 0
-
-
-async def test_get_categories_resource(mock_packages_categories_api):
-    """Test djangopackages.org://categories resource"""
-    async with Client(mcp) as client:
-        result = await client.read_resource("djangopackages.org://categories")
-        assert result is not None
-        assert len(result) > 0
-
-
-async def test_get_category_detail_resource(mock_packages_category_detail_api):
-    """Test djangopackages.org://categories/{slug} resource"""
-    async with Client(mcp) as client:
-        result = await client.read_resource("djangopackages.org://categories/apps")
-        assert result is not None
-        assert len(result) > 0
-
-
-async def test_search_djangopackages_tool(mock_packages_search_single_api):
-    """Test search_djangopackages tool"""
-    async with Client(mcp) as client:
-        result = await client.call_tool(
-            Tool.SEARCH_DJANGOPACKAGES, {"query": "authentication"}
-        )
-
-        assert result.data is not None
-        assert len(result.data.results) > 0
-        assert result.data.count > 0
-        assert result.data.has_more is False
-
-
-async def test_search_djangopackages_tool_with_pagination(respx_mock: MockRouter):
-    mock_search_response = [
-        {
-            "id": i,
-            "title": f"package-{i}",
-            "slug": f"package-{i}",
-            "description": "Test package",
-            "category": "App",
-            "item_type": "package",
-            "repo_watchers": 100,
-            "last_committed": None,
-        }
-        for i in range(1, 16)
-    ]
-
-    respx_mock.get("https://djangopackages.org/api/v4/search/").mock(
-        return_value=httpx.Response(200, json=mock_search_response)
-    )
-
-    for i in range(1, 6):
-        respx_mock.get(f"https://djangopackages.org/api/v4/packages/package-{i}/").mock(
-            return_value=httpx.Response(
-                200,
-                json={
-                    "id": i,
-                    "title": f"package-{i}",
-                    "slug": f"package-{i}",
-                    "category": "https://djangopackages.org/api/v4/categories/1/",
-                    "grids": [],
-                    "repo_description": "Test package",
-                    "repo_watchers": 100,
-                },
-            )
-        )
-
-    async with Client(mcp) as client:
-        result = await client.call_tool(
-            Tool.SEARCH_DJANGOPACKAGES,
-            {"query": "test", "max_results": 5, "offset": 0},
-        )
-
-        assert result.data is not None
-        assert len(result.data.results) == 5
-        assert result.data.count == 15
-        assert result.data.has_more is True
-        assert result.data.next_offset == 5

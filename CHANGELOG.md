@@ -29,8 +29,8 @@ For multi-package releases, use package names as subsections:
 ### Added
 
 - Added `list_routes` tool for comprehensive Django URL route introspection with filtering by HTTP method, route name, and URL pattern
-- Added Django Packages integration: 5 resources for browsing packages/grids/categories, `search_djangopackages` tool for package discovery, and HTTP client with file-based caching
-- Added dependencies: `httpx` and `platformdirs`
+- Added Django Packages integration via mounted toolset: `djangopackages_search`, `djangopackages_get_package`, and `djangopackages_get_grid` tools with corresponding `django://package/{slug}` and `django://grid/{slug}` resources
+- Added dependency: `httpx`
 
 ### Changed
 
