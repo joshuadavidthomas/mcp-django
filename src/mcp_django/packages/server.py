@@ -8,10 +8,10 @@ from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
 from .client import DjangoPackagesClient
-from .models import GridResource
-from .models import GridSearchResult
-from .models import PackageResource
-from .models import PackageSearchResult
+from .client import GridResource
+from .client import GridSearchResult
+from .client import PackageResource
+from .client import PackageSearchResult
 
 logger = logging.getLogger(__name__)
 

@@ -5,9 +5,9 @@ import pytest
 import pytest_asyncio
 from fastmcp import Client
 
-from mcp_django.packages.models import extract_slug_from_url
-from mcp_django.packages.models import extract_slugs_from_urls
-from mcp_django.packages.models import parse_participant_list
+from mcp_django.packages.client import extract_slug_from_url
+from mcp_django.packages.client import extract_slugs_from_urls
+from mcp_django.packages.client import parse_participant_list
 from mcp_django.server import mcp
 
 
