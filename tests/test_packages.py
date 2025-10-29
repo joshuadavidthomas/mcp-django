@@ -8,30 +8,27 @@ from mcp_django.packages import DjangoPackagesClient
 from mcp_django.packages import GridResource
 from mcp_django.packages import PackageResource
 from mcp_django.packages import PackageSearchResult
-from mcp_django.packages import SearchResultsResource
+from mcp_django.packages import GridSearchResult
 
 
 class TestDjangoPackagesClient:
     @pytest.mark.asyncio
     async def test_search(self, mock_packages_search_api, packages_client):
         async with packages_client as client:
-            results = await client.search(query="auth", limit=10, offset=0)
+            results = await client.search(query="auth")
 
-        assert isinstance(results, SearchResultsResource)
-        assert len(results.results) == 3
-        assert results.count == 3
-        assert results.has_more is False
-        assert results.next_offset is None
+        assert isinstance(results, list)
+        assert len(results) == 3
 
         # First result is a package
-        package_result = results.results[0]
+        package_result = results[0]
         assert package_result.item_type == "package"
         assert package_result.slug == "django-allauth"
         assert package_result.repo_watchers == 8500
         assert package_result.last_committed == "2024-01-15T10:30:00"
 
         # Third result is a grid
-        grid_result = results.results[2]
+        grid_result = results[2]
         assert grid_result.item_type == "grid"
         assert grid_result.slug == "authentication"
         assert grid_result.title == "Authentication"
@@ -59,10 +56,10 @@ class TestDjangoPackagesClient:
         )
 
         async with DjangoPackagesClient() as client:
-            results = await client.search(query="test", limit=10, offset=0)
-            assert len(results.results) == 1
+            results = await client.search(query="test")
+            assert len(results) == 1
             # Verify string participants were parsed to count
-            assert results.results[0].participants == 3
+            assert results[0].participants == 3
 
     @pytest.mark.asyncio
     async def test_search_pagination(self, respx_mock: MockRouter, tmp_path):
@@ -130,28 +127,13 @@ class TestDjangoPackagesClient:
         )
 
         async with DjangoPackagesClient() as client:
-            # First page - returns lightweight search results
-            page1 = await client.search(query="test", limit=10, offset=0)
-            assert len(page1.results) == 10
-            assert page1.count == 15
-            assert page1.has_more is True
-            assert page1.next_offset == 10
+            # Returns all search results
+            results = await client.search(query="test")
+            assert len(results) == 15
 
-            # Verify we got the first 10 packages
-            for i in range(10):
-                assert page1.results[i].slug == f"package-{i + 1}"
-
-        # Use a new client with different cache to test second page
-        async with DjangoPackagesClient() as client:
-            page2 = await client.search(query="test", limit=10, offset=10)
-            assert len(page2.results) == 5
-            assert page2.count == 15
-            assert page2.has_more is False
-            assert page2.next_offset is None
-
-            # Verify we got the last 5 packages
-            for i in range(5):
-                assert page2.results[i].slug == f"package-{i + 11}"
+            # Verify we got all packages
+            for i in range(15):
+                assert results[i].slug == f"package-{i + 1}"
 
         # Search no longer calls package detail endpoints
         for route in package_detail_routes:
@@ -166,8 +148,6 @@ class TestDjangoPackagesClient:
         assert package.slug == "django-debug-toolbar"
         assert package.repo_watchers == 7937
         assert package.pypi_version == "4.3.0"
-        assert len(package.grids) == 2
-        # Verify grids have been enriched to slugs
         assert package.grids == ["grid-21", "grid-11"]
 
     @pytest.mark.asyncio

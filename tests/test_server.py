@@ -313,9 +313,7 @@ async def test_search_djangopackages_tool(mock_packages_search_single_api):
         )
 
         assert result.data is not None
-        assert len(result.data.results) > 0
-        assert result.data.count > 0
-        assert result.data.has_more is False
+        assert len(result.data) > 0
 
 
 async def test_search_djangopackages_tool_with_pagination(respx_mock: MockRouter):
@@ -337,30 +335,11 @@ async def test_search_djangopackages_tool_with_pagination(respx_mock: MockRouter
         return_value=httpx.Response(200, json=mock_search_response)
     )
 
-    for i in range(1, 6):
-        respx_mock.get(f"https://djangopackages.org/api/v4/packages/package-{i}/").mock(
-            return_value=httpx.Response(
-                200,
-                json={
-                    "id": i,
-                    "title": f"package-{i}",
-                    "slug": f"package-{i}",
-                    "category": "https://djangopackages.org/api/v4/categories/1/",
-                    "grids": [],
-                    "repo_description": "Test package",
-                    "repo_watchers": 100,
-                },
-            )
-        )
-
     async with Client(mcp.server) as client:
         result = await client.call_tool(
             Tool.SEARCH_DJANGOPACKAGES,
-            {"query": "test", "max_results": 5, "offset": 0},
+            {"query": "test"},
         )
 
         assert result.data is not None
-        assert len(result.data.results) == 5
-        assert result.data.count == 15
-        assert result.data.has_more is True
-        assert result.data.next_offset == 5
+        assert len(result.data) == 15

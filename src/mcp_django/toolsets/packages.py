@@ -10,7 +10,8 @@ from mcp.types import ToolAnnotations
 from mcp_django.packages import DjangoPackagesClient
 from mcp_django.packages import GridResource
 from mcp_django.packages import PackageResource
-from mcp_django.packages import SearchResultsResource
+from mcp_django.packages import PackageSearchResult
+from mcp_django.packages import GridSearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -98,38 +99,25 @@ async def search(
         str,
         "Search term for packages (e.g., 'authentication', 'REST API', 'admin')",
     ],
-    max_results: Annotated[
-        int, "Maximum number of results to return (default: 10)"
-    ] = 10,
-    offset: Annotated[
-        int,
-        "Offset for pagination, use next_offset from previous response (default: 0)",
-    ] = 0,
-) -> SearchResultsResource:
+) -> list[PackageSearchResult | GridSearchResult]:
     """Search djangopackages.org for third-party packages.
 
     Use this when you need packages for common Django tasks like authentication,
     admin interfaces, REST APIs, forms, caching, testing, deployment, etc.
     """
     logger.info(
-        "djangopackages.org search called - request_id: %s, query: %s, max_results: %d, offset: %d",
+        "djangopackages.org search called - request_id: %s, query: %s",
         ctx.request_id,
         query,
-        max_results,
-        offset,
     )
 
     async with DjangoPackagesClient() as client:
-        results = await client.search(
-            query=query,
-            limit=max_results,
-            offset=offset,
-        )
+        results = await client.search(query=query)
 
     logger.debug(
         "djangopackages.org search completed - request_id: %s, results: %d",
         ctx.request_id,
-        len(results.results),
+        len(results),
     )
 
     return results

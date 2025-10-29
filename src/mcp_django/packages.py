@@ -52,13 +52,6 @@ class GridSearchResult(BaseModel):
     description: str | None = None
 
 
-class SearchResultsResource(BaseModel):
-    results: list[PackageSearchResult | GridSearchResult]
-    count: int
-    next_offset: int | None
-    has_more: bool
-
-
 class DjangoPackagesClient:
     BASE_URL_V4 = "https://djangopackages.org/api/v4"
     BASE_URL_V3 = "https://djangopackages.org/api/v3"
@@ -85,10 +78,8 @@ class DjangoPackagesClient:
     async def search(
         self,
         query: str,
-        limit: int = 10,
-        offset: int = 0,
-    ) -> SearchResultsResource:
-        logger.debug("Searching: query=%s, limit=%d, offset=%d", query, limit, offset)
+    ) -> list[PackageSearchResult | GridSearchResult]:
+        logger.debug("Searching: query=%s", query)
 
         data = await self._request(
             "GET", f"{self.BASE_URL_V4}/search/", params={"q": query}
@@ -96,12 +87,8 @@ class DjangoPackagesClient:
 
         filtered_data = [item for item in data if item.get("slug")]
 
-        total_count = len(filtered_data)
-        paginated_data = filtered_data[offset : offset + limit]
-        has_more = (offset + limit) < total_count
-
         results: list[PackageSearchResult | GridSearchResult] = []
-        for item in paginated_data:
+        for item in filtered_data:
             item_type = item.get("item_type", "package")
 
             if item_type == "grid":
@@ -135,18 +122,11 @@ class DjangoPackagesClient:
             results.append(result)
 
         logger.debug(
-            "Search complete: total=%d, returned=%d, has_more=%s",
-            total_count,
+            "Search complete: returned=%d",
             len(results),
-            has_more,
         )
 
-        return SearchResultsResource(
-            results=results,
-            count=total_count,
-            next_offset=(offset + limit) if has_more else None,
-            has_more=has_more,
-        )
+        return results
 
     async def get_package(self, slug_or_id: str) -> PackageResource:
         logger.debug("Fetching package: %s", slug_or_id)
