@@ -4,6 +4,7 @@ import logging
 from enum import Enum
 from typing import Annotated
 from typing import Any
+from typing import Literal
 
 import httpx
 from fastmcp import Context
@@ -11,6 +12,7 @@ from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 from pydantic import BaseModel
 from pydantic import BeforeValidator
+from pydantic import Discriminator
 from pydantic import TypeAdapter
 from pydantic import model_validator
 
@@ -85,7 +87,7 @@ class SearchItemType(str, Enum):
 
 
 class PackageSearchResult(BaseModel):
-    item_type: SearchItemType = SearchItemType.PACKAGE
+    item_type: Literal[SearchItemType.PACKAGE] = SearchItemType.PACKAGE
     slug: str
     title: str
     description: str | None = None
@@ -97,13 +99,15 @@ class PackageSearchResult(BaseModel):
 
 
 class GridSearchResult(BaseModel):
-    item_type: SearchItemType = SearchItemType.GRID
+    item_type: Literal[SearchItemType.GRID] = SearchItemType.GRID
     slug: str
     title: str
     description: str | None = None
 
 
-SearchResultList = TypeAdapter(list[PackageSearchResult | GridSearchResult])
+SearchResultList = TypeAdapter(
+    list[Annotated[PackageSearchResult | GridSearchResult, Discriminator("item_type")]]
+)
 
 
 class DjangoPackagesClient:
