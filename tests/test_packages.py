@@ -5,10 +5,7 @@ import pytest
 from respx import MockRouter
 
 from mcp_django.toolsets.packages import DjangoPackagesClient
-from mcp_django.toolsets.packages import GridResource
-from mcp_django.toolsets.packages import GridSearchResult
 from mcp_django.toolsets.packages import PackageResource
-from mcp_django.toolsets.packages import PackageSearchResult
 
 
 class TestDjangoPackagesClient:
@@ -186,9 +183,9 @@ class TestValidators:
         assert extract_slugs_from_urls("not-a-list") == "not-a-list"
 
     def test_parse_comma_separated_count_with_non_string(self):
-        from mcp_django.toolsets.packages import parse_comma_separated_count
+        from mcp_django.toolsets.packages import parse_participant_list
 
-        assert parse_comma_separated_count(123) == 123
+        assert parse_participant_list(123) == 123
 
     @pytest.mark.asyncio
     async def test_package_resource_with_non_dict(self):

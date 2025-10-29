@@ -20,24 +20,23 @@ logger = logging.getLogger(__name__)
 
 
 def extract_slug_from_url(value: str | None) -> str | None:
-    if value:
-        return value.rstrip("/").split("/")[-1]
-    return value
+    if value is None:
+        return None
+    return value.rstrip("/").split("/")[-1]
 
 
 def extract_slugs_from_urls(value: list[str] | None) -> list[str] | None:
-    if isinstance(value, list):
-        slugs = [extract_slug_from_url(url) for url in value if url]
-        return [s for s in slugs if s is not None]
-    return value
+    if value is None:
+        return None
+    slugs = [extract_slug_from_url(url) for url in value if url]
+    return [s for s in slugs if s is not None]
 
 
 def parse_participant_list(value: str | list[str] | None) -> int | None:
-    if isinstance(value, str):
-        return len([p.strip() for p in value.split(",") if p.strip()])
-    elif isinstance(value, list):
-        return len([p for p in value if p])
-    return None
+    if value is None:
+        return None
+    participants = value.split(",") if isinstance(value, str) else value
+    return len([p.strip() for p in participants if p.strip()])
 
 
 CategorySlug = Annotated[str, BeforeValidator(extract_slug_from_url)]
