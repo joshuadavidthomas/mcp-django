@@ -4,11 +4,11 @@ import httpx
 import pytest
 from respx import MockRouter
 
-from mcp_django.packages import DjangoPackagesClient
-from mcp_django.packages import GridResource
-from mcp_django.packages import PackageResource
-from mcp_django.packages import PackageSearchResult
-from mcp_django.packages import GridSearchResult
+from mcp_django.toolsets.packages import DjangoPackagesClient
+from mcp_django.toolsets.packages import GridResource
+from mcp_django.toolsets.packages import GridSearchResult
+from mcp_django.toolsets.packages import PackageResource
+from mcp_django.toolsets.packages import PackageSearchResult
 
 
 class TestDjangoPackagesClient:

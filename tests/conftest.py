@@ -436,6 +436,6 @@ def mock_packages_search_single_api(
 @pytest.fixture
 def packages_client(tmp_path):
     """Provides a DjangoPackagesClient with isolated tmp_path cache."""
-    from mcp_django.packages import DjangoPackagesClient
+    from mcp_django.toolsets.packages import DjangoPackagesClient
 
     return DjangoPackagesClient()
