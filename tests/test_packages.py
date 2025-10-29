@@ -165,3 +165,37 @@ class TestDjangoPackagesClient:
             await client.search(query="test")
 
         assert client.client.is_closed
+
+
+class TestValidators:
+    """Test validator functions for edge cases."""
+
+    def test_extract_slug_from_url_with_none(self):
+        from mcp_django.toolsets.packages import extract_slug_from_url
+
+        assert extract_slug_from_url(None) is None
+
+    def test_extract_slug_from_url_with_int(self):
+        from mcp_django.toolsets.packages import extract_slug_from_url
+
+        assert extract_slug_from_url(123) == 123
+
+    def test_extract_slugs_from_urls_with_non_list(self):
+        from mcp_django.toolsets.packages import extract_slugs_from_urls
+
+        assert extract_slugs_from_urls("not-a-list") == "not-a-list"
+
+    def test_parse_comma_separated_count_with_non_string(self):
+        from mcp_django.toolsets.packages import parse_comma_separated_count
+
+        assert parse_comma_separated_count(123) == 123
+
+    @pytest.mark.asyncio
+    async def test_package_resource_with_non_dict(self):
+        from mcp_django.toolsets.packages import PackageResource
+
+        # Test that model validator handles non-dict gracefully
+        # This would normally raise a validation error, but the validator
+        # should pass through non-dict values unchanged
+        with pytest.raises(Exception):  # Pydantic will raise validation error
+            PackageResource.model_validate("not-a-dict")

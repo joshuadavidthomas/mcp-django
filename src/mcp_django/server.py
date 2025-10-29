@@ -41,9 +41,7 @@ class DjangoMCP:
             if toolset_server.instructions:
                 instructions.append(toolset_server.instructions)
 
-        self._server = mcp = FastMCP(
-            name=self.NAME, instructions="\n\n".join(instructions)
-        )
+        self._server = FastMCP(name=self.NAME, instructions="\n\n".join(instructions))
 
     @property
     def server(self) -> FastMCP:
@@ -54,7 +52,6 @@ class DjangoMCP:
             await self._server.import_server(toolset_server, prefix=toolset_prefix)
 
     def run(self, **kwargs: Any) -> None:  # pragma: no cover
-        # CLI entry point - tested via management command integration tests
         asyncio.run(self.initialize())
         self._server.run(**kwargs)
 
