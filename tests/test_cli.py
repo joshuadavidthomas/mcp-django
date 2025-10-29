@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import sys
-from unittest.mock import AsyncMock
 from unittest.mock import Mock
 
 from mcp_django.cli import main
@@ -45,7 +44,6 @@ def test_cli_with_pythonpath(monkeypatch):
     monkeypatch.setenv("DJANGO_SETTINGS_MODULE", "tests.settings")
 
     mock_mcp = Mock()
-    # mock_mcp.run is already a Mock()
     monkeypatch.setattr("mcp_django.server.mcp", mock_mcp)
 
     test_path = "/test/path"
@@ -59,7 +57,6 @@ def test_cli_with_debug(monkeypatch):
     monkeypatch.setenv("DJANGO_SETTINGS_MODULE", "tests.settings")
 
     mock_mcp = Mock()
-    # mock_mcp.run is already a Mock()
     monkeypatch.setattr("mcp_django.server.mcp", mock_mcp)
 
     result = main(["--debug"])
@@ -71,7 +68,6 @@ def test_cli_with_http_transport(monkeypatch):
     monkeypatch.setenv("DJANGO_SETTINGS_MODULE", "tests.settings")
 
     mock_mcp = Mock()
-    # mock_mcp.run is already a Mock()
     monkeypatch.setattr("mcp_django.server.mcp", mock_mcp)
 
     result = main(
@@ -97,7 +93,6 @@ def test_cli_with_sse_transport(monkeypatch):
     monkeypatch.setenv("DJANGO_SETTINGS_MODULE", "tests.settings")
 
     mock_mcp = Mock()
-    # mock_mcp.run is already a Mock()
     monkeypatch.setattr("mcp_django.server.mcp", mock_mcp)
 
     result = main(["--transport", "sse", "--host", "0.0.0.0", "--port", "9000"])
