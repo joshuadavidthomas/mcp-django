@@ -149,17 +149,13 @@ class DjangoPackagesClient:
         )
 
     async def get_package(self, slug_or_id: str) -> PackageResource:
-        """Get package details using v3 API (returns slugs in grid URLs)."""
         logger.debug("Fetching package: %s", slug_or_id)
 
-        # Fetch from v3 API
         data = await self._request("GET", f"{self.BASE_URL_V3}/packages/{slug_or_id}/")
 
-        # Map v3 fields to our model
         if "modified" in data:
             data["last_updated"] = data.pop("modified")
 
-        # Extract category slug from v3 URL
         if (
             "category" in data
             and isinstance(data["category"], str)
@@ -167,31 +163,24 @@ class DjangoPackagesClient:
         ):
             data["category"] = data["category"].rstrip("/").split("/")[-1]
 
-        # Extract slugs from v3 grid URLs (simple string parsing - no API calls!)
         if "grids" in data and isinstance(data["grids"], list):
             data["grids"] = [url.rstrip("/").split("/")[-1] for url in data["grids"]]
 
-        # Parse participants
         if "participants" in data and isinstance(data["participants"], str):
-            # v3 returns comma-separated string
             data["participants"] = len(
                 [p.strip() for p in data["participants"].split(",") if p.strip()]
             )
 
-        # v3 doesn't have description field at package level, use repo_description
         if "description" not in data or not data.get("description"):
             data["description"] = data.get("repo_description")
 
         return PackageResource(**data)
 
     async def get_grid(self, slug_or_id: str) -> GridResource:
-        """Get grid details using v3 API (returns slugs in package URLs)."""
         logger.debug("Fetching grid: %s", slug_or_id)
 
-        # Fetch from v3 API
         data = await self._request("GET", f"{self.BASE_URL_V3}/grids/{slug_or_id}/")
 
-        # Extract slugs from v3 URLs (simple string parsing - no API calls!)
         if "packages" in data and isinstance(data["packages"], list):
             data["packages"] = [
                 url.rstrip("/").split("/")[-1] for url in data["packages"]
