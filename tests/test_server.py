@@ -3,14 +3,12 @@ from __future__ import annotations
 from enum import Enum
 from unittest.mock import AsyncMock
 
-import httpx
 import pytest
 import pytest_asyncio
 from django.conf import settings
 from django.test import override_settings
 from fastmcp import Client
 from fastmcp.exceptions import ToolError
-from respx import MockRouter
 
 from mcp_django.output import ExecutionStatus
 from mcp_django.server import mcp
@@ -22,19 +20,16 @@ pytestmark = pytest.mark.asyncio
 class Tool(str, Enum):
     SHELL = "shell"
     LIST_ROUTES = "list_routes"
-    SEARCH_DJANGOPACKAGES = "djangopackages_search"
 
 
 @pytest_asyncio.fixture(autouse=True)
 async def initialize_and_reset():
-    """Initialize server and reset shell session before each test."""
     await mcp.initialize()
     async with Client(mcp.server) as client:
         await client.call_tool(Tool.SHELL, {"action": "reset"})
 
 
 async def test_instructions_exist():
-    """Test that instructions are present and contain toolset information."""
     instructions = mcp.server.instructions
 
     assert instructions is not None
@@ -263,83 +258,3 @@ async def test_list_routes_tool_with_filters():
                 "list_routes", {"pattern": all_routes.data[0]["pattern"][:3]}
             )
             assert isinstance(pattern_routes.data, list)
-
-
-async def test_get_package_detail_tool(mock_packages_package_detail_api):
-    """Test get_package_detail tool"""
-    async with Client(mcp.server) as client:
-        result = await client.call_tool(
-            "djangopackages_get_package", {"slug": "django-debug-toolbar"}
-        )
-        assert result.data is not None
-
-
-async def test_get_grid_detail_tool(mock_packages_grid_detail_api):
-    """Test get_grid_detail tool"""
-    async with Client(mcp.server) as client:
-        result = await client.call_tool(
-            "djangopackages_get_grid", {"slug": "rest-frameworks"}
-        )
-        assert result.data is not None
-
-
-async def test_get_package_resource(mock_packages_package_detail_api):
-    """Test get_package MCP resource"""
-    async with Client(mcp.server) as client:
-        # Read the package resource with correct prefix
-        contents = await client.read_resource(
-            "django://djangopackages/package/django-debug-toolbar"
-        )
-        assert isinstance(contents, list)
-        assert len(contents) > 0
-
-
-async def test_get_grid_resource(mock_packages_grid_detail_api):
-    """Test get_grid MCP resource"""
-    async with Client(mcp.server) as client:
-        # Read the grid resource with correct prefix
-        contents = await client.read_resource(
-            "django://djangopackages/grid/rest-frameworks"
-        )
-        assert isinstance(contents, list)
-        assert len(contents) > 0
-
-
-async def test_search_djangopackages_tool(mock_packages_search_single_api):
-    """Test search_djangopackages tool"""
-    async with Client(mcp.server) as client:
-        result = await client.call_tool(
-            Tool.SEARCH_DJANGOPACKAGES, {"query": "authentication"}
-        )
-
-        assert result.data is not None
-        assert len(result.data) > 0
-
-
-async def test_search_djangopackages_tool_with_pagination(respx_mock: MockRouter):
-    mock_search_response = [
-        {
-            "id": i,
-            "title": f"package-{i}",
-            "slug": f"package-{i}",
-            "description": "Test package",
-            "category": "App",
-            "item_type": "package",
-            "repo_watchers": 100,
-            "last_committed": None,
-        }
-        for i in range(1, 16)
-    ]
-
-    respx_mock.get("https://djangopackages.org/api/v4/search/").mock(
-        return_value=httpx.Response(200, json=mock_search_response)
-    )
-
-    async with Client(mcp.server) as client:
-        result = await client.call_tool(
-            Tool.SEARCH_DJANGOPACKAGES,
-            {"query": "test"},
-        )
-
-        assert result.data is not None
-        assert len(result.data) == 15
