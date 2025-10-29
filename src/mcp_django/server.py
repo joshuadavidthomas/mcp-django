@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 class DjangoMCP:
     NAME = "Django"
-    INSTRUCTIONS = "Provides Django project exploration and management tools, including a stateful shell environment for executing Python code."
+    INSTRUCTIONS = "Django ecosystem MCP server providing comprehensive project introspection, stateful code execution, and development tools. Supports exploring project structure, analyzing configurations, executing Python in persistent sessions, and accessing Django ecosystem resources."
 
     def __init__(self) -> None:
         instructions = [self.INSTRUCTIONS]
@@ -59,30 +59,28 @@ class DjangoMCP:
 mcp = DjangoMCP()
 
 
-@mcp.server.tool(
-    annotations=ToolAnnotations(
-        title="Get Django Project Information",
-        readOnlyHint=True,
-        idempotentHint=True,
-    ),
+@mcp.server.resource(
+    "django://project",
+    name="Django Project Information",
+    mime_type="application/json",
+    annotations={"readOnlyHint": True, "idempotentHint": True},
 )
-async def get_project(ctx: Context) -> ProjectResource:
+def get_project() -> ProjectResource:
     """Get comprehensive project information including Python environment and Django configuration.
 
-    Returns metadata about the project's runtime environment, installed apps, and database
+    Use this to understand the project's runtime environment, installed apps, and database
     configuration.
     """
     return ProjectResource.from_env()
 
 
-@mcp.server.tool(
-    annotations=ToolAnnotations(
-        title="Get Installed Django Apps",
-        readOnlyHint=True,
-        idempotentHint=True,
-    ),
+@mcp.server.resource(
+    "django://apps",
+    name="Installed Django Apps",
+    mime_type="application/json",
+    annotations={"readOnlyHint": True, "idempotentHint": True},
 )
-async def get_apps(ctx: Context) -> list[AppResource]:
+def get_apps() -> list[AppResource]:
     """Get a list of all installed Django applications with their models.
 
     Use this to explore the project structure and available models without executing code.
@@ -90,18 +88,16 @@ async def get_apps(ctx: Context) -> list[AppResource]:
     return [AppResource.from_app(app) for app in apps.get_app_configs()]
 
 
-@mcp.server.tool(
-    annotations=ToolAnnotations(
-        title="Get Django Models",
-        readOnlyHint=True,
-        idempotentHint=True,
-    ),
+@mcp.server.resource(
+    "django://models",
+    name="Django Models",
+    mime_type="application/json",
+    annotations={"readOnlyHint": True, "idempotentHint": True},
 )
-async def get_models(ctx: Context) -> list[ModelResource]:
+def get_models() -> list[ModelResource]:
     """Get detailed information about all Django models in the project.
 
-    Returns comprehensive model information including import paths, source locations,
-    and field definitions.
+    Use this for quick model introspection without shell access.
     """
     return [ModelResource.from_model(model) for model in apps.get_models()]
 

@@ -159,7 +159,7 @@ class DjangoPackagesClient:
 
 mcp = FastMCP(
     name="djangopackages.org",
-    instructions="djangopackages.org is a curated directory of reusable Django apps, sites, and tools. Each package includes metadata like GitHub stars, PyPI info, documentation links, and which comparison grids it appears in.",
+    instructions="Search and discover reusable Django apps, sites, and tools from the community. Access package metadata including GitHub stars, PyPI versions, documentation links, and comparison grids for evaluating similar packages.",
 )
 
 DJANGOPACKAGES_TOOLSET = "djangopackages"

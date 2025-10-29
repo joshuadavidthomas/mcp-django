@@ -33,8 +33,10 @@ async def test_instructions_exist():
     instructions = mcp.server.instructions
 
     assert instructions is not None
-    assert "Django project exploration" in instructions
-    assert "Available Toolsets" in instructions
+    assert len(instructions) > 100
+    assert "Django ecosystem" in instructions
+    assert "## Available Toolsets" in instructions
+    assert "djangopackages.org" in instructions
 
 
 async def test_tool_listing():
@@ -50,24 +52,24 @@ async def test_tool_listing():
         assert "Useful exploration commands:" in django_shell_tool.description
 
 
-async def test_get_apps_tool():
+async def test_get_apps_resource():
     async with Client(mcp.server) as client:
-        result = await client.call_tool("get_apps", {})
-        assert result.data is not None
-        assert len(result.data) > 0
+        result = await client.read_resource("django://apps")
+        assert result is not None
+        assert len(result) > 0
 
 
-async def test_get_models_tool():
+async def test_get_models_resource():
     async with Client(mcp.server) as client:
-        result = await client.call_tool("get_models", {})
-        assert result.data is not None
-        assert len(result.data) > 0
+        result = await client.read_resource("django://models")
+        assert result is not None
+        assert len(result) > 0
 
 
-async def test_get_project_tool_no_auth():
+async def test_get_project_resource_no_auth():
     async with Client(mcp.server) as client:
-        result = await client.call_tool("get_project", {})
-        assert result.data is not None
+        result = await client.read_resource("django://project")
+        assert result is not None
 
 
 async def test_django_shell_tool():
@@ -231,10 +233,10 @@ async def test_django_reset_session():
         "django.contrib.contenttypes",
     ]
 )
-async def test_project_tool_with_auth():
+async def test_project_resource_with_auth():
     async with Client(mcp.server) as client:
-        result = await client.call_tool("get_project", {})
-        assert result.data is not None
+        result = await client.read_resource("django://project")
+        assert result is not None
 
 
 async def test_list_routes_tool_returns_routes():

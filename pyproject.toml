@@ -126,6 +126,7 @@ reportUnknownVariableType = "none"
 reportUntypedBaseClass = "none"
 reportUntypedClassDecorator = "none"
 reportUntypedFunctionDecorator = "none"
+reportUnusedCallResult = "none"
 root = "tests"
 
 [tool.coverage.paths]
