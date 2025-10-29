@@ -1,212 +1,75 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
 
 import httpx
-from django.core.cache.backends.filebased import FileBasedCache
-from platformdirs import user_cache_dir
 from pydantic import BaseModel
-from pydantic import Field
 
 logger = logging.getLogger(__name__)
 
 
 class PackageResource(BaseModel):
-    id: int
-    title: str
-    slug: str
-    description: str
     category: str
-    item_type: str  # "package" or "grid"
-    pypi_url: str | None = None
-    repo_url: str | None = None
+    slug: str
+    title: str
+    description: str | None = None
     documentation_url: str | None = None
-    repo_watchers: int = 0
+    grids: list[str] | None = None
     last_updated: str | None = None
-
-    @classmethod
-    def from_search(cls, item: dict[str, Any]) -> PackageResource:
-        """Create PackageResource from search API response.
-
-        The search endpoint returns basic package information. This method
-        creates a PackageResource from that data without additional API calls.
-
-        Args:
-            item: Search result item dictionary
-
-        Returns:
-            PackageResource with basic information
-        """
-        return cls(
-            id=item.get("id", 0),
-            title=item.get("title", ""),
-            slug=item.get("slug", ""),
-            description=item.get("description", ""),
-            category=normalize_category(item.get("category")),
-            item_type=item.get("item_type", "package"),
-            pypi_url=item.get("pypi_url"),
-            repo_url=item.get("repo_url"),
-            documentation_url=item.get("documentation_url"),
-            repo_watchers=item.get("repo_watchers", 0),
-            last_updated=item.get("last_committed") or item.get("last_released"),
-        )
-
-    @classmethod
-    def from_detail(cls, data: dict[str, Any]) -> PackageResource:
-        """Create PackageResource from package detail API response.
-
-        The package detail endpoint returns comprehensive information including
-        grids, participants, and repository statistics. This method extracts
-        the fields needed for PackageResource directly from the API response.
-
-        Args:
-            data: Raw dictionary from /packages/{slug}/ endpoint
-
-        Returns:
-            PackageResource with enriched information
-        """
-        return cls(
-            id=data.get("id", 0),
-            title=data.get("title", ""),
-            slug=data.get("slug", ""),
-            description=data.get("repo_description", ""),
-            category=normalize_category(data.get("category")),
-            item_type="package",  # Package details are always packages
-            pypi_url=data.get("pypi_url"),
-            repo_url=data.get("repo_url"),
-            documentation_url=data.get("documentation_url"),
-            repo_watchers=data.get("repo_watchers", 0),
-            last_updated=data.get("last_updated"),
-        )
-
-
-class PackageDetailResource(BaseModel):
-    id: int
-    title: str
-    slug: str
-    category: str
-    grids: list[str]
-    last_updated: str | None = None
-    last_fetched: str | None = None
-    repo_url: str | None = None
+    participants: int | None = None
+    pypi_url: str | None = None
     pypi_version: str | None = None
-    pypi_url: str | None = None
-    documentation_url: str | None = None
-    repo_forks: int = 0
     repo_description: str | None = None
+    repo_forks: int | None = None
+    repo_url: str | None = None
     repo_watchers: int = 0
-    commits_over_52: list[int] = Field(default_factory=list)
-    participants: list[str] = Field(default_factory=list)
-    created: str | None = None
-    modified: str | None = None
 
 
 class GridResource(BaseModel):
-    id: int
     title: str
     slug: str
     description: str
-    is_locked: bool
-    packages: list[str]
-    header: bool
-    created: str
-    modified: str
+    packages: list[str] | int
 
 
-class CategoryResource(BaseModel):
-    id: int
-    title: str
+class PackageSearchResult(BaseModel):
+    item_type: str = "package"
     slug: str
-    description: str
-    title_plural: str
-    show_pypi: bool
-    created: str
-    modified: str
+    title: str
+    description: str | None = None
+    repo_watchers: int = 0
+    repo_forks: int = 0
+    participants: int | None = None
+    last_committed: str | None = None
+    last_released: str | None = None
 
 
-CATEGORY_ID_TO_SLUG = {
-    "1": "apps",
-    "2": "frameworks",
-    "3": "projects",
-    "4": "other",
-}
-
-CATEGORY_TITLE_TO_SLUG = {
-    "App": "apps",
-    "Framework": "frameworks",
-    "Project": "projects",
-    "Other": "other",
-}
-
-
-def normalize_category(category: str | None) -> str:
-    """Normalize category to slug format.
-
-    Handles three formats:
-    - URL: "https://djangopackages.org/api/v4/categories/1/" -> "apps"
-    - Title: "App" -> "apps"
-    - Slug: "apps" -> "apps"
-    - None/empty: "" -> ""
-
-    Args:
-        category: Category string in any format
-
-    Returns:
-        Category slug (e.g., "apps", "frameworks", "projects", "other")
-    """
-    if not category:
-        return ""
-
-    parsed = urlparse(category)
-    if parsed.scheme and parsed.netloc:
-        category_id = parsed.path.rstrip("/").split("/")[-1]
-        return CATEGORY_ID_TO_SLUG.get(category_id, "")
-
-    if category in CATEGORY_TITLE_TO_SLUG:
-        return CATEGORY_TITLE_TO_SLUG[category]
-
-    return category.lower()
+class GridSearchResult(BaseModel):
+    item_type: str = "grid"
+    slug: str
+    title: str
+    description: str | None = None
 
 
 class SearchResultsResource(BaseModel):
-    results: list[PackageResource]
+    results: list[PackageSearchResult | GridSearchResult]
     count: int
     next_offset: int | None
     has_more: bool
 
 
 class DjangoPackagesClient:
-    BASE_URL = "https://djangopackages.org/api/v4"
-    CACHE_DIR = Path(user_cache_dir("mcp-django")) / "djangopackages"
-    CACHE_TTL = 60 * 60 * 24  # 1 day
+    BASE_URL_V4 = "https://djangopackages.org/api/v4"
+    BASE_URL_V3 = "https://djangopackages.org/api/v3"
     TIMEOUT = 30.0
 
-    def __init__(self, cache_dir: Path | None = None):
+    def __init__(self):
         self.client = httpx.AsyncClient(
-            base_url=self.BASE_URL,
             timeout=self.TIMEOUT,
             headers={"Content-Type": "application/json"},
         )
-
-        cache_dir = cache_dir or self.CACHE_DIR
-        cache_dir.mkdir(parents=True, exist_ok=True)
-
-        self.cache = FileBasedCache(
-            dir=str(cache_dir),
-            params={
-                "max_entries": 1000,
-                "cull_frequency": 3,
-            },
-        )
-
-        logger.debug(
-            "Django Packages client initialized with cache at %s (TTL: %d days)",
-            cache_dir,
-            self.CACHE_TTL // 86400,
-        )
+        logger.debug("Django Packages client initialized")
 
     async def __aenter__(self):
         return self
@@ -214,125 +77,124 @@ class DjangoPackagesClient:
     async def __aexit__(self, *args):
         await self.client.aclose()
 
-    async def _request(self, method: str, path: str, **kwargs) -> Any:
-        response = await self.client.request(method, path, **kwargs)
+    async def _request(self, method: str, url: str, **kwargs) -> Any:
+        response = await self.client.request(method, url, **kwargs)
         response.raise_for_status()
         return response.json()
 
-    def _get_cached_package(self, slug: str) -> dict[str, Any] | None:
-        cached = self.cache.get(f"pkg:{slug}")
-        if cached:
-            logger.debug("Cache hit for package: %s", slug)
-        else:
-            logger.debug("Cache miss for package: %s", slug)
-        return cached
-
-    def _cache_package(self, slug: str, data: dict[str, Any]):
-        self.cache.set(f"pkg:{slug}", data, timeout=self.CACHE_TTL)
-        logger.debug("Cached package: %s (TTL: %d days)", slug, self.CACHE_TTL // 86400)
-
-    async def search_packages(
+    async def search(
         self,
         query: str,
         limit: int = 10,
         offset: int = 0,
     ) -> SearchResultsResource:
-        """Search packages by query, enriching results with cached/fetched details.
+        logger.debug("Searching: query=%s, limit=%d, offset=%d", query, limit, offset)
 
-        The search process:
-        1. Fetch all search results from the API
-        2. Transform to basic PackageResources
-        3. Paginate the results
-        4. Enrich only the paginated subset with full package details
-
-        This approach minimizes API calls by only fetching full details for
-        packages that will be returned, while still providing accurate pagination.
-
-        Args:
-            query: Search query string
-            limit: Maximum number of results to return (default: 10)
-            offset: Pagination offset (default: 0)
-
-        Returns:
-            SearchResultsResource with enriched package information
-        """
-        logger.debug(
-            "Searching packages: query=%s, limit=%d, offset=%d", query, limit, offset
+        data = await self._request(
+            "GET", f"{self.BASE_URL_V4}/search/", params={"q": query}
         )
 
-        data = await self._request("GET", "/search/", params={"q": query})
+        filtered_data = [item for item in data if item.get("slug")]
 
-        basic_results = [
-            PackageResource.from_search(item)
-            for item in data
-            if item.get("slug")  # Skip items without slug
-        ]
-
-        total_count = len(basic_results)
-        paginated_basic = basic_results[offset : offset + limit]
+        total_count = len(filtered_data)
+        paginated_data = filtered_data[offset : offset + limit]
         has_more = (offset + limit) < total_count
 
-        enriched_results = []
-        for basic_pkg in paginated_basic:
-            cached_data = self._get_cached_package(basic_pkg.slug)
-            if not cached_data:
-                cached_data = await self._request("GET", f"/packages/{basic_pkg.slug}/")
-                self._cache_package(basic_pkg.slug, cached_data)
+        results: list[PackageSearchResult | GridSearchResult] = []
+        for item in paginated_data:
+            item_type = item.get("item_type", "package")
 
-            enriched_pkg = PackageResource.from_detail(cached_data)
+            if item_type == "grid":
+                result = GridSearchResult(
+                    slug=item["slug"],
+                    title=item["title"],
+                    description=item.get("description"),
+                )
+            else:
+                participants = None
+                if item.get("participants") and isinstance(item["participants"], str):
+                    participants = len(
+                        [
+                            p.strip()
+                            for p in item["participants"].split(",")
+                            if p.strip()
+                        ]
+                    )
 
-            if not enriched_pkg.last_updated:
-                enriched_pkg.last_updated = basic_pkg.last_updated
+                result = PackageSearchResult(
+                    slug=item["slug"],
+                    title=item["title"],
+                    description=item.get("description"),
+                    repo_watchers=item.get("repo_watchers", 0),
+                    repo_forks=item.get("repo_forks", 0),
+                    participants=participants,
+                    last_committed=item.get("last_committed"),
+                    last_released=item.get("last_released"),
+                )
 
-            enriched_results.append(enriched_pkg)
+            results.append(result)
 
         logger.debug(
             "Search complete: total=%d, returned=%d, has_more=%s",
             total_count,
-            len(enriched_results),
+            len(results),
             has_more,
         )
 
         return SearchResultsResource(
-            results=enriched_results,
+            results=results,
             count=total_count,
             next_offset=(offset + limit) if has_more else None,
             has_more=has_more,
         )
 
-    async def get_package(self, slug: str) -> PackageDetailResource:
-        logger.debug("Fetching package: %s", slug)
+    async def get_package(self, slug_or_id: str) -> PackageResource:
+        """Get package details using v3 API (returns slugs in grid URLs)."""
+        logger.debug("Fetching package: %s", slug_or_id)
 
-        cached_data = self._get_cached_package(slug)
-        if cached_data:
-            return PackageDetailResource(**cached_data)
+        # Fetch from v3 API
+        data = await self._request("GET", f"{self.BASE_URL_V3}/packages/{slug_or_id}/")
 
-        data = await self._request("GET", f"/packages/{slug}/")
-        self._cache_package(slug, data)
-        return PackageDetailResource(**data)
+        # Map v3 fields to our model
+        if "modified" in data:
+            data["last_updated"] = data.pop("modified")
 
-    async def list_grids(self, limit: int = 20, offset: int = 0) -> list[GridResource]:
-        logger.debug("Listing grids: limit=%d, offset=%d", limit, offset)
-        data = await self._request(
-            "GET", "/grids/", params={"limit": limit, "offset": offset}
-        )
-        return [GridResource(**item) for item in data.get("results", [])]
+        # Extract category slug from v3 URL
+        if (
+            "category" in data
+            and isinstance(data["category"], str)
+            and data["category"]
+        ):
+            data["category"] = data["category"].rstrip("/").split("/")[-1]
 
-    async def get_grid(self, slug: str) -> GridResource:
-        logger.debug("Fetching grid: %s", slug)
-        data = await self._request("GET", f"/grids/{slug}/")
+        # Extract slugs from v3 grid URLs (simple string parsing - no API calls!)
+        if "grids" in data and isinstance(data["grids"], list):
+            data["grids"] = [url.rstrip("/").split("/")[-1] for url in data["grids"]]
+
+        # Parse participants
+        if "participants" in data and isinstance(data["participants"], str):
+            # v3 returns comma-separated string
+            data["participants"] = len(
+                [p.strip() for p in data["participants"].split(",") if p.strip()]
+            )
+
+        # v3 doesn't have description field at package level, use repo_description
+        if "description" not in data or not data.get("description"):
+            data["description"] = data.get("repo_description")
+
+        return PackageResource(**data)
+
+    async def get_grid(self, slug_or_id: str) -> GridResource:
+        """Get grid details using v3 API (returns slugs in package URLs)."""
+        logger.debug("Fetching grid: %s", slug_or_id)
+
+        # Fetch from v3 API
+        data = await self._request("GET", f"{self.BASE_URL_V3}/grids/{slug_or_id}/")
+
+        # Extract slugs from v3 URLs (simple string parsing - no API calls!)
+        if "packages" in data and isinstance(data["packages"], list):
+            data["packages"] = [
+                url.rstrip("/").split("/")[-1] for url in data["packages"]
+            ]
+
         return GridResource(**data)
-
-    async def list_categories(
-        self, limit: int = 20, offset: int = 0
-    ) -> list[CategoryResource]:
-        logger.debug("Listing categories: limit=%d, offset=%d", limit, offset)
-        data = await self._request(
-            "GET", "/categories/", params={"limit": limit, "offset": offset}
-        )
-        return [CategoryResource(**item) for item in data.get("results", [])]
-
-    async def get_category(self, slug: str) -> CategoryResource:
-        logger.debug("Fetching category: %s", slug)
-        data = await self._request("GET", f"/categories/{slug}/")
-        return CategoryResource(**data)

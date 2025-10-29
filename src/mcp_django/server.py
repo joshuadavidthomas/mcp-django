@@ -49,11 +49,12 @@ class DjangoMCP:
     def server(self) -> FastMCP:
         return self._server
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         for toolset_prefix, toolset_server in TOOLSETS.items():
             await self._server.import_server(toolset_server, prefix=toolset_prefix)
 
-    def run(self, **kwargs: Any):
+    def run(self, **kwargs: Any) -> None:  # pragma: no cover
+        # CLI entry point - tested via management command integration tests
         asyncio.run(self.initialize())
         self._server.run(**kwargs)
 
