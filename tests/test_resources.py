@@ -7,12 +7,13 @@ from django.apps import apps
 from django.conf import settings
 from django.test import override_settings
 
-from mcp_django.resources import AppResource
-from mcp_django.resources import DjangoResource
-from mcp_django.resources import ModelResource
-from mcp_django.resources import ProjectResource
-from mcp_django.resources import PythonResource
-from mcp_django.resources import get_source_file_path
+from mcp_django.project.resources import AppResource
+from mcp_django.project.resources import DjangoResource
+from mcp_django.project.resources import ModelResource
+from mcp_django.project.resources import ProjectResource
+from mcp_django.project.resources import PythonResource
+from mcp_django.project.resources import SettingResource
+from mcp_django.project.resources import get_source_file_path
 from tests.models import AModel
 
 
@@ -39,11 +40,11 @@ def test_get_source_file_path_valueerror(monkeypatch):
     mock_obj = object()
 
     monkeypatch.setattr(
-        "mcp_django.resources.inspect.getfile",
+        "mcp_django.project.resources.inspect.getfile",
         lambda obj: "/usr/lib/python3.12/os.py",
     )
     monkeypatch.setattr(
-        "mcp_django.resources.Path.cwd",
+        "mcp_django.project.resources.Path.cwd",
         lambda: Path("/completely/different/path"),
     )
 
@@ -163,3 +164,52 @@ def test_model_resource_from_model():
     data = result.model_dump()
 
     assert data["model_class"] == "AModel"
+
+
+def test_setting_resource_with_bool():
+    result = SettingResource(key="DEBUG", value=False, value_type="bool")
+
+    assert result.key == "DEBUG"
+    assert result.value is False
+    assert result.value_type == "bool"
+
+    data = result.model_dump()
+    assert data["value"] is False
+
+
+def test_setting_resource_with_list():
+    apps = ["django.contrib.auth", "myapp"]
+    result = SettingResource(key="INSTALLED_APPS", value=apps, value_type="list")
+
+    assert result.key == "INSTALLED_APPS"
+    assert result.value == apps
+    assert result.value_type == "list"
+
+
+def test_setting_resource_with_dict():
+    databases = {"default": {"ENGINE": "django.db.backends.sqlite3"}}
+    result = SettingResource(key="DATABASES", value=databases, value_type="dict")
+
+    assert result.key == "DATABASES"
+    assert result.value == databases
+    assert result.value_type == "dict"
+
+
+def test_setting_resource_serializes_path():
+    from pathlib import Path
+
+    base_dir = Path("/home/user/project")
+    result = SettingResource(key="BASE_DIR", value=base_dir, value_type="PosixPath")
+
+    data = result.model_dump()
+    assert data["value"] == "/home/user/project"
+    assert isinstance(data["value"], str)
+
+
+def test_setting_resource_serializes_class():
+    # Use AModel from tests since it doesn't require extra apps installed
+    result = SettingResource(key="SOME_MODEL_CLASS", value=AModel, value_type="type")
+
+    data = result.model_dump()
+    assert data["value"] == "tests.models.AModel"
+    assert isinstance(data["value"], str)
