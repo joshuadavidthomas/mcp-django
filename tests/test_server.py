@@ -15,7 +15,7 @@ pytestmark = pytest.mark.asyncio
 
 class Tool(str, Enum):
     SHELL = "shell"
-    LIST_ROUTES = "list_routes"
+    LIST_ROUTES = "project_list_routes"
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -45,7 +45,7 @@ async def test_tool_listing():
             "djangopackages_get_grid",
             "djangopackages_get_package",
             "djangopackages_search",
-            "list_routes",
+            "project_list_routes",
             "shell_execute",
             "shell_reset",
         ]:
@@ -54,14 +54,14 @@ async def test_tool_listing():
 
 async def test_get_apps_resource():
     async with Client(mcp.server) as client:
-        result = await client.read_resource("django://apps")
+        result = await client.read_resource("django://project/apps")
         assert result is not None
         assert len(result) > 0
 
 
 async def test_get_models_resource():
     async with Client(mcp.server) as client:
-        result = await client.read_resource("django://models")
+        result = await client.read_resource("django://project/models")
         assert result is not None
         assert len(result) > 0
 
@@ -81,13 +81,16 @@ async def test_get_project_resource_no_auth():
 )
 async def test_project_resource_with_auth():
     async with Client(mcp.server) as client:
+        resources = await client.list_resources()
+        print(f"{resources=}")
+
         result = await client.read_resource("django://project")
         assert result is not None
 
 
 async def test_list_routes_tool_returns_routes():
     async with Client(mcp.server) as client:
-        result = await client.call_tool("list_routes", {})
+        result = await client.call_tool("project_list_routes", {})
 
         assert isinstance(result.data, list)
         assert len(result.data) > 0
@@ -95,14 +98,14 @@ async def test_list_routes_tool_returns_routes():
 
 async def test_list_routes_tool_with_filters():
     async with Client(mcp.server) as client:
-        all_routes = await client.call_tool("list_routes", {})
+        all_routes = await client.call_tool("project_list_routes", {})
 
-        get_routes = await client.call_tool("list_routes", {"method": "GET"})
+        get_routes = await client.call_tool("project_list_routes", {"method": "GET"})
         assert len(get_routes.data) > 0
         assert len(get_routes.data) <= len(all_routes.data)
 
         if all_routes.data:
             pattern_routes = await client.call_tool(
-                "list_routes", {"pattern": all_routes.data[0]["pattern"][:3]}
+                "project_list_routes", {"pattern": all_routes.data[0]["pattern"][:3]}
             )
             assert isinstance(pattern_routes.data, list)

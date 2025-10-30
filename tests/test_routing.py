@@ -5,17 +5,17 @@ from pathlib import Path
 
 import pytest
 
-from mcp_django.routing import ClassViewSchema
-from mcp_django.routing import FunctionViewSchema
-from mcp_django.routing import RouteSchema
-from mcp_django.routing import ViewMethod
-from mcp_django.routing import ViewType
-from mcp_django.routing import extract_url_parameters
-from mcp_django.routing import filter_routes
-from mcp_django.routing import get_all_routes
-from mcp_django.routing import get_source_file_path
-from mcp_django.routing import get_view_func
-from mcp_django.routing import get_view_name
+from mcp_django.project.routing import ClassViewSchema
+from mcp_django.project.routing import FunctionViewSchema
+from mcp_django.project.routing import RouteSchema
+from mcp_django.project.routing import ViewMethod
+from mcp_django.project.routing import ViewType
+from mcp_django.project.routing import extract_url_parameters
+from mcp_django.project.routing import filter_routes
+from mcp_django.project.routing import get_all_routes
+from mcp_django.project.routing import get_source_file_path
+from mcp_django.project.routing import get_view_func
+from mcp_django.project.routing import get_view_name
 from tests.urls import ArticleCreate as DummyCreateView
 from tests.urls import ArticleDelete as DummyDeleteView
 from tests.urls import ArticleDetail as DummyDetailView
