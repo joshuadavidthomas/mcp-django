@@ -146,3 +146,18 @@ class ModelResource(BaseModel):
     @field_serializer("model_class")
     def serialize_model_class(self, klass: type[models.Model]) -> str:
         return klass.__name__
+
+
+class SettingResource(BaseModel):
+    key: str
+    value: Any
+    value_type: str
+
+    @field_serializer("value")
+    def serialize_value(self, value: Any) -> Any:
+        # Handle common Django types that need conversion
+        if isinstance(value, Path):
+            return str(value)
+        if isinstance(value, type):  # Class objects
+            return f"{value.__module__}.{value.__name__}"
+        return value

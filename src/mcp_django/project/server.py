@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from typing import Annotated
-from typing import Any
 
 from django.apps import apps
 from django.conf import settings
@@ -13,6 +12,7 @@ from mcp.types import ToolAnnotations
 from .resources import AppResource
 from .resources import ModelResource
 from .resources import ProjectResource
+from .resources import SettingResource
 from .routing import RouteSchema
 from .routing import ViewMethod
 from .routing import filter_routes
@@ -222,9 +222,14 @@ def get_setting(
     key: Annotated[
         str, "Django setting key (e.g., 'DEBUG', 'DATABASES', 'INSTALLED_APPS')"
     ],
-) -> Any:
-    """Get a Django setting by key."""
-    return getattr(settings, key, None)
+) -> SettingResource:
+    """Get a Django setting by key.
+
+    Returns the setting value along with type information. Raises AttributeError
+    if the setting does not exist.
+    """
+    value = getattr(settings, key)  # Will raise AttributeError if missing
+    return SettingResource(key=key, value=value, value_type=type(value).__name__)
 
 
 mcp.resource(
