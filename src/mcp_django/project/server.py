@@ -187,19 +187,20 @@ async def list_routes(
         pattern,
     )
 
-    all_routes = get_all_routes()
+    routes = get_all_routes()
+    total_count = len(routes)
 
     if any([method, name, pattern]):
-        filtered = filter_routes(all_routes, method=method, name=name, pattern=pattern)
-        logger.debug(
-            "list_routes completed - request_id: %s, total_routes: %d, filtered_routes: %d",
-            ctx.request_id,
-            len(all_routes),
-            len(filtered),
-        )
-        return filtered
+        routes = filter_routes(routes, method=method, name=name, pattern=pattern)
 
-    return all_routes
+    logger.debug(
+        "list_routes completed - request_id: %s, total_routes: %d, returned_routes: %d",
+        ctx.request_id,
+        total_count,
+        len(routes),
+    )
+
+    return routes
 
 
 @mcp.resource(
