@@ -28,12 +28,14 @@ For multi-package releases, use package names as subsections:
 
 ### Added
 
-- Added `list_routes` tool for comprehensive Django URL route introspection with filtering by HTTP method, route name, and URL pattern
+- Added project introspection toolset containing `project_get_project_info`, `project_list_apps`, `project_list_models`, `project_list_routes`, and `project_get_setting` tools
+- Added parameterized resources for targeted introspection: `django://app/{app_label}`, `django://app/{app_label}/models`, `django://model/{app_label}/{model_name}`, `django://route/{pattern*}`, and `django://setting/{key}`
 - Added Django Packages integration via mounted toolset: `djangopackages_search`, `djangopackages_get_package`, and `djangopackages_get_grid` tools with corresponding `django://package/{slug}` and `django://grid/{slug}` resources
 - Added dependency: `httpx`
 
 ### Changed
 
+- Refactored project resources into dedicated toolset with namespaced URIs (`django://project/apps`, `django://project/models`, etc.)
 - Refactored shell tools into mounted toolset with `shell_` prefix
 
 ### Removed
