@@ -39,6 +39,10 @@ def is_first_party_app(app_config: AppConfig) -> bool:
         True if the app is first-party project code, False if third-party or stdlib
     """
     try:
+        # Defensive check for malformed app configs (should never happen in practice)
+        if app_config.module is None:  # pragma: no cover
+            return False
+
         app_path = Path(inspect.getfile(app_config.module)).resolve()
 
         for lib_path in [
@@ -49,12 +53,15 @@ def is_first_party_app(app_config: AppConfig) -> bool:
             try:
                 if app_path.is_relative_to(lib_path):
                     return False
-            except ValueError:
-                # Path is on a different drive/mount (Windows), definitely not relative
+
+            # Windows-specific: paths on different drives (e.g., C:\ vs D:\)
+            except ValueError:  # pragma: no cover
                 pass
 
         return True
-    except (TypeError, OSError):
+
+    # Defensive error handling for built-in modules or broken app configs
+    except (TypeError, OSError):  # pragma: no cover
         return False
 
 
