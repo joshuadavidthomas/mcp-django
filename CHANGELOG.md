@@ -26,6 +26,8 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
+## [0.11.0]
+
 ### Added
 
 - Added project introspection toolset containing `project_get_project_info`, `project_list_apps`, `project_list_models`, `project_list_routes`, and `project_get_setting` tools
@@ -197,7 +199,7 @@ This should allow for safer production deployments where shell access can be com
 
 - Josh Thomas <josh@joshthomas.dev> (maintainer)
 
-[unreleased]: https://github.com/joshuadavidthomas/mcp-django/compare/2025.8.1...HEAD
+[unreleased]: https://github.com/joshuadavidthomas/mcp-django/compare/v0.11.0...HEAD
 [0.1.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/mcp-django-shell-v0.1.0
 [0.2.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/mcp-django-shell-v0.2.0
 [0.3.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/mcp-django-shell-v0.3.0
@@ -211,3 +213,4 @@ This should allow for safer production deployments where shell access can be com
 [mcp-django: 0.1.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/mcp-django-v0.1.0
 [2025.8.1]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/v2025.8.1
 [0.10.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/v0.10.0
+[0.11.0]: https://github.com/joshuadavidthomas/mcp-django/releases/tag/v0.11.0
