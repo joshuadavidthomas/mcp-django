@@ -23,23 +23,7 @@ mcp = FastMCP(
 DJANGOPACKAGES_TOOLSET = "djangopackages"
 
 
-@mcp.resource("django://grid/{slug}", tags={DJANGOPACKAGES_TOOLSET})
-async def get_grid_resource(slug: str) -> GridResource:
-    """Comparison grid details with all packages for comparison."""
-    async with DjangoPackagesClient() as client:
-        return await client.get_grid(slug)
-
-
-@mcp.tool(
-    name="get_grid",
-    annotations=ToolAnnotations(
-        title="djangopackages.org Grid Details",
-        readOnlyHint=True,
-        idempotentHint=True,
-    ),
-    tags={DJANGOPACKAGES_TOOLSET},
-)
-async def get_grid_tool(
+async def get_grid(
     slug: Annotated[
         str,
         "The grid slug (e.g., 'rest-frameworks', 'admin-interfaces')",
@@ -54,23 +38,25 @@ async def get_grid_tool(
         return await client.get_grid(slug)
 
 
-@mcp.resource("django://package/{slug}", tags={DJANGOPACKAGES_TOOLSET})
-async def get_package_resource(slug: str) -> PackageResource:
-    """Detailed package information including stats and metadata."""
-    async with DjangoPackagesClient() as client:
-        return await client.get_package(slug)
+mcp.resource(
+    "django://grid/{slug}",
+    name="Django Grid Details",
+    annotations={"readOnlyHint": True, "idempotentHint": True},
+    tags={DJANGOPACKAGES_TOOLSET},
+)(get_grid)
 
-
-@mcp.tool(
-    name="get_package",
+mcp.tool(
+    name="get_grid",
     annotations=ToolAnnotations(
-        title="djangopackages.org Package Details",
+        title="djangopackages.org Grid Details",
         readOnlyHint=True,
         idempotentHint=True,
     ),
     tags={DJANGOPACKAGES_TOOLSET},
-)
-async def get_package_tool(
+)(get_grid)
+
+
+async def get_package(
     slug: Annotated[
         str,
         "The package slug (e.g., 'django-debug-toolbar', 'django-rest-framework')",
@@ -83,6 +69,24 @@ async def get_package_tool(
     """
     async with DjangoPackagesClient() as client:
         return await client.get_package(slug)
+
+
+mcp.resource(
+    "django://package/{slug}",
+    name="Django Package Details",
+    annotations={"readOnlyHint": True, "idempotentHint": True},
+    tags={DJANGOPACKAGES_TOOLSET},
+)(get_package)
+
+mcp.tool(
+    name="get_package",
+    annotations=ToolAnnotations(
+        title="djangopackages.org Package Details",
+        readOnlyHint=True,
+        idempotentHint=True,
+    ),
+    tags={DJANGOPACKAGES_TOOLSET},
+)(get_package)
 
 
 @mcp.tool(
