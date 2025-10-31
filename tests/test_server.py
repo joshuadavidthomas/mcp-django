@@ -142,6 +142,102 @@ async def test_list_models_tool():
         assert "AModel" in model_names
 
 
+async def test_list_models_with_scope_project():
+    async with Client(mcp.server) as client:
+        result = await client.call_tool("project_list_models", {"scope": "project"})
+
+        assert isinstance(result.data, list)
+        assert len(result.data) > 0
+
+        # Should have project models, e.g. our test models
+        model_names = [model["model_class"] for model in result.data]
+        assert "AModel" in model_names
+
+        # Should NOT have Django models (they're in site-packages)
+        # This test might be limited if Django apps aren't installed
+        assert "User" not in model_names or "auth" not in model_names
+
+
+@override_settings(
+    INSTALLED_APPS=settings.INSTALLED_APPS
+    + [
+        "django.contrib.auth",
+        "django.contrib.contenttypes",
+    ]
+)
+async def test_list_models_with_scope_all():
+    """Test that scope='all' returns all models including Django contrib."""
+    async with Client(mcp.server) as client:
+        result = await client.call_tool("project_list_models", {"scope": "all"})
+
+        assert isinstance(result.data, list)
+        assert len(result.data) > 0
+
+        model_names = [model["model_class"] for model in result.data]
+
+        assert "AModel" in model_names
+        assert "User" in model_names
+        assert "ContentType" in model_names
+
+
+@override_settings(
+    INSTALLED_APPS=settings.INSTALLED_APPS
+    + [
+        "django.contrib.auth",
+        "django.contrib.contenttypes",
+    ]
+)
+async def test_list_models_with_include():
+    """Test that include parameter filters to specific apps."""
+    async with Client(mcp.server) as client:
+        result = await client.call_tool(
+            "project_list_models", {"include": ["auth", "tests"]}
+        )
+
+        assert isinstance(result.data, list)
+        assert len(result.data) > 0
+
+        model_names = [model["model_class"] for model in result.data]
+        app_labels = [model["import_path"].split(".")[0] for model in result.data]
+
+        # should include auth and tests models
+        assert "AModel" in model_names
+        assert "User" in model_names
+
+        # should not have anything else, e.g. from the contenttypes app
+        assert "ContentType" not in model_names
+
+        for label in app_labels:
+            assert label in ["tests", "django"], f"Unexpected app: {label}"
+
+
+@override_settings(
+    INSTALLED_APPS=settings.INSTALLED_APPS
+    + [
+        "django.contrib.auth",
+        "django.contrib.contenttypes",
+    ]
+)
+async def test_list_models_include_overrides_scope():
+    async with Client(mcp.server) as client:
+        # Even with scope='project', include should override
+        result = await client.call_tool(
+            "project_list_models", {"include": ["auth"], "scope": "project"}
+        )
+
+        assert isinstance(result.data, list)
+        assert len(result.data) > 0
+
+        model_names = [model["model_class"] for model in result.data]
+
+        # Should ONLY have auth models (include overrides scope)
+        assert "User" in model_names
+        assert "Group" in model_names
+
+        # Should NOT have project models despite scope='project'
+        assert "AModel" not in model_names
+
+
 async def test_get_setting_tool():
     async with Client(mcp.server) as client:
         result = await client.call_tool("project_get_setting", {"key": "DEBUG"})
