@@ -218,7 +218,7 @@ Read-only resources for project exploration without executing code (note that re
 |------|-------------|
 | `get_grid` | Get a specific comparison grid with all its packages |
 | `get_package` | Get detailed information about a specific Django package |
-| `search` | Search Django Packages for third-party packages |
+| `search` | Search djangopackages.org for third-party packages |
 
 ## Development
 
