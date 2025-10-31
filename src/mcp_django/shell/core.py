@@ -49,18 +49,14 @@ class DjangoShell:
     def export_history(
         self,
         filename: str | None = None,
-        include_output: bool = True,
         include_errors: bool = False,
-        deduplicate_imports: bool = True,
     ) -> str:
         """Export shell session history as a Python script.
 
         Args:
             filename: Optional filename to save to (relative to project dir).
                       If None, returns script content as string.
-            include_output: Include execution results as comments
             include_errors: Include failed attempts in export
-            deduplicate_imports: Consolidate import statements at top
 
         Returns:
             If filename is None: The Python script as a string
@@ -86,34 +82,18 @@ class DjangoShell:
 
             code = result.code
 
-            # Extract imports if deduplicating
-            if deduplicate_imports:
-                try:
-                    tree = ast.parse(code)
-                    for node in ast.walk(tree):
-                        if isinstance(node, (ast.Import, ast.ImportFrom)):
-                            imports_set.add(ast.unparse(node))
-                except SyntaxError:
-                    pass  # If can't parse, include code as-is
+            # Extract and deduplicate imports
+            try:
+                tree = ast.parse(code)
+                for node in ast.walk(tree):
+                    if isinstance(node, (ast.Import, ast.ImportFrom)):
+                        imports_set.add(ast.unparse(node))
+            except SyntaxError:
+                pass  # If can't parse, include code as-is
 
             # Add step comment
             steps.append(f"# Step {i}")
             steps.append(code)
-
-            # Add output as comment
-            if include_output:
-                if isinstance(result, ExpressionResult):
-                    value_repr = repr(result.value)
-                    if len(value_repr) > 100:
-                        value_repr = value_repr[:100] + "..."
-                    steps.append(f"# → {value_repr}")
-                elif isinstance(result, ErrorResult):
-                    steps.append(f"# → Error: {result.exception}")
-
-                if result.stdout:
-                    for line in result.stdout.strip().split("\n"):
-                        steps.append(f"# {line}")
-
             steps.append("")  # Blank line between steps
 
         # Build script
@@ -123,7 +103,7 @@ class DjangoShell:
             "",
         ]
 
-        if deduplicate_imports and imports_set:
+        if imports_set:
             script_parts.extend(sorted(imports_set))
             script_parts.append("")
 

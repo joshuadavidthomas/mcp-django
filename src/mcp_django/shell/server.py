@@ -98,24 +98,19 @@ async def export_history(
         str | None,
         "Optional filename to save to (relative to project dir). If None, returns script as string.",
     ] = None,
-    include_output: Annotated[
-        bool,
-        "Include execution results as comments in the exported script",
-    ] = True,
     include_errors: Annotated[
         bool,
         "Include failed execution attempts in the export",
     ] = False,
-    deduplicate_imports: Annotated[
-        bool,
-        "Consolidate import statements at the top of the script",
-    ] = True,
 ) -> str:
     """Export shell session history as a Python script.
 
     Returns a Python script containing all executed code from the current session.
     Useful for saving debugging sessions or creating reproducible scripts from
     interactive exploration.
+
+    The exported script will deduplicate import statements at the top of the script.
+    Execution results and output are not included in the export.
 
     If filename is provided, the script is saved to a file in the project directory.
     If no filename is provided, the script content is returned as a string.
@@ -130,9 +125,7 @@ async def export_history(
     try:
         result = django_shell.export_history(
             filename=filename,
-            include_output=include_output,
             include_errors=include_errors,
-            deduplicate_imports=deduplicate_imports,
         )
 
         if filename:
