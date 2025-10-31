@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from typing import Annotated
+from typing import Literal
 
 from django.apps import apps
 from django.conf import settings
@@ -13,6 +14,7 @@ from .resources import AppResource
 from .resources import ModelResource
 from .resources import ProjectResource
 from .resources import SettingResource
+from .resources import filter_models
 from .routing import RouteSchema
 from .routing import ViewMethod
 from .routing import filter_routes
@@ -124,20 +126,60 @@ def get_model(
     return ModelResource.from_model(model)
 
 
-def list_models() -> list[ModelResource]:
-    """Get detailed information about all Django models in the project.
+def list_models(
+    ctx: Context,
+    include: Annotated[
+        list[str] | None,
+        "Specific app labels to include (e.g., ['auth', 'myapp']). When provided, only models from these exact apps are returned (overrides scope).",
+    ] = None,
+    scope: Annotated[
+        Literal["project", "all"],
+        "Filter scope when include is not specified: 'project' (default) for your project's models only, 'all' for everything including Django and third-party packages.",
+    ] = "project",
+) -> list[ModelResource]:
+    """Get detailed information about Django models with optional filtering.
+
+    By default returns only models from your project directory. Use include for
+    specific apps or scope='all' for everything including Django and third-party packages.
+    When include is provided, it overrides the scope parameter.
 
     Use this for quick model introspection without shell access.
     """
-    return [ModelResource.from_model(model) for model in apps.get_models()]
+    logger.info(
+        "list_models called - request_id: %s, client_id: %s, include: %s, scope: %s",
+        ctx.request_id,
+        ctx.client_id or "unknown",
+        include,
+        scope,
+    )
+
+    all_models = list(apps.get_models())
+    total_count = len(all_models)
+
+    filtered_models = filter_models(all_models, include=include, scope=scope)
+    result = [ModelResource.from_model(model) for model in filtered_models]
+
+    logger.debug(
+        "list_models completed - request_id: %s, total_models: %d, returned_models: %d",
+        ctx.request_id,
+        total_count,
+        len(result),
+    )
+
+    return result
 
 
-mcp.resource(
-    "django://models",
-    name="Django Models",
-    annotations={"readOnlyHint": True, "idempotentHint": True},
-    tags={PROJECT_TOOLSET},
-)(list_models)
+# TODO: Uncomment once upstream bug is fixed
+# Resource templates with only optional query parameters don't work when called without
+# query params.
+# Ref: https://github.com/jlowin/fastmcp/pull/2323
+
+# mcp.resource(
+#     "django://models{?include,scope}",
+#     name="Django Models",
+#     annotations={"readOnlyHint": True, "idempotentHint": True},
+#     tags={PROJECT_TOOLSET},
+# )(list_models)
 
 mcp.tool(
     name="list_models",
@@ -148,6 +190,25 @@ mcp.tool(
     ),
     tags={PROJECT_TOOLSET},
 )(list_models)
+
+
+@mcp.resource(
+    "django://models",
+    name="Django Models",
+    annotations={"readOnlyHint": True, "idempotentHint": True},
+    tags={PROJECT_TOOLSET},
+)
+def list_models_resource() -> list[ModelResource]:
+    """Resource endpoint without query parameters - uses default filtering (project scope)."""
+
+    # TODO: Replace with query-param template once upstream bug is fixed.
+    # This static resource provides access with default settings until the bug is fixed.
+    # Use the list_models() tool for filtering options.
+    # Ref: https://github.com/jlowin/fastmcp/pull/2323
+
+    all_models = list(apps.get_models())
+    filtered_models = filter_models(all_models, include=None, scope="project")
+    return [ModelResource.from_model(model) for model in filtered_models]
 
 
 @mcp.tool(

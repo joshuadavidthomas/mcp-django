@@ -14,6 +14,7 @@ from mcp_django.project.resources import ProjectResource
 from mcp_django.project.resources import PythonResource
 from mcp_django.project.resources import SettingResource
 from mcp_django.project.resources import get_source_file_path
+from mcp_django.project.resources import is_first_party_app
 from tests.models import AModel
 
 
@@ -50,6 +51,24 @@ def test_get_source_file_path_valueerror(monkeypatch):
 
     result = get_source_file_path(mock_obj)
     assert str(result) == "/usr/lib/python3.12/os.py"
+
+
+def test_is_first_party_app_first_party():
+    """Test that project apps are correctly identified as first-party."""
+    tests_app = apps.get_app_config("tests")
+    result = is_first_party_app(tests_app)
+    assert result is True
+
+
+@override_settings(
+    INSTALLED_APPS=settings.INSTALLED_APPS
+    + ["django.contrib.auth", "django.contrib.contenttypes"]
+)
+def test_is_first_party_app_third_party():
+    """Test that Django built-in apps are correctly identified as third-party."""
+    auth_app = apps.get_app_config("auth")
+    result = is_first_party_app(auth_app)
+    assert result is False
 
 
 def test_project_resource_from_env():

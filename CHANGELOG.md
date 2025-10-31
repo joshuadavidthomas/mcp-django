@@ -26,6 +26,14 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
+### Added
+
+- Added `include` and `scope` parameters to `list_models` tool for filtering Django models
+
+### Changed
+
+- `django://project/models` resource now defaults to `scope="project"` (first-party models only) instead of returning all models
+
 ## [0.11.0]
 
 ### Added

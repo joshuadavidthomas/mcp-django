@@ -182,7 +182,7 @@ Read-only resources for project exploration without executing code (note that re
 | `django://app/{app_label}/models` | All models in a specific app |
 | `django://apps` | All installed Django applications with their models |
 | `django://model/{app_label}/{model_name}` | Detailed information about a specific model |
-| `django://models` | All models with import paths and field types |
+| `django://models` | Project models with import paths and field types (first-party only) |
 | `django://route/{pattern*}` | Routes matching a specific URL pattern |
 | `django://setting/{key}` | Get a specific Django setting value |
 
@@ -202,7 +202,7 @@ Read-only resources for project exploration without executing code (note that re
 | `get_project_info` | Get comprehensive project information including Python environment and Django configuration |
 | `get_setting` | Get a Django setting value by key |
 | `list_apps` | List all installed Django applications with their models |
-| `list_models` | Get detailed information about all Django models in the project |
+| `list_models` | Get detailed information about Django models with optional filtering by app or scope |
 | `list_routes` | Introspect Django URL routes with filtering support for HTTP method, route name, or URL pattern |
 
 #### Shell

@@ -3,6 +3,7 @@ from __future__ import annotations
 import inspect
 import os
 import sys
+import sysconfig
 from pathlib import Path
 from typing import Any
 from typing import Literal
@@ -23,6 +24,78 @@ def get_source_file_path(obj: Any) -> Path:
         return Path(inspect.getfile(target))
     except (TypeError, OSError):
         return Path("unknown")
+
+
+def is_first_party_app(app_config: AppConfig) -> bool:
+    """Check if an app is first-party (project code) vs third-party (installed package).
+
+    Uses Python's sysconfig to determine installation paths, which properly handles
+    all installation scenarios (pip, conda, virtualenv, etc.) and is platform-independent.
+
+    Args:
+        app_config: Django AppConfig to check
+
+    Returns:
+        True if the app is first-party project code, False if third-party or stdlib
+    """
+    try:
+        # Defensive check for malformed app configs (should never happen in practice)
+        if app_config.module is None:  # pragma: no cover
+            return False
+
+        app_path = Path(inspect.getfile(app_config.module)).resolve()
+
+        for lib_path in [
+            Path(sysconfig.get_path("purelib")),  # site-packages (pure Python)
+            Path(sysconfig.get_path("platlib")),  # site-packages (platform-specific)
+            Path(sysconfig.get_path("stdlib")),  # standard library
+        ]:
+            try:
+                if app_path.is_relative_to(lib_path):
+                    return False
+
+            # Windows-specific: paths on different drives (e.g., C:\ vs D:\)
+            except ValueError:  # pragma: no cover
+                pass
+
+        return True
+
+    # Defensive error handling for built-in modules or broken app configs
+    except (TypeError, OSError):  # pragma: no cover
+        return False
+
+
+def filter_models(
+    models: list[Any],
+    include: list[str] | None = None,
+    scope: Literal["project", "all"] = "project",
+) -> list[Any]:
+    """Filter Django models by app inclusion or scope.
+
+    Args:
+        models: List of Django model classes to filter
+        include: Specific app labels to include (overrides scope)
+        scope: "project" for project models, "all" for everything
+
+    Returns:
+        Filtered list of model classes
+    """
+    filtered_models = []
+
+    for model in models:
+        app_label = model._meta.app_label
+
+        # If include is specified, only filter by include (ignore scope)
+        if include is not None:
+            if app_label in include:
+                filtered_models.append(model)
+        # Otherwise, filter by scope
+        elif scope == "project" and is_first_party_app(apps.get_app_config(app_label)):
+            filtered_models.append(model)
+        elif scope == "all":
+            filtered_models.append(model)
+
+    return filtered_models
 
 
 class ProjectResource(BaseModel):
