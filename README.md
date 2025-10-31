@@ -174,7 +174,7 @@ Inspired by Armin Ronacher's [Your MCP Doesn't Need 30 Tools: It Needs Code](htt
 
 Read-only resources for project exploration without executing code (note that resource support varies across MCP clients):
 
-**Project Resources:**
+#### Project
 
 | Resource | Description |
 |----------|-------------|
@@ -186,7 +186,7 @@ Read-only resources for project exploration without executing code (note that re
 | `django://route/{pattern*}` | Routes matching a specific URL pattern |
 | `django://setting/{key}` | Get a specific Django setting value |
 
-**djangopackages.org Resources:**
+#### djangopackages.org
 
 | Resource | Description |
 |----------|-------------|
@@ -195,7 +195,7 @@ Read-only resources for project exploration without executing code (note that re
 
 ### Tools
 
-**Project Tools:**
+#### Project
 
 | Tool | Description |
 |------|-------------|
@@ -205,14 +205,14 @@ Read-only resources for project exploration without executing code (note that re
 | `list_models` | Get detailed information about all Django models in the project |
 | `list_routes` | Introspect Django URL routes with filtering support for HTTP method, route name, or URL pattern |
 
-**Shell Tools:**
+#### Shell
 
 | Tool | Description |
 |------|-------------|
 | `execute` | Execute Python code in a persistent Django shell session |
 | `reset` | Reset the Django shell session, clearing all variables and history |
 
-**djangopackages.org Tools:**
+#### djangopackages.org
 
 | Tool | Description |
 |------|-------------|
