@@ -19,10 +19,10 @@ class Tool(str, Enum):
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def initialize_and_reset():
+async def initialize_and_clear():
     await mcp.initialize()
     async with Client(mcp.server) as client:
-        await client.call_tool("shell_reset")
+        await client.call_tool("shell_clear_history")
 
 
 async def test_instructions_exist():
@@ -51,7 +51,8 @@ async def test_tool_listing():
             "project_list_routes",
             "project_get_setting",
             "shell_execute",
-            "shell_reset",
+            "shell_clear_history",
+            "shell_export_history",
         ]:
             assert tool_name in tool_names
 

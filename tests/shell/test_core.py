@@ -16,7 +16,7 @@ from mcp_django.shell.core import StatementResult
 def shell():
     shell = DjangoShell()
     yield shell
-    shell.reset()
+    shell.clear_history()
 
 
 class TestCodeExecution:
@@ -110,30 +110,30 @@ class TestShellState:
         shell = DjangoShell()
 
         assert apps.ready
-        assert shell.globals == {}
+        assert shell.history == []
 
-    def test_globals_persist_across_executions(self, shell):
+    def test_execution_uses_fresh_globals(self, shell):
+        """Verify each execution uses fresh globals (stateless)."""
+        # First execution
         parsed_code, setup, code_type = parse_code("x = 42")
         result = shell._execute(parsed_code, setup, code_type)
+        assert isinstance(result, StatementResult)
 
-        assert "x" in shell.globals
-
-        result = parsed_code, setup, code_type = parse_code("x + 8")
+        # Second execution should NOT have access to 'x' (fresh globals)
+        parsed_code, setup, code_type = parse_code("x + 8")
         result = shell._execute(parsed_code, setup, code_type)
+        assert isinstance(result, ErrorResult)
+        assert isinstance(result.exception, NameError)
 
-        assert result.value == 50
-
-    def test_reset_clears_globals_and_history(self, shell):
+    def test_clear_history_clears_history_only(self, shell):
+        """Verify clear_history clears the execution history."""
         parsed_code, setup, code_type = parse_code("x = 42")
-
         shell._execute(parsed_code, setup, code_type)
 
-        assert "x" in shell.globals
         assert len(shell.history) == 1
 
-        shell.reset()
+        shell.clear_history()
 
-        assert shell.globals == {}
         assert len(shell.history) == 0
 
 

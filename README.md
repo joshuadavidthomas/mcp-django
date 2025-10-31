@@ -162,9 +162,10 @@ It wouldn't be an MCP server README without a gratuitous list of features punctu
 - 🔍 **Project exploration** - MCP resources for discovering apps, models, and configuration
 - 📦 **Package discovery** - Search and browse Django Packages for third-party packages
 - 🚀 **Zero configuration** - No schemas, no settings, just Django
-- 🐚 **Stateful shell** - `shell` executes Python code in your Django environment
-- 🔄 **Persistent state** - Imports and variables stick around between calls
-- 🧹 **Reset when needed** - `shell(action="reset")` clears the session when things get weird
+- 🐚 **Stateless shell** - `shell` executes Python code with fresh state each call
+- 🔄 **Always fresh** - Code changes take effect immediately, no stale modules
+- 📤 **Export sessions** - Save debugging sessions as Python scripts
+- 🧹 **Clear history** - Start fresh when exploration gets messy
 - 🤖 **LLM-friendly** - Designed for LLM assistants that already know Python
 - 🌐 **Multiple transports** - STDIO, HTTP, SSE support
 
@@ -209,8 +210,9 @@ Read-only resources for project exploration without executing code (note that re
 
 | Tool | Description |
 |------|-------------|
-| `execute` | Execute Python code in a persistent Django shell session |
-| `reset` | Reset the Django shell session, clearing all variables and history |
+| `execute` | Execute Python code in a stateless Django shell (fresh state each call) |
+| `export_history` | Export session history as a Python script (optionally save to file) |
+| `clear_history` | Clear the session history for a fresh start |
 
 #### djangopackages.org
 

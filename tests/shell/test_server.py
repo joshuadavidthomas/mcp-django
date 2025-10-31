@@ -17,10 +17,10 @@ pytestmark = pytest.mark.asyncio
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def initialize_and_reset():
+async def initialize_and_clear():
     await mcp.initialize()
     async with Client(mcp.server) as client:
-        await client.call_tool("shell_reset")
+        await client.call_tool("shell_clear_history")
 
 
 async def test_shell_execute():
@@ -52,7 +52,7 @@ async def test_shell_execute_with_imports():
     async with Client(mcp.server) as client:
         result = await client.call_tool(
             "shell_execute",
-            {"code": "os.path.join('test', 'path')", "imports": "import os"},
+            {"code": "import os\nos.path.join('test', 'path')"},
         )
         assert result.data["status"] == ExecutionStatus.SUCCESS
         assert result.data["output"]["value"] == "'test/path'"
@@ -70,28 +70,17 @@ async def test_shell_execute_with_multiple_imports():
         result = await client.call_tool(
             "shell_execute",
             {
-                "code": "datetime.datetime.now().year + math.floor(math.pi)",
-                "imports": "import datetime\nimport math",
+                "code": "import datetime\nimport math\ndatetime.datetime.now().year + math.floor(math.pi)",
             },
         )
         assert result.data["status"] == ExecutionStatus.SUCCESS
-
-
-async def test_shell_execute_with_empty_imports():
-    async with Client(mcp.server) as client:
-        result = await client.call_tool(
-            "shell_execute",
-            {"code": "2 + 2", "imports": ""},
-        )
-        assert result.data["status"] == ExecutionStatus.SUCCESS
-        assert result.data["output"]["value"] == "4"
 
 
 async def test_shell_execute_imports_error():
     async with Client(mcp.server) as client:
         result = await client.call_tool(
             "shell_execute",
-            {"code": "2 + 2", "imports": "import nonexistent_module"},
+            {"code": "import nonexistent_module"},
         )
         assert result.data["status"] == ExecutionStatus.ERROR
         assert "ModuleNotFoundError" in str(
@@ -99,23 +88,23 @@ async def test_shell_execute_imports_error():
         )
 
 
-async def test_shell_execute_imports_optimization():
+async def test_shell_execute_stateless():
+    """Test that each execution uses fresh globals (stateless)."""
     async with Client(mcp.server) as client:
-        # First call imports os
+        # First call imports and uses os
         result1 = await client.call_tool(
             "shell_execute",
-            {"code": "os.path.join('test', 'first')", "imports": "import os"},
+            {"code": "import os\nos.path.join('test', 'first')"},
         )
         assert result1.data["status"] == ExecutionStatus.SUCCESS
 
-        # Second call should not re-import os since it's already available
-        # This tests that the optimization works (no duplicate import error)
+        # Second call should NOT have os available (fresh globals)
         result2 = await client.call_tool(
             "shell_execute",
-            {"code": "os.path.join('test', 'second')", "imports": "import os"},
+            {"code": "os.path.join('test', 'second')"},  # No import!
         )
-        assert result2.data["status"] == ExecutionStatus.SUCCESS
-        assert result2.data["output"]["value"] == "'test/second'"
+        assert result2.data["status"] == ExecutionStatus.ERROR
+        assert "NameError" in str(result2.data["output"]["exception"]["exc_type"])
 
 
 async def test_shell_execute_error_output():
@@ -144,17 +133,19 @@ async def test_shell_execute_unexpected_error(monkeypatch):
             await client.call_tool("shell_execute", {"code": "2 + 2"})
 
 
-async def test_shell_reset():
+async def test_shell_clear_history():
+    """Test that clear_history clears the execution history."""
     async with Client(mcp.server) as client:
-        await client.call_tool("shell_execute", {"code": "x = 42"})
+        # Execute some code to create history
+        await client.call_tool("shell_execute", {"code": "2 + 2"})
+        await client.call_tool("shell_execute", {"code": "3 + 3"})
 
-        result = await client.call_tool("shell_reset")
-        assert (
-            "reset" in result.content[0].text.lower()
-        )  # This one still returns a string
+        # Verify history exists
+        assert len(django_shell.history) == 2
 
-        result = await client.call_tool(
-            "shell_execute", {"code": "print('x' in globals())"}
-        )
-        # Check stdout contains "False"
-        assert "False" in result.data["stdout"]
+        # Clear history
+        result = await client.call_tool("shell_clear_history")
+        assert "cleared" in result.content[0].text.lower()
+
+        # Verify history is empty
+        assert len(django_shell.history) == 0

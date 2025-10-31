@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import ast
 import logging
+import os
 from contextlib import redirect_stderr
 from contextlib import redirect_stdout
 from dataclasses import dataclass
 from dataclasses import field
 from datetime import datetime
 from io import StringIO
+from pathlib import Path
 from typing import Any
 from typing import Literal
 
@@ -30,16 +33,132 @@ class DjangoShell:
         else:
             logger.debug("Django already initialized, skipping setup")
 
-        self.globals: dict[str, Any] = {}
         self.history: list[Result] = []
 
         logger.info("Shell initialized successfully")
 
-    def reset(self):
-        logger.info("Shell reset - clearing globals and history")
+    def clear_history(self):
+        """Clear the execution history.
 
-        self.globals = {}
+        Use this when you want to start with a clean history for the next
+        export, or when the history has become cluttered with exploratory code.
+        """
+        logger.info("Clearing shell history - previous entries: %s", len(self.history))
         self.history = []
+
+    def export_history(
+        self,
+        filename: str | None = None,
+        include_output: bool = True,
+        include_errors: bool = False,
+        deduplicate_imports: bool = True,
+    ) -> str:
+        """Export shell session history as a Python script.
+
+        Args:
+            filename: Optional filename to save to (relative to project dir).
+                      If None, returns script content as string.
+            include_output: Include execution results as comments
+            include_errors: Include failed attempts in export
+            deduplicate_imports: Consolidate import statements at top
+
+        Returns:
+            If filename is None: The Python script as a string
+            If filename provided: Confirmation message with preview
+        """
+        logger.info(
+            "Exporting history - entries: %s, filename: %s",
+            len(self.history),
+            filename or "None",
+        )
+
+        if not self.history:
+            return "# No history to export\n"
+
+        # Collect imports and code
+        imports_set = set()
+        steps = []
+
+        for i, result in enumerate(self.history, 1):
+            # Skip errors if not including them
+            if isinstance(result, ErrorResult) and not include_errors:
+                continue
+
+            code = result.code
+
+            # Extract imports if deduplicating
+            if deduplicate_imports:
+                try:
+                    tree = ast.parse(code)
+                    for node in ast.walk(tree):
+                        if isinstance(node, (ast.Import, ast.ImportFrom)):
+                            imports_set.add(ast.unparse(node))
+                except SyntaxError:
+                    pass  # If can't parse, include code as-is
+
+            # Add step comment
+            steps.append(f"# Step {i}")
+            steps.append(code)
+
+            # Add output as comment
+            if include_output:
+                if isinstance(result, ExpressionResult):
+                    value_repr = repr(result.value)
+                    if len(value_repr) > 100:
+                        value_repr = value_repr[:100] + "..."
+                    steps.append(f"# → {value_repr}")
+                elif isinstance(result, ErrorResult):
+                    steps.append(f"# → Error: {result.exception}")
+
+                if result.stdout:
+                    for line in result.stdout.strip().split("\n"):
+                        steps.append(f"# {line}")
+
+            steps.append("")  # Blank line between steps
+
+        # Build script
+        script_parts = [
+            "# Django Shell Session Export",
+            f"# Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            "",
+        ]
+
+        if deduplicate_imports and imports_set:
+            script_parts.extend(sorted(imports_set))
+            script_parts.append("")
+
+        script_parts.extend(steps)
+
+        script = "\n".join(script_parts)
+
+        # Save to file if requested
+        if filename:
+            # Security: only allow relative paths
+            if os.path.isabs(filename):
+                raise ValueError("Absolute paths not allowed for security reasons")
+
+            # Ensure .py extension
+            if not filename.endswith(".py"):
+                filename += ".py"
+
+            filepath = Path(filename)
+
+            # Write file
+            filepath.write_text(script)
+
+            logger.info("Exported history to file: %s", filepath)
+
+            # Return confirmation with preview
+            line_count = len(script.split("\n"))
+            preview_lines = script.split("\n")[:20]
+            preview = "\n".join(preview_lines)
+            if line_count > 20:
+                preview += f"\n... ({line_count - 20} more lines)"
+
+            return f"Exported {line_count} lines to {filename}\n\n{preview}"
+
+        # Return script content
+        return script
 
     async def execute(
         self, code: str, setup: str, code_type: Literal["expression", "statement"]
@@ -62,8 +181,8 @@ class DjangoShell:
     ) -> Result:
         """Execute Python code in the Django shell context (synchronous).
 
-        Attempts to evaluate code as an expression first (returning a value),
-        falling back to exec for statements. Captures stdout and errors.
+        Each execution uses fresh globals for stateless behavior. This ensures
+        code changes always take effect and no stale modules persist.
 
         Note: This synchronous method contains the actual execution logic.
         Use `execute()` for async contexts or `_execute()` for sync/testing.
@@ -76,6 +195,9 @@ class DjangoShell:
 
         stdout = StringIO()
         stderr = StringIO()
+
+        # Use fresh globals for THIS execution only (stateless)
+        execution_globals: dict[str, Any] = {}
 
         with redirect_stdout(stdout), redirect_stderr(stderr):
             try:
@@ -93,11 +215,11 @@ class DjangoShell:
                         setup[:200] + "..." if len(setup) > 200 else setup,
                     )
 
-                    exec(setup, self.globals)
+                    exec(setup, execution_globals)
 
                 match code_type:
                     case "expression":
-                        value = eval(code, self.globals)
+                        value = eval(code, execution_globals)
 
                         logger.debug(
                             "Expression executed successfully, result type: %s",
@@ -113,7 +235,7 @@ class DjangoShell:
                             )
                         )
                     case "statement":
-                        exec(code, self.globals)
+                        exec(code, execution_globals)
 
                         logger.debug("Statement executed successfully")
 
