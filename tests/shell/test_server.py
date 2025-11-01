@@ -133,6 +133,78 @@ async def test_shell_execute_unexpected_error(monkeypatch):
             await client.call_tool("shell_execute", {"code": "2 + 2"})
 
 
+async def test_shell_export_history_to_string():
+    """Test that export_history returns script as string."""
+    async with Client(mcp.server) as client:
+        # Execute some code to create history
+        await client.call_tool("shell_execute", {"code": "2 + 2"})
+        await client.call_tool("shell_execute", {"code": "x = 5"})
+
+        # Export history
+        result = await client.call_tool("shell_export_history")
+        script = result.content[0].text
+
+        # Verify script content
+        assert "# Django Shell Session Export" in script
+        assert "2 + 2" in script
+        assert "x = 5" in script
+
+
+async def test_shell_export_history_with_errors():
+    """Test that export_history can include errors."""
+    async with Client(mcp.server) as client:
+        # Execute code with error
+        await client.call_tool("shell_execute", {"code": "1 / 0"})
+
+        # Export without errors (default)
+        result = await client.call_tool("shell_export_history")
+        script = result.content[0].text
+        assert "1 / 0" not in script
+
+        # Export with errors
+        result = await client.call_tool("shell_export_history", {"include_errors": True})
+        script = result.content[0].text
+        assert "1 / 0" in script
+
+
+async def test_shell_export_history_to_file(tmp_path):
+    """Test that export_history can save to file."""
+    import os
+    old_cwd = os.getcwd()
+    os.chdir(tmp_path)
+
+    try:
+        async with Client(mcp.server) as client:
+            # Execute some code
+            await client.call_tool("shell_execute", {"code": "x = 42"})
+
+            # Export to file
+            result = await client.call_tool("shell_export_history", {"filename": "test_script"})
+            output = result.content[0].text
+
+            # Should mention the file
+            assert "test_script.py" in output
+            assert "Exported" in output
+
+            # File should exist
+            assert (tmp_path / "test_script.py").exists()
+    finally:
+        os.chdir(old_cwd)
+
+
+async def test_shell_export_history_error_handling():
+    """Test that export_history handles exceptions gracefully."""
+    from unittest.mock import patch
+    async with Client(mcp.server) as client:
+        # Execute some code
+        await client.call_tool("shell_execute", {"code": "x = 1"})
+
+        # Mock export_history to raise an exception
+        with patch.object(django_shell, "export_history", side_effect=ValueError("Test error")):
+            with pytest.raises(ToolError, match="Test error"):
+                await client.call_tool("shell_export_history")
+
+
 async def test_shell_clear_history():
     """Test that clear_history clears the execution history."""
     async with Client(mcp.server) as client:

@@ -170,6 +170,45 @@ class TestExportHistory:
         assert "1 + 1" in script
         assert "2 + 2" in script
 
+    def test_export_to_file_with_long_output(self, shell, tmp_path):
+        """Export truncates preview for files with more than 20 lines."""
+        parsed_code, setup, code_type = parse_code("2 + 2")
+        shell._execute(parsed_code, setup, code_type)
+
+        # Execute enough times to create > 20 lines (header + steps)
+        for i in range(10):
+            parsed_code, setup, code_type = parse_code(f"x = {i}")
+            shell._execute(parsed_code, setup, code_type)
+
+        old_cwd = Path.cwd()
+        os.chdir(tmp_path)
+
+        try:
+            result = shell.export_history(filename="test_long")
+
+            # Should mention truncation
+            assert "more lines" in result
+        finally:
+            os.chdir(old_cwd)
+
+    def test_export_with_invalid_syntax_in_history(self, shell):
+        """Export handles code with syntax errors gracefully."""
+        from mcp_django.shell.core import StatementResult
+
+        # Manually add a result with code that can't be parsed
+        # (This simulates a defensive case that shouldn't normally happen)
+        invalid_result = StatementResult(
+            code="if x == 1:",  # Missing body, invalid syntax
+            stdout="",
+            stderr="",
+        )
+        shell.history.append(invalid_result)
+
+        # Should not crash, just include the code as-is
+        script = shell.export_history()
+
+        assert "if x == 1:" in script
+
 
 class TestClearHistory:
     def test_clear_history_clears_entries(self, shell):
