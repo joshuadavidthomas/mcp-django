@@ -44,7 +44,7 @@ For multi-package releases, use package names as subsections:
 
 ### Fixed
 
-- Shell execution now reflects code changes immediately without requiring MCP server restart
+- Shell execution now reflects code changes immediately without requiring MCP server restart, as each execution uses fresh globals rather than persistent state
 
 ## [0.11.0]
 
