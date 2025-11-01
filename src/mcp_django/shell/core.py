@@ -78,14 +78,12 @@ class DjangoShell:
 
         imports_set = set()
         steps = []
-        step_num = 1
 
-        for result in self.history:
-            if isinstance(result, ErrorResult):
-                continue
+        successful_codes = [
+            result.code for result in self.history if not isinstance(result, ErrorResult)
+        ]
 
-            code = result.code
-
+        for step_num, code in enumerate(successful_codes, start=1):
             try:
                 tree = ast.parse(code)
                 for node in ast.walk(tree):
@@ -97,7 +95,6 @@ class DjangoShell:
             steps.append(f"# Step {step_num}")
             steps.append(code)
             steps.append("")
-            step_num += 1
 
         script_parts = [
             "# Django Shell Session Export",
