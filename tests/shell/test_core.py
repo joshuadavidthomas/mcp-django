@@ -5,7 +5,6 @@ import logging
 import pytest
 from django.apps import apps
 
-from mcp_django.shell.code import parse_code
 from mcp_django.shell.core import DjangoShell
 from mcp_django.shell.core import ErrorResult
 from mcp_django.shell.core import StatementResult
@@ -20,14 +19,12 @@ def shell():
 
 class TestCodeExecution:
     def test_execute_simple_statement(self, shell):
-        parsed_code = parse_code("x = 5")
-        result = shell._execute(parsed_code)
+        result = shell._execute("x = 5")
 
         assert isinstance(result, StatementResult)
 
     def test_execute_print_captures_stdout(self, shell):
-        parsed_code = parse_code('print("Hello, World!")')
-        result = shell._execute(parsed_code)
+        result = shell._execute('print("Hello, World!")')
 
         assert isinstance(result, StatementResult)
         assert result.stdout == "Hello, World!\n"
@@ -38,27 +35,23 @@ x = 5
 y = 10
 print(f"Sum: {x + y}")
 """
-        parsed_code = parse_code(code)
-        result = shell._execute(parsed_code)
+        result = shell._execute(code)
 
         assert isinstance(result, StatementResult)
         assert result.stdout == "Sum: 15\n"
 
     def test_execute_invalid_code_returns_error(self, shell):
-        parsed_code = parse_code("1 / 0")
-        result = shell._execute(parsed_code)
+        result = shell._execute("1 / 0")
 
         assert isinstance(result, ErrorResult)
 
     def test_execute_empty_string_returns_ok(self, shell):
-        parsed_code = parse_code("")
-        result = shell._execute(parsed_code)
+        result = shell._execute("")
 
         assert isinstance(result, StatementResult)
 
     def test_execute_whitespace_only_returns_ok(self, shell):
-        parsed_code = parse_code("   \n  \t  ")
-        result = shell._execute(parsed_code)
+        result = shell._execute("   \n  \t  ")
 
         assert isinstance(result, StatementResult)
 
@@ -66,8 +59,7 @@ print(f"Sum: {x + y}")
     async def test_async_execute_returns_result(self):
         shell = DjangoShell()
 
-        parsed_code = parse_code("x = 5")
-        result = await shell.execute(parsed_code)
+        result = await shell.execute("x = 5")
 
         assert isinstance(result, StatementResult)
 
@@ -82,20 +74,17 @@ class TestShellState:
     def test_execution_uses_fresh_globals(self, shell):
         """Verify each execution uses fresh globals (stateless)."""
         # First execution
-        parsed_code = parse_code("x = 42")
-        result = shell._execute(parsed_code)
+        result = shell._execute("x = 42")
         assert isinstance(result, StatementResult)
 
         # Second execution should NOT have access to 'x' (fresh globals)
-        parsed_code = parse_code("print(x)")
-        result = shell._execute(parsed_code)
+        result = shell._execute("print(x)")
         assert isinstance(result, ErrorResult)
         assert isinstance(result.exception, NameError)
 
     def test_clear_history_clears_history_only(self, shell):
         """Verify clear_history clears the execution history."""
-        parsed_code = parse_code("x = 42")
-        shell._execute(parsed_code)
+        shell._execute("x = 42")
 
         assert len(shell.history) == 1
 
@@ -117,8 +106,7 @@ sys.stdout.write("Output message\\n")
 sys.stderr.write("Error message\\n")
 x = 42
 """
-        parsed_code = parse_code(code.strip())
-        result = shell._execute(parsed_code)
+        result = shell._execute(code.strip())
 
         assert isinstance(result, StatementResult)
         assert result.stdout == "Output message\n"
@@ -133,8 +121,7 @@ sys.stdout.write("Before error\\n")
 sys.stderr.write("Warning before error\\n")
 1 / 0
 """
-        parsed_code = parse_code(code.strip())
-        result = shell._execute(parsed_code)
+        result = shell._execute(code.strip())
 
         assert isinstance(result, ErrorResult)
         assert result.stdout == "Before error\n"

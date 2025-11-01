@@ -7,7 +7,6 @@ from fastmcp import Context
 from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
-from .code import parse_code
 from .core import django_shell
 from .output import DjangoShellOutput
 from .output import ErrorOutput
@@ -59,10 +58,8 @@ async def execute(
         "Full code for django_shell - request_id: %s: %s", ctx.request_id, code
     )
 
-    parsed_code = parse_code(code)
-
     try:
-        result = await django_shell.execute(parsed_code)
+        result = await django_shell.execute(code)
         output = DjangoShellOutput.from_result(result)
 
         logger.debug(
