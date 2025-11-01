@@ -39,8 +39,8 @@ class DjangoShell:
     def clear_history(self):
         """Clear the execution history.
 
-        Use this when you want to start with a clean history for the next
-        export, or when the history has become cluttered with exploratory code.
+        Removes all entries from the shell history. Useful for starting fresh
+        or removing exploratory code before exporting.
         """
         logger.info("Clearing shell history - previous entries: %s", len(self.history))
         self.history = []
@@ -52,14 +52,21 @@ class DjangoShell:
     ) -> str:
         """Export shell session history as a Python script.
 
+        Generates a Python script containing all executed code from the session.
+        Import statements are deduplicated and placed at the top. Output and
+        execution results are not included in the export.
+
         Args:
-            filename: Optional filename to save to (relative to project dir).
-                      If None, returns script content as string.
-            include_errors: Include failed attempts in export
+            filename: Relative path to save the script. If None, returns the
+                script content as a string. Absolute paths are rejected.
+            include_errors: Whether to include code that raised exceptions.
 
         Returns:
-            If filename is None: The Python script as a string
-            If filename provided: Confirmation message with preview
+            The Python script as a string if filename is None, otherwise a
+            confirmation message with preview of the exported file.
+
+        Raises:
+            ValueError: If an absolute path is provided for filename.
         """
         logger.info(
             "Exporting history - entries: %s, filename: %s",
@@ -142,15 +149,20 @@ class DjangoShell:
     async def execute(
         self, code: str, setup: str, code_type: Literal["expression", "statement"]
     ) -> Result:
-        """Execute Python code in the Django shell context (async wrapper).
+        """Execute Python code in the Django shell context (async).
 
-        This async wrapper enables use from FastMCP and other async contexts.
-        It delegates to `_execute()` for the actual execution logic.
+        Async wrapper around the synchronous _execute() method. Delegates
+        execution to a thread pool via sync_to_async to avoid Django's
+        SynchronousOnlyOperation errors when called from async contexts.
 
-        Note: FastMCP requires async methods, but Django ORM operations are
-        synchronous. The `@sync_to_async` decorator runs the synchronous
-        `_execute()` method in a thread pool to avoid `SynchronousOnlyOperation`
-        errors.
+        Args:
+            code: Python code to execute.
+            setup: Setup code to run before the main code.
+            code_type: Whether the code is an "expression" or "statement".
+
+        Returns:
+            ExpressionResult, StatementResult, or ErrorResult depending on
+            execution outcome.
         """
 
         return await sync_to_async(self._execute)(code, setup, code_type)
@@ -160,11 +172,19 @@ class DjangoShell:
     ) -> Result:
         """Execute Python code in the Django shell context (synchronous).
 
-        Each execution uses fresh globals for stateless behavior. This ensures
-        code changes always take effect and no stale modules persist.
+        Executes code in a fresh global namespace for stateless behavior,
+        ensuring code changes take effect and no stale modules persist between
+        executions. Captures stdout/stderr and saves results to history.
 
-        Note: This synchronous method contains the actual execution logic.
-        Use `execute()` for async contexts or `_execute()` for sync/testing.
+        Args:
+            code: Python code to execute.
+            setup: Setup code to run before the main code.
+            code_type: Whether the code is an "expression" or "statement".
+
+        Returns:
+            ExpressionResult if code_type is "expression" and execution succeeds.
+            StatementResult if code_type is "statement" and execution succeeds.
+            ErrorResult if execution raises an exception.
         """
 
         code_preview = (code[:100] + "..." if len(code) > 100 else code).replace(
