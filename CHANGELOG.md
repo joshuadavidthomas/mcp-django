@@ -28,11 +28,23 @@ For multi-package releases, use package names as subsections:
 
 ### Added
 
+- Added `export_history` tool for exporting shell session history as a Python script with deduplicated imports
+- Added `clear_history` tool for clearing shell session history
 - Added `include` and `scope` parameters to `list_models` tool for filtering Django models
 
 ### Changed
 
+- **BREAKING**: Shell execution is now stateless. Each tool call uses fresh globals and variables/imports no longer persist between calls
 - `django://project/models` resource now defaults to `scope="project"` (first-party models only) instead of returning all models
+
+### Removed
+
+- **BREAKING**: Removed `reset` tool, no longer needed with stateless execution
+- **BREAKING**: Removed `imports` parameter from `execute` tool. Parameter was redundant as LLMs would include imports in code body regardless, and is no longer needed with stateless execution
+
+### Fixed
+
+- Shell execution now reflects code changes immediately without requiring MCP server restart, as each execution uses fresh globals rather than persistent state
 
 ## [0.11.0]
 
