@@ -28,7 +28,7 @@ For multi-package releases, use package names as subsections:
 
 ### Added
 
-- Added `export_history` tool for exporting shell session history as a Python script with deduplicated imports, optionally including failed execution attempts
+- Added `export_history` tool for exporting shell session history as a Python script with deduplicated imports
 - Added `clear_history` tool for clearing shell session history
 - Added `include` and `scope` parameters to `list_models` tool for filtering Django models
 
@@ -36,11 +36,13 @@ For multi-package releases, use package names as subsections:
 
 - **BREAKING**: Shell execution is now stateless. Each tool call uses fresh globals and variables/imports no longer persist between calls
 - `django://project/models` resource now defaults to `scope="project"` (first-party models only) instead of returning all models
+- `export_history` now always excludes failed execution attempts (errors) from exported scripts, producing clean runnable code
 
 ### Removed
 
 - **BREAKING**: Removed `reset` tool, no longer needed with stateless execution
 - **BREAKING**: Removed `imports` parameter from `execute` tool. Parameter was redundant as LLMs would include imports in code body regardless, and is no longer needed with stateless execution
+- Removed `include_errors` parameter from `export_history` tool. Errors are now always excluded from exports as they represent failed attempts (typically syntax errors) rather than useful code
 
 ### Fixed
 
