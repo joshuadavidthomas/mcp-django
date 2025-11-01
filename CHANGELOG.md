@@ -36,7 +36,6 @@ For multi-package releases, use package names as subsections:
 
 - **BREAKING**: Shell execution is now stateless. Each tool call uses fresh globals and variables/imports no longer persist between calls
 - `django://project/models` resource now defaults to `scope="project"` (first-party models only) instead of returning all models
-- `export_history` now always excludes failed execution attempts (errors) from exported scripts, producing clean runnable code
 
 ### Removed
 
