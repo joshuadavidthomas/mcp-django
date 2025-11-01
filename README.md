@@ -155,7 +155,7 @@ Don't see your client? [Submit a PR](CONTRIBUTING.md) with setup instructions.
 
 ## Features
 
-mcp-django provides an MCP server with Django project exploration resources and stateful shell access for LLM assistants.
+mcp-django provides an MCP server with Django project exploration resources and stateless shell access for LLM assistants.
 
 It wouldn't be an MCP server README without a gratuitous list of features punctuated by emojis, so:
 
