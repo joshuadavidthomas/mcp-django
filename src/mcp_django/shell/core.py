@@ -48,18 +48,17 @@ class DjangoShell:
     def export_history(
         self,
         filename: str | None = None,
-        include_errors: bool = False,
     ) -> str:
         """Export shell session history as a Python script.
 
-        Generates a Python script containing all executed code from the session.
-        Import statements are deduplicated and placed at the top. Output and
-        execution results are not included in the export.
+        Generates a Python script containing all successfully executed code
+        from the session. Failed executions are excluded. Import statements
+        are deduplicated and placed at the top. Output and execution results
+        are not included in the export.
 
         Args:
             filename: Relative path to save the script. If None, returns the
                 script content as a string. Absolute paths are rejected.
-            include_errors: Whether to include code that raised exceptions.
 
         Returns:
             The Python script as a string if filename is None, otherwise a
@@ -79,9 +78,10 @@ class DjangoShell:
 
         imports_set = set()
         steps = []
+        step_num = 1
 
-        for i, result in enumerate(self.history, 1):
-            if isinstance(result, ErrorResult) and not include_errors:
+        for result in self.history:
+            if isinstance(result, ErrorResult):
                 continue
 
             code = result.code
@@ -94,9 +94,10 @@ class DjangoShell:
             except SyntaxError:
                 pass
 
-            steps.append(f"# Step {i}")
+            steps.append(f"# Step {step_num}")
             steps.append(code)
             steps.append("")
+            step_num += 1
 
         script_parts = [
             "# Django Shell Session Export",
