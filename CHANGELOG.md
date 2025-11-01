@@ -40,7 +40,7 @@ For multi-package releases, use package names as subsections:
 ### Removed
 
 - **BREAKING**: Removed `reset` tool, no longer needed with stateless execution
-- **BREAKING**: Removed `imports` parameter from `execute` tool. LLMs should include imports directly in code body
+- **BREAKING**: Removed `imports` parameter from `execute` tool. Parameter was redundant as imports were duplicated in both the parameter and code body, and is no longer needed with stateless execution
 
 ### Fixed
 
