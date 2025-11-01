@@ -9,8 +9,6 @@ from dataclasses import field
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
-from typing import Any
-from typing import Literal
 
 import django
 from asgiref.sync import sync_to_async
@@ -133,9 +131,7 @@ class DjangoShell:
 
         return script
 
-    async def execute(
-        self, code: str, setup: str, code_type: Literal["expression", "statement"]
-    ) -> Result:
+    async def execute(self, code: str) -> Result:
         """Execute Python code in the Django shell context (async).
 
         Async wrapper around the synchronous _execute() method. Delegates
@@ -144,19 +140,14 @@ class DjangoShell:
 
         Args:
             code: Python code to execute.
-            setup: Setup code to run before the main code.
-            code_type: Whether the code is an "expression" or "statement".
 
         Returns:
-            ExpressionResult, StatementResult, or ErrorResult depending on
-            execution outcome.
+            StatementResult or ErrorResult depending on execution outcome.
         """
 
-        return await sync_to_async(self._execute)(code, setup, code_type)
+        return await sync_to_async(self._execute)(code)
 
-    def _execute(
-        self, code: str, setup: str, code_type: Literal["expression", "statement"]
-    ) -> Result:
+    def _execute(self, code: str) -> Result:
         """Execute Python code in the Django shell context (synchronous).
 
         Executes code in a fresh global namespace for stateless behavior,
@@ -165,12 +156,9 @@ class DjangoShell:
 
         Args:
             code: Python code to execute.
-            setup: Setup code to run before the main code.
-            code_type: Whether the code is an "expression" or "statement".
 
         Returns:
-            ExpressionResult if code_type is "expression" and execution succeeds.
-            StatementResult if code_type is "statement" and execution succeeds.
+            StatementResult if execution succeeds.
             ErrorResult if execution raises an exception.
         """
 
@@ -181,55 +169,25 @@ class DjangoShell:
 
         stdout = StringIO()
         stderr = StringIO()
-        execution_globals: dict[str, Any] = {}
 
         with redirect_stdout(stdout), redirect_stderr(stderr):
             try:
-                logger.debug(
-                    "Execution type: %s, has setup: %s", code_type, bool(setup)
-                )
                 logger.debug(
                     "Code to execute: %s",
                     code[:200] + "..." if len(code) > 200 else code,
                 )
 
-                if setup:
-                    logger.debug(
-                        "Setup code: %s",
-                        setup[:200] + "..." if len(setup) > 200 else setup,
+                exec(code, {})
+
+                logger.debug("Code executed successfully")
+
+                return self.save_result(
+                    StatementResult(
+                        code=code,
+                        stdout=stdout.getvalue(),
+                        stderr=stderr.getvalue(),
                     )
-
-                    exec(setup, execution_globals)
-
-                match code_type:
-                    case "expression":
-                        value = eval(code, execution_globals)
-
-                        logger.debug(
-                            "Expression executed successfully, result type: %s",
-                            type(value).__name__,
-                        )
-
-                        return self.save_result(
-                            ExpressionResult(
-                                code=code,
-                                value=value,
-                                stdout=stdout.getvalue(),
-                                stderr=stderr.getvalue(),
-                            )
-                        )
-                    case "statement":
-                        exec(code, execution_globals)
-
-                        logger.debug("Statement executed successfully")
-
-                        return self.save_result(
-                            StatementResult(
-                                code=code,
-                                stdout=stdout.getvalue(),
-                                stderr=stderr.getvalue(),
-                            )
-                        )
+                )
 
             except Exception as e:
                 logger.error(
@@ -251,27 +209,6 @@ class DjangoShell:
     def save_result(self, result: Result) -> Result:
         self.history.append(result)
         return result
-
-
-@dataclass
-class ExpressionResult:
-    code: str
-    value: Any
-    stdout: str
-    stderr: str
-    timestamp: datetime = field(default_factory=datetime.now)
-
-    def __post_init__(self):
-        logger.debug(
-            "%s created - value type: %s",
-            self.__class__.__name__,
-            type(self.value).__name__,
-        )
-        logger.debug("%s.value: %s", self.__class__.__name__, repr(self.value)[:200])
-        if self.stdout:
-            logger.debug("%s.stdout: %s", self.__class__.__name__, self.stdout[:200])
-        if self.stderr:
-            logger.debug("%s.stderr: %s", self.__class__.__name__, self.stderr[:200])
 
 
 @dataclass
@@ -310,6 +247,6 @@ class ErrorResult:
             logger.debug("%s.stderr: %s", self.__class__.__name__, self.stderr[:200])
 
 
-Result = ExpressionResult | StatementResult | ErrorResult
+Result = StatementResult | ErrorResult
 
 django_shell = DjangoShell()

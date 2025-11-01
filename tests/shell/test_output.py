@@ -3,18 +3,17 @@ from __future__ import annotations
 import traceback
 
 from mcp_django.shell.core import ErrorResult
-from mcp_django.shell.core import ExpressionResult
+from mcp_django.shell.core import StatementResult
 from mcp_django.shell.output import DjangoShellOutput
 from mcp_django.shell.output import ErrorOutput
 from mcp_django.shell.output import ExceptionOutput
 from mcp_django.shell.output import ExecutionStatus
-from mcp_django.shell.output import ExpressionOutput
+from mcp_django.shell.output import StatementOutput
 
 
-def test_django_shell_output_from_expression_result():
-    result = ExpressionResult(
-        code="2 + 2",
-        value=4,
+def test_django_shell_output_from_statement_result():
+    result = StatementResult(
+        code="x = 5",
         stdout="",
         stderr="",
     )
@@ -22,28 +21,7 @@ def test_django_shell_output_from_expression_result():
     output = DjangoShellOutput.from_result(result)
 
     assert output.status == ExecutionStatus.SUCCESS
-    assert isinstance(output.output, ExpressionOutput)
-    assert output.output.value == 4
-    assert output.output.value_type is int
-
-
-def test_expression_with_none_value():
-    result = ExpressionResult(
-        code="None",
-        value=None,
-        stdout="",
-        stderr="",
-    )
-
-    output = DjangoShellOutput.from_result(result)
-
-    assert output.status == ExecutionStatus.SUCCESS
-    assert isinstance(output.output, ExpressionOutput)
-
-    serialized = output.output.model_dump(mode="json")
-
-    assert serialized["value"] == "None"
-    assert serialized["value_type"] == "NoneType"
+    assert isinstance(output.output, StatementOutput)
 
 
 def test_django_shell_output_from_error_result():

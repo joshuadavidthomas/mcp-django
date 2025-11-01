@@ -25,9 +25,9 @@ async def initialize_and_clear():
 
 async def test_shell_execute():
     async with Client(mcp.server) as client:
-        result = await client.call_tool("shell_execute", {"code": "2 + 2"})
+        result = await client.call_tool("shell_execute", {"code": "print(2 + 2)"})
         assert result.data["status"] == ExecutionStatus.SUCCESS
-        assert result.data["output"]["value"] == "4"
+        assert result.data["stdout"] == "4\n"
 
 
 @override_settings(
@@ -52,17 +52,17 @@ async def test_shell_execute_with_imports():
     async with Client(mcp.server) as client:
         result = await client.call_tool(
             "shell_execute",
-            {"code": "import os\nos.path.join('test', 'path')"},
+            {"code": "import os\nprint(os.path.join('test', 'path'))"},
         )
         assert result.data["status"] == ExecutionStatus.SUCCESS
-        assert result.data["output"]["value"] == "'test/path'"
+        assert result.data["stdout"] == "test/path\n"
 
 
 async def test_shell_execute_without_imports():
     async with Client(mcp.server) as client:
-        result = await client.call_tool("shell_execute", {"code": "2 + 2"})
+        result = await client.call_tool("shell_execute", {"code": "print(2 + 2)"})
         assert result.data["status"] == ExecutionStatus.SUCCESS
-        assert result.data["output"]["value"] == "4"
+        assert result.data["stdout"] == "4\n"
 
 
 async def test_shell_execute_with_multiple_imports():
@@ -94,14 +94,14 @@ async def test_shell_execute_stateless():
         # First call imports and uses os
         result1 = await client.call_tool(
             "shell_execute",
-            {"code": "import os\nos.path.join('test', 'first')"},
+            {"code": "import os\nprint(os.path.join('test', 'first'))"},
         )
         assert result1.data["status"] == ExecutionStatus.SUCCESS
 
         # Second call should NOT have os available (fresh globals)
         result2 = await client.call_tool(
             "shell_execute",
-            {"code": "os.path.join('test', 'second')"},  # No import!
+            {"code": "print(os.path.join('test', 'second'))"},  # No import!
         )
         assert result2.data["status"] == ExecutionStatus.ERROR
         assert "NameError" in str(result2.data["output"]["exception"]["exc_type"])
@@ -137,7 +137,7 @@ async def test_shell_export_history_to_string():
     """Test that export_history returns script as string."""
     async with Client(mcp.server) as client:
         # Execute some code to create history
-        await client.call_tool("shell_execute", {"code": "2 + 2"})
+        await client.call_tool("shell_execute", {"code": "print(2 + 2)"})
         await client.call_tool("shell_execute", {"code": "x = 5"})
 
         # Export history
@@ -146,7 +146,7 @@ async def test_shell_export_history_to_string():
 
         # Verify script content
         assert "# Django Shell Session Export" in script
-        assert "2 + 2" in script
+        assert "print(2 + 2)" in script
         assert "x = 5" in script
 
 
@@ -204,8 +204,8 @@ async def test_shell_clear_history():
     """Test that clear_history clears the execution history."""
     async with Client(mcp.server) as client:
         # Execute some code to create history
-        await client.call_tool("shell_execute", {"code": "2 + 2"})
-        await client.call_tool("shell_execute", {"code": "3 + 3"})
+        await client.call_tool("shell_execute", {"code": "print(2 + 2)"})
+        await client.call_tool("shell_execute", {"code": "print(3 + 3)"})
 
         # Verify history exists
         assert len(django_shell.history) == 2

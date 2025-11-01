@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 
-from mcp_django.shell.code import parse_code
 from mcp_django.shell.core import DjangoShell
 
 
@@ -24,29 +23,26 @@ class TestExportHistory:
 
     def test_export_basic_code(self, shell):
         """Export basic execution to script."""
-        parsed_code, setup, code_type = parse_code("2 + 2")
-        shell._execute(parsed_code, setup, code_type)
+        shell._execute("x = 2 + 2")
 
         script = shell.export_history()
 
         assert "# Django Shell Session Export" in script
         assert "# Step 1" in script
-        assert "2 + 2" in script
+        assert "x = 2 + 2" in script
 
     def test_export_excludes_output(self, shell):
         """Export does not include execution results."""
-        parsed_code, setup, code_type = parse_code("2 + 2")
-        shell._execute(parsed_code, setup, code_type)
+        shell._execute("print(2 + 2)")
 
         script = shell.export_history()
 
         assert "# → 4" not in script
-        assert "2 + 2" in script
+        assert "print(2 + 2)" in script
 
     def test_export_excludes_errors(self, shell):
         """Export excludes error results."""
-        parsed_code, setup, code_type = parse_code("1 / 0")
-        shell._execute(parsed_code, setup, code_type)
+        shell._execute("1 / 0")
 
         script = shell.export_history()
 
@@ -57,14 +53,11 @@ class TestExportHistory:
     def test_export_continuous_step_numbers(self, shell):
         """Export has continuous step numbers even when errors are skipped."""
         # Execute: success, error, success
-        parsed_code, setup, code_type = parse_code("2 + 2")
-        shell._execute(parsed_code, setup, code_type)
+        shell._execute("x = 2 + 2")
 
-        parsed_code, setup, code_type = parse_code("1 / 0")
-        shell._execute(parsed_code, setup, code_type)
+        shell._execute("1 / 0")
 
-        parsed_code, setup, code_type = parse_code("3 + 3")
-        shell._execute(parsed_code, setup, code_type)
+        shell._execute("y = 3 + 3")
 
         script = shell.export_history()
 
@@ -72,20 +65,18 @@ class TestExportHistory:
         assert "# Step 1" in script
         assert "# Step 2" in script
         assert "# Step 3" not in script
-        assert "2 + 2" in script
+        assert "x = 2 + 2" in script
         assert "1 / 0" not in script
-        assert "3 + 3" in script
+        assert "y = 3 + 3" in script
 
     def test_export_deduplicates_imports(self, shell):
         """Export always consolidates imports at the top."""
         # Execute code with same import twice (without DB access)
         code1 = "from datetime import datetime\nx = datetime.now()"
-        parsed_code, setup, code_type = parse_code(code1)
-        shell._execute(parsed_code, setup, code_type)
+        shell._execute(code1)
 
         code2 = "from datetime import datetime\ny = datetime.now()"
-        parsed_code, setup, code_type = parse_code(code2)
-        shell._execute(parsed_code, setup, code_type)
+        shell._execute(code2)
 
         script = shell.export_history()
 
@@ -105,8 +96,7 @@ class TestExportHistory:
 
     def test_export_to_file(self, shell, tmp_path):
         """Export saves to file when filename provided."""
-        parsed_code, setup, code_type = parse_code("2 + 2")
-        shell._execute(parsed_code, setup, code_type)
+        shell._execute("x = 2 + 2")
 
         # Use temp directory
         old_cwd = Path.cwd()
@@ -125,22 +115,20 @@ class TestExportHistory:
 
             # File should contain code
             content = filepath.read_text()
-            assert "2 + 2" in content
+            assert "x = 2 + 2" in content
         finally:
             os.chdir(old_cwd)
 
     def test_export_rejects_absolute_paths(self, shell):
         """Export rejects absolute paths for security."""
-        parsed_code, setup, code_type = parse_code("2 + 2")
-        shell._execute(parsed_code, setup, code_type)
+        shell._execute("x = 2 + 2")
 
         with pytest.raises(ValueError, match="Absolute paths not allowed"):
             shell.export_history(filename="/tmp/evil.py")
 
     def test_export_adds_py_extension(self, shell, tmp_path):
         """Export adds .py extension if not present."""
-        parsed_code, setup, code_type = parse_code("2 + 2")
-        shell._execute(parsed_code, setup, code_type)
+        shell._execute("x = 2 + 2")
 
         old_cwd = Path.cwd()
         os.chdir(tmp_path)
@@ -156,8 +144,7 @@ class TestExportHistory:
 
     def test_export_excludes_stdout(self, shell):
         """Export does not include stdout output."""
-        parsed_code, setup, code_type = parse_code('print("Hello, World!")')
-        shell._execute(parsed_code, setup, code_type)
+        shell._execute('print("Hello, World!")')
 
         script = shell.export_history()
 
@@ -168,8 +155,7 @@ class TestExportHistory:
         """Export handles multiple execution steps."""
         # Execute multiple times
         for i in range(3):
-            parsed_code, setup, code_type = parse_code(f"{i} + {i}")
-            shell._execute(parsed_code, setup, code_type)
+            shell._execute(f"x{i} = {i} + {i}")
 
         script = shell.export_history()
 
@@ -177,19 +163,17 @@ class TestExportHistory:
         assert "# Step 1" in script
         assert "# Step 2" in script
         assert "# Step 3" in script
-        assert "0 + 0" in script
-        assert "1 + 1" in script
-        assert "2 + 2" in script
+        assert "x0 = 0 + 0" in script
+        assert "x1 = 1 + 1" in script
+        assert "x2 = 2 + 2" in script
 
     def test_export_to_file_with_long_output(self, shell, tmp_path):
         """Export truncates preview for files with more than 20 lines."""
-        parsed_code, setup, code_type = parse_code("2 + 2")
-        shell._execute(parsed_code, setup, code_type)
+        shell._execute("x = 2 + 2")
 
         # Execute enough times to create > 20 lines (header + steps)
         for i in range(10):
-            parsed_code, setup, code_type = parse_code(f"x = {i}")
-            shell._execute(parsed_code, setup, code_type)
+            shell._execute(f"x{i} = {i}")
 
         old_cwd = Path.cwd()
         os.chdir(tmp_path)
@@ -224,9 +208,8 @@ class TestExportHistory:
 class TestClearHistory:
     def test_clear_history_clears_entries(self, shell):
         """Clear history removes all entries."""
-        parsed_code, setup, code_type = parse_code("2 + 2")
-        shell._execute(parsed_code, setup, code_type)
-        shell._execute(parsed_code, setup, code_type)
+        shell._execute("x = 2 + 2")
+        shell._execute("x = 2 + 2")
 
         assert len(shell.history) == 2
 
@@ -237,18 +220,16 @@ class TestClearHistory:
     def test_clear_history_allows_fresh_export(self, shell):
         """Clear history allows clean export after messy exploration."""
         # Messy exploration
-        parsed_code, setup, code_type = parse_code("1 / 0")
-        shell._execute(parsed_code, setup, code_type)
-        shell._execute(parsed_code, setup, code_type)
+        shell._execute("1 / 0")
+        shell._execute("1 / 0")
 
         # Clear
         shell.clear_history()
 
         # Clean solution
-        parsed_code, setup, code_type = parse_code("2 + 2")
-        shell._execute(parsed_code, setup, code_type)
+        shell._execute("x = 2 + 2")
 
         # Export should only have clean solution
         script = shell.export_history()
         assert "1 / 0" not in script
-        assert "2 + 2" in script
+        assert "x = 2 + 2" in script
