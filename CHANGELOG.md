@@ -34,7 +34,7 @@ For multi-package releases, use package names as subsections:
 
 ### Changed
 
-- **BREAKING**: Shell execution is now stateless. Each tool call uses fresh globals and variables/imports no longer persist between calls, eliminating the stale module bug where code changes weren't reflected until server restart
+- **BREAKING**: Shell execution is now stateless. Each tool call uses fresh globals and variables/imports no longer persist between calls
 - `django://project/models` resource now defaults to `scope="project"` (first-party models only) instead of returning all models
 
 ### Removed
