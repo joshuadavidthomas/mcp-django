@@ -98,16 +98,12 @@ async def export_history(
         str | None,
         "Optional filename to save to (relative to project dir). If None, returns script as string.",
     ] = None,
-    include_errors: Annotated[
-        bool,
-        "Include failed execution attempts in the export",
-    ] = False,
 ) -> str:
     """Export shell session history as a Python script.
 
-    Returns a Python script containing all executed code from the current session.
-    Useful for saving debugging sessions or creating reproducible scripts from
-    interactive exploration.
+    Returns a Python script containing all successfully executed code from the
+    current session. Failed execution attempts are excluded. Useful for saving
+    debugging sessions or creating reproducible scripts from interactive exploration.
 
     The exported script will deduplicate import statements at the top of the script.
     Execution results and output are not included in the export.
@@ -123,10 +119,7 @@ async def export_history(
     )
 
     try:
-        result = django_shell.export_history(
-            filename=filename,
-            include_errors=include_errors,
-        )
+        result = django_shell.export_history(filename=filename)
 
         if filename:
             await ctx.debug(f"Exported history to {filename}")

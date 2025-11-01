@@ -43,27 +43,38 @@ class TestExportHistory:
         assert "# → 4" not in script
         assert "2 + 2" in script
 
-    def test_export_excludes_errors_by_default(self, shell):
-        """Export excludes error results by default."""
+    def test_export_excludes_errors(self, shell):
+        """Export excludes error results."""
         parsed_code, setup, code_type = parse_code("1 / 0")
         shell._execute(parsed_code, setup, code_type)
 
-        script = shell.export_history(include_errors=False)
+        script = shell.export_history()
 
         # Should have header but no steps
         assert "# Django Shell Session Export" in script
         assert "1 / 0" not in script
 
-    def test_export_includes_errors_when_requested(self, shell):
-        """Export includes error code when include_errors=True."""
+    def test_export_continuous_step_numbers(self, shell):
+        """Export has continuous step numbers even when errors are skipped."""
+        # Execute: success, error, success
+        parsed_code, setup, code_type = parse_code("2 + 2")
+        shell._execute(parsed_code, setup, code_type)
+
         parsed_code, setup, code_type = parse_code("1 / 0")
         shell._execute(parsed_code, setup, code_type)
 
-        script = shell.export_history(include_errors=True)
+        parsed_code, setup, code_type = parse_code("3 + 3")
+        shell._execute(parsed_code, setup, code_type)
 
-        assert "1 / 0" in script
-        # Error messages are not included in output
-        assert "# → Error:" not in script
+        script = shell.export_history()
+
+        # Should have Step 1 and Step 2 (not Step 1 and Step 3)
+        assert "# Step 1" in script
+        assert "# Step 2" in script
+        assert "# Step 3" not in script
+        assert "2 + 2" in script
+        assert "1 / 0" not in script
+        assert "3 + 3" in script
 
     def test_export_deduplicates_imports(self, shell):
         """Export always consolidates imports at the top."""
@@ -238,6 +249,6 @@ class TestClearHistory:
         shell._execute(parsed_code, setup, code_type)
 
         # Export should only have clean solution
-        script = shell.export_history(include_errors=True)
+        script = shell.export_history()
         assert "1 / 0" not in script
         assert "2 + 2" in script

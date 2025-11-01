@@ -150,21 +150,16 @@ async def test_shell_export_history_to_string():
         assert "x = 5" in script
 
 
-async def test_shell_export_history_with_errors():
-    """Test that export_history can include errors."""
+async def test_shell_export_history_excludes_errors():
+    """Test that export_history excludes errors."""
     async with Client(mcp.server) as client:
         # Execute code with error
         await client.call_tool("shell_execute", {"code": "1 / 0"})
 
-        # Export without errors (default)
+        # Export - errors should be excluded
         result = await client.call_tool("shell_export_history")
         script = result.content[0].text
         assert "1 / 0" not in script
-
-        # Export with errors
-        result = await client.call_tool("shell_export_history", {"include_errors": True})
-        script = result.content[0].text
-        assert "1 / 0" in script
 
 
 async def test_shell_export_history_to_file(tmp_path):
