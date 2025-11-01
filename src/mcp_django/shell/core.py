@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ast
 import logging
-import os
 from contextlib import redirect_stderr
 from contextlib import redirect_stdout
 from dataclasses import dataclass
@@ -114,7 +113,7 @@ class DjangoShell:
         # Save to file if requested
         if filename:
             # Security: only allow relative paths
-            if os.path.isabs(filename):
+            if Path(filename).is_absolute():
                 raise ValueError("Absolute paths not allowed for security reasons")
 
             # Ensure .py extension

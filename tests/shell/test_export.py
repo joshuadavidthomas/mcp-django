@@ -98,7 +98,7 @@ class TestExportHistory:
         shell._execute(parsed_code, setup, code_type)
 
         # Use temp directory
-        old_cwd = os.getcwd()
+        old_cwd = Path.cwd()
         os.chdir(tmp_path)
 
         try:
@@ -131,7 +131,7 @@ class TestExportHistory:
         parsed_code, setup, code_type = parse_code("2 + 2")
         shell._execute(parsed_code, setup, code_type)
 
-        old_cwd = os.getcwd()
+        old_cwd = Path.cwd()
         os.chdir(tmp_path)
 
         try:
