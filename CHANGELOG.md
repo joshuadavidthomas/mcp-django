@@ -44,7 +44,7 @@ For multi-package releases, use package names as subsections:
 
 ### Fixed
 
-- Stale module bug where modifications to Django models, views, or other Python files weren't reflected until MCP server restart
+- Shell execution now reflects code changes immediately without requiring MCP server restart
 
 ## [0.11.0]
 
