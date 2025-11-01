@@ -26,25 +26,25 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
-### Breaking Changes
-
-- **Shell execution is now stateless** - Each `execute()` call uses fresh globals. Variables and imports no longer persist between calls. This eliminates the stale module bug where code changes weren't reflected until server restart.
-- **Removed `reset()` tool** - No longer needed with stateless execution. Use `clear_history()` if you want to clear the session history for export purposes.
-- **Removed `imports` parameter from `execute()` tool** - Simplified API. Include imports directly in your code body (which LLMs were already doing anyway).
-
 ### Added
 
-- **`export_history()` tool** - Export your shell session as a Python script. Supports options for including output, errors, and deduplicating imports. Can save to file or return as string.
-- **`clear_history()` tool** - Clear the shell session history, useful for starting fresh when you want a clean export after messy exploration.
+- Added `export_history` tool for exporting shell session history as a Python script with deduplicated imports, optionally including failed execution attempts
+- Added `clear_history` tool for clearing shell session history
 - Added `include` and `scope` parameters to `list_models` tool for filtering Django models
-
-### Fixed
-
-- **Stale module bug** - Shell now always uses fresh code. When you modify Django models, views, or other Python files, changes take effect immediately without needing to restart the MCP server.
 
 ### Changed
 
+- **BREAKING**: Shell execution is now stateless. Each tool call uses fresh globals and variables/imports no longer persist between calls
 - `django://project/models` resource now defaults to `scope="project"` (first-party models only) instead of returning all models
+
+### Removed
+
+- **BREAKING**: Removed `reset` tool, no longer needed with stateless execution
+- **BREAKING**: Removed `imports` parameter from `execute` tool. Parameter was redundant as LLMs would include imports in code body regardless, and is no longer needed with stateless execution
+
+### Fixed
+
+- Shell execution now reflects code changes immediately without requiring MCP server restart, as each execution uses fresh globals rather than persistent state
 
 ## [0.11.0]
 

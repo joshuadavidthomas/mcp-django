@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ast
 import logging
-import os
 from contextlib import redirect_stderr
 from contextlib import redirect_stdout
 from dataclasses import dataclass
@@ -40,8 +39,8 @@ class DjangoShell:
     def clear_history(self):
         """Clear the execution history.
 
-        Use this when you want to start with a clean history for the next
-        export, or when the history has become cluttered with exploratory code.
+        Removes all entries from the shell history. Useful for starting fresh
+        or removing exploratory code before exporting.
         """
         logger.info("Clearing shell history - previous entries: %s", len(self.history))
         self.history = []
@@ -49,22 +48,25 @@ class DjangoShell:
     def export_history(
         self,
         filename: str | None = None,
-        include_output: bool = True,
         include_errors: bool = False,
-        deduplicate_imports: bool = True,
     ) -> str:
         """Export shell session history as a Python script.
 
+        Generates a Python script containing all executed code from the session.
+        Import statements are deduplicated and placed at the top. Output and
+        execution results are not included in the export.
+
         Args:
-            filename: Optional filename to save to (relative to project dir).
-                      If None, returns script content as string.
-            include_output: Include execution results as comments
-            include_errors: Include failed attempts in export
-            deduplicate_imports: Consolidate import statements at top
+            filename: Relative path to save the script. If None, returns the
+                script content as a string. Absolute paths are rejected.
+            include_errors: Whether to include code that raised exceptions.
 
         Returns:
-            If filename is None: The Python script as a string
-            If filename provided: Confirmation message with preview
+            The Python script as a string if filename is None, otherwise a
+            confirmation message with preview of the exported file.
+
+        Raises:
+            ValueError: If an absolute path is provided for filename.
         """
         logger.info(
             "Exporting history - entries: %s, filename: %s",
@@ -75,55 +77,34 @@ class DjangoShell:
         if not self.history:
             return "# No history to export\n"
 
-        # Collect imports and code
         imports_set = set()
         steps = []
 
         for i, result in enumerate(self.history, 1):
-            # Skip errors if not including them
             if isinstance(result, ErrorResult) and not include_errors:
                 continue
 
             code = result.code
 
-            # Extract imports if deduplicating
-            if deduplicate_imports:
-                try:
-                    tree = ast.parse(code)
-                    for node in ast.walk(tree):
-                        if isinstance(node, (ast.Import, ast.ImportFrom)):
-                            imports_set.add(ast.unparse(node))
-                except SyntaxError:
-                    pass  # If can't parse, include code as-is
+            try:
+                tree = ast.parse(code)
+                for node in ast.walk(tree):
+                    if isinstance(node, (ast.Import, ast.ImportFrom)):
+                        imports_set.add(ast.unparse(node))
+            except SyntaxError:
+                pass
 
-            # Add step comment
             steps.append(f"# Step {i}")
             steps.append(code)
+            steps.append("")
 
-            # Add output as comment
-            if include_output:
-                if isinstance(result, ExpressionResult):
-                    value_repr = repr(result.value)
-                    if len(value_repr) > 100:
-                        value_repr = value_repr[:100] + "..."
-                    steps.append(f"# → {value_repr}")
-                elif isinstance(result, ErrorResult):
-                    steps.append(f"# → Error: {result.exception}")
-
-                if result.stdout:
-                    for line in result.stdout.strip().split("\n"):
-                        steps.append(f"# {line}")
-
-            steps.append("")  # Blank line between steps
-
-        # Build script
         script_parts = [
             "# Django Shell Session Export",
             f"# Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
             "",
         ]
 
-        if deduplicate_imports and imports_set:
+        if imports_set:
             script_parts.extend(sorted(imports_set))
             script_parts.append("")
 
@@ -131,24 +112,19 @@ class DjangoShell:
 
         script = "\n".join(script_parts)
 
-        # Save to file if requested
         if filename:
             # Security: only allow relative paths
-            if os.path.isabs(filename):
+            if Path(filename).is_absolute():
                 raise ValueError("Absolute paths not allowed for security reasons")
 
-            # Ensure .py extension
             if not filename.endswith(".py"):
                 filename += ".py"
 
             filepath = Path(filename)
-
-            # Write file
             filepath.write_text(script)
 
             logger.info("Exported history to file: %s", filepath)
 
-            # Return confirmation with preview
             line_count = len(script.split("\n"))
             preview_lines = script.split("\n")[:20]
             preview = "\n".join(preview_lines)
@@ -157,21 +133,25 @@ class DjangoShell:
 
             return f"Exported {line_count} lines to {filename}\n\n{preview}"
 
-        # Return script content
         return script
 
     async def execute(
         self, code: str, setup: str, code_type: Literal["expression", "statement"]
     ) -> Result:
-        """Execute Python code in the Django shell context (async wrapper).
+        """Execute Python code in the Django shell context (async).
 
-        This async wrapper enables use from FastMCP and other async contexts.
-        It delegates to `_execute()` for the actual execution logic.
+        Async wrapper around the synchronous _execute() method. Delegates
+        execution to a thread pool via sync_to_async to avoid Django's
+        SynchronousOnlyOperation errors when called from async contexts.
 
-        Note: FastMCP requires async methods, but Django ORM operations are
-        synchronous. The `@sync_to_async` decorator runs the synchronous
-        `_execute()` method in a thread pool to avoid `SynchronousOnlyOperation`
-        errors.
+        Args:
+            code: Python code to execute.
+            setup: Setup code to run before the main code.
+            code_type: Whether the code is an "expression" or "statement".
+
+        Returns:
+            ExpressionResult, StatementResult, or ErrorResult depending on
+            execution outcome.
         """
 
         return await sync_to_async(self._execute)(code, setup, code_type)
@@ -181,11 +161,19 @@ class DjangoShell:
     ) -> Result:
         """Execute Python code in the Django shell context (synchronous).
 
-        Each execution uses fresh globals for stateless behavior. This ensures
-        code changes always take effect and no stale modules persist.
+        Executes code in a fresh global namespace for stateless behavior,
+        ensuring code changes take effect and no stale modules persist between
+        executions. Captures stdout/stderr and saves results to history.
 
-        Note: This synchronous method contains the actual execution logic.
-        Use `execute()` for async contexts or `_execute()` for sync/testing.
+        Args:
+            code: Python code to execute.
+            setup: Setup code to run before the main code.
+            code_type: Whether the code is an "expression" or "statement".
+
+        Returns:
+            ExpressionResult if code_type is "expression" and execution succeeds.
+            StatementResult if code_type is "statement" and execution succeeds.
+            ErrorResult if execution raises an exception.
         """
 
         code_preview = (code[:100] + "..." if len(code) > 100 else code).replace(
@@ -195,8 +183,6 @@ class DjangoShell:
 
         stdout = StringIO()
         stderr = StringIO()
-
-        # Use fresh globals for THIS execution only (stateless)
         execution_globals: dict[str, Any] = {}
 
         with redirect_stdout(stdout), redirect_stderr(stderr):

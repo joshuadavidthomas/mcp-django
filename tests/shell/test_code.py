@@ -110,6 +110,30 @@ def test_filter_existing_imports_star_import():
     assert result == "from os import *"
 
 
+def test_filter_existing_imports_simple_import():
+    result = filter_existing_imports("import os", {})
+
+    assert result == "import os"
+
+
+def test_filter_existing_imports_simple_import_already_exists():
+    result = filter_existing_imports("import os", {"os": True})
+
+    assert result == ""
+
+
+def test_filter_existing_imports_import_with_asname():
+    result = filter_existing_imports("import os as operating_system", {})
+
+    assert result == "import os as operating_system"
+
+
+def test_filter_existing_imports_import_with_asname_already_exists():
+    result = filter_existing_imports("import os as operating_system", {"operating_system": True})
+
+    assert result == ""
+
+
 def test_filter_existing_imports_relative():
     result = filter_existing_imports(
         "from ..models import User\nfrom ...core import Base", {}

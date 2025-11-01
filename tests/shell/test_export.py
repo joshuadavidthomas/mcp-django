@@ -33,23 +33,15 @@ class TestExportHistory:
         assert "# Step 1" in script
         assert "2 + 2" in script
 
-    def test_export_includes_output(self, shell):
-        """Export includes results when include_output=True."""
-        parsed_code, setup, code_type = parse_code("2 + 2")
-        shell._execute(parsed_code, setup, code_type)
-
-        script = shell.export_history(include_output=True)
-
-        assert "# → 4" in script
-
     def test_export_excludes_output(self, shell):
-        """Export excludes results when include_output=False."""
+        """Export does not include execution results."""
         parsed_code, setup, code_type = parse_code("2 + 2")
         shell._execute(parsed_code, setup, code_type)
 
-        script = shell.export_history(include_output=False)
+        script = shell.export_history()
 
         assert "# → 4" not in script
+        assert "2 + 2" in script
 
     def test_export_excludes_errors_by_default(self, shell):
         """Export excludes error results by default."""
@@ -63,17 +55,18 @@ class TestExportHistory:
         assert "1 / 0" not in script
 
     def test_export_includes_errors_when_requested(self, shell):
-        """Export includes error results when include_errors=True."""
+        """Export includes error code when include_errors=True."""
         parsed_code, setup, code_type = parse_code("1 / 0")
         shell._execute(parsed_code, setup, code_type)
 
         script = shell.export_history(include_errors=True)
 
         assert "1 / 0" in script
-        assert "Error" in script
+        # Error messages are not included in output
+        assert "# → Error:" not in script
 
     def test_export_deduplicates_imports(self, shell):
-        """Export consolidates imports when deduplicate_imports=True."""
+        """Export always consolidates imports at the top."""
         # Execute code with same import twice (without DB access)
         code1 = "from datetime import datetime\nx = datetime.now()"
         parsed_code, setup, code_type = parse_code(code1)
@@ -83,9 +76,9 @@ class TestExportHistory:
         parsed_code, setup, code_type = parse_code(code2)
         shell._execute(parsed_code, setup, code_type)
 
-        script = shell.export_history(deduplicate_imports=True)
+        script = shell.export_history()
 
-        # When deduplicated, import should appear at top before steps
+        # Import should appear at top before steps
         lines = script.split("\n")
 
         # Find where steps start and where consolidated imports are
@@ -105,7 +98,7 @@ class TestExportHistory:
         shell._execute(parsed_code, setup, code_type)
 
         # Use temp directory
-        old_cwd = os.getcwd()
+        old_cwd = Path.cwd()
         os.chdir(tmp_path)
 
         try:
@@ -138,7 +131,7 @@ class TestExportHistory:
         parsed_code, setup, code_type = parse_code("2 + 2")
         shell._execute(parsed_code, setup, code_type)
 
-        old_cwd = os.getcwd()
+        old_cwd = Path.cwd()
         os.chdir(tmp_path)
 
         try:
@@ -150,14 +143,15 @@ class TestExportHistory:
         finally:
             os.chdir(old_cwd)
 
-    def test_export_includes_stdout(self, shell):
-        """Export includes stdout as comments when include_output=True."""
+    def test_export_excludes_stdout(self, shell):
+        """Export does not include stdout output."""
         parsed_code, setup, code_type = parse_code('print("Hello, World!")')
         shell._execute(parsed_code, setup, code_type)
 
-        script = shell.export_history(include_output=True)
+        script = shell.export_history()
 
-        assert "# Hello, World!" in script
+        assert "# Hello, World!" not in script
+        assert 'print("Hello, World!")' in script
 
     def test_export_multiple_steps(self, shell):
         """Export handles multiple execution steps."""
@@ -175,6 +169,45 @@ class TestExportHistory:
         assert "0 + 0" in script
         assert "1 + 1" in script
         assert "2 + 2" in script
+
+    def test_export_to_file_with_long_output(self, shell, tmp_path):
+        """Export truncates preview for files with more than 20 lines."""
+        parsed_code, setup, code_type = parse_code("2 + 2")
+        shell._execute(parsed_code, setup, code_type)
+
+        # Execute enough times to create > 20 lines (header + steps)
+        for i in range(10):
+            parsed_code, setup, code_type = parse_code(f"x = {i}")
+            shell._execute(parsed_code, setup, code_type)
+
+        old_cwd = Path.cwd()
+        os.chdir(tmp_path)
+
+        try:
+            result = shell.export_history(filename="test_long")
+
+            # Should mention truncation
+            assert "more lines" in result
+        finally:
+            os.chdir(old_cwd)
+
+    def test_export_with_invalid_syntax_in_history(self, shell):
+        """Export handles code with syntax errors gracefully."""
+        from mcp_django.shell.core import StatementResult
+
+        # Manually add a result with code that can't be parsed
+        # (This simulates a defensive case that shouldn't normally happen)
+        invalid_result = StatementResult(
+            code="if x == 1:",  # Missing body, invalid syntax
+            stdout="",
+            stderr="",
+        )
+        shell.history.append(invalid_result)
+
+        # Should not crash, just include the code as-is
+        script = shell.export_history()
+
+        assert "if x == 1:" in script
 
 
 class TestClearHistory:
