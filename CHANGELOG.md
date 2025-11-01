@@ -34,8 +34,8 @@ For multi-package releases, use package names as subsections:
 
 ### Added
 
-- **`export_history()` tool** - Export your shell session as a Python script. Supports options for including output, errors, and deduplicating imports. Can save to file or return as string.
-- **`clear_history()` tool** - Clear the shell session history, useful for starting fresh when you want a clean export after messy exploration.
+- Added `export_history()` tool to export shell session as a Python script with deduplicated imports at the top, optionally including failed execution attempts
+- Added `clear_history()` tool to clear the shell session history for a fresh start
 - Added `include` and `scope` parameters to `list_models` tool for filtering Django models
 
 ### Fixed
