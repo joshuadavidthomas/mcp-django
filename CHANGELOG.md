@@ -26,25 +26,25 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
-### Breaking Changes
-
-- **Shell execution is now stateless** - Each `execute()` call uses fresh globals. Variables and imports no longer persist between calls. This eliminates the stale module bug where code changes weren't reflected until server restart.
-- **Removed `reset()` tool** - No longer needed with stateless execution. Use `clear_history()` if you want to clear the session history for export purposes.
-- **Removed `imports` parameter from `execute()` tool** - Simplified API. Include imports directly in your code body (which LLMs were already doing anyway).
-
 ### Added
 
 - Added `export_history()` tool to export shell session as a Python script with deduplicated imports at the top, optionally including failed execution attempts
 - Added `clear_history()` tool to clear the shell session history for a fresh start
 - Added `include` and `scope` parameters to `list_models` tool for filtering Django models
 
-### Fixed
-
-- **Stale module bug** - Shell now always uses fresh code. When you modify Django models, views, or other Python files, changes take effect immediately without needing to restart the MCP server.
-
 ### Changed
 
+- **BREAKING**: Shell execution is now stateless. Each `execute()` call uses fresh globals and variables/imports no longer persist between calls, eliminating the stale module bug where code changes weren't reflected until server restart
 - `django://project/models` resource now defaults to `scope="project"` (first-party models only) instead of returning all models
+
+### Removed
+
+- **BREAKING**: Removed `reset()` tool, no longer needed with stateless execution. Use `clear_history()` to clear session history for export purposes
+- **BREAKING**: Removed `imports` parameter from `execute()` tool. Include imports directly in code body
+
+### Fixed
+
+- Stale module bug where modifications to Django models, views, or other Python files weren't reflected until MCP server restart
 
 ## [0.11.0]
 
