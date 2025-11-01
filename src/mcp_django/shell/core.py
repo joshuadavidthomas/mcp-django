@@ -77,32 +77,27 @@ class DjangoShell:
         if not self.history:
             return "# No history to export\n"
 
-        # Collect imports and code
         imports_set = set()
         steps = []
 
         for i, result in enumerate(self.history, 1):
-            # Skip errors if not including them
             if isinstance(result, ErrorResult) and not include_errors:
                 continue
 
             code = result.code
 
-            # Extract and deduplicate imports
             try:
                 tree = ast.parse(code)
                 for node in ast.walk(tree):
                     if isinstance(node, (ast.Import, ast.ImportFrom)):
                         imports_set.add(ast.unparse(node))
             except SyntaxError:
-                pass  # If can't parse, include code as-is
+                pass
 
-            # Add step comment
             steps.append(f"# Step {i}")
             steps.append(code)
-            steps.append("")  # Blank line between steps
+            steps.append("")
 
-        # Build script
         script_parts = [
             "# Django Shell Session Export",
             f"# Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
@@ -117,24 +112,19 @@ class DjangoShell:
 
         script = "\n".join(script_parts)
 
-        # Save to file if requested
         if filename:
             # Security: only allow relative paths
             if Path(filename).is_absolute():
                 raise ValueError("Absolute paths not allowed for security reasons")
 
-            # Ensure .py extension
             if not filename.endswith(".py"):
                 filename += ".py"
 
             filepath = Path(filename)
-
-            # Write file
             filepath.write_text(script)
 
             logger.info("Exported history to file: %s", filepath)
 
-            # Return confirmation with preview
             line_count = len(script.split("\n"))
             preview_lines = script.split("\n")[:20]
             preview = "\n".join(preview_lines)
@@ -143,7 +133,6 @@ class DjangoShell:
 
             return f"Exported {line_count} lines to {filename}\n\n{preview}"
 
-        # Return script content
         return script
 
     async def execute(
@@ -194,8 +183,6 @@ class DjangoShell:
 
         stdout = StringIO()
         stderr = StringIO()
-
-        # Use fresh globals for THIS execution only (stateless)
         execution_globals: dict[str, Any] = {}
 
         with redirect_stdout(stdout), redirect_stderr(stderr):
