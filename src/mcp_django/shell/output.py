@@ -3,14 +3,12 @@ from __future__ import annotations
 import traceback
 from enum import Enum
 from types import TracebackType
-from typing import Any
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import field_serializer
 
 from .core import ErrorResult
-from .core import ExpressionResult
 from .core import Result
 from .core import StatementResult
 
@@ -26,11 +24,6 @@ class DjangoShellOutput(BaseModel):
         output: Output
 
         match result:
-            case ExpressionResult():
-                output = ExpressionOutput(
-                    value=result.value,
-                    value_type=type(result.value),
-                )
             case StatementResult():
                 output = StatementOutput()
             case ErrorResult():
@@ -56,27 +49,10 @@ class ExecutionStatus(str, Enum):
     @classmethod
     def from_output(cls, output: Output) -> ExecutionStatus:
         match output:
-            case ExpressionOutput() | StatementOutput():
+            case StatementOutput():
                 return cls.SUCCESS
             case ErrorOutput():
                 return cls.ERROR
-
-
-class ExpressionOutput(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    value: Any
-    value_type: type
-
-    @field_serializer("value")
-    def serialize_value(self, val: Any) -> str:
-        if val is None:
-            return "None"
-        return repr(val)
-
-    @field_serializer("value_type")
-    def serialize_value_type(self, typ: type) -> str:
-        return typ.__name__
 
 
 class StatementOutput(BaseModel):
@@ -123,4 +99,4 @@ class ExceptionOutput(BaseModel):
         return relevant_tb_lines
 
 
-Output = ExpressionOutput | StatementOutput | ErrorOutput
+Output = StatementOutput | ErrorOutput

@@ -59,10 +59,10 @@ async def execute(
         "Full code for django_shell - request_id: %s: %s", ctx.request_id, code
     )
 
-    parsed_code, setup, code_type = parse_code(code)
+    parsed_code = parse_code(code)
 
     try:
-        result = await django_shell.execute(parsed_code, setup, code_type)
+        result = await django_shell.execute(parsed_code)
         output = DjangoShellOutput.from_result(result)
 
         logger.debug(
