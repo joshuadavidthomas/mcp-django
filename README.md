@@ -210,8 +210,8 @@ Read-only resources for project exploration without executing code (note that re
 
 | Tool | Description |
 |------|-------------|
-| `execute` | Execute Python code in a stateless Django shell (fresh state each call) |
-| `export_history` | Export session history as a Python script (optionally save to file) |
+| `execute` | Execute Python code in a stateless Django shell |
+| `export_history` | Export session history as a Python script |
 | `clear_history` | Clear the session history for a fresh start |
 
 #### djangopackages.org
