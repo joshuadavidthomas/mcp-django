@@ -47,6 +47,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         default="/mcp",
         help="Path for HTTP transport endpoint (default: /mcp)",
     )
+    parser.add_argument(
+        "--toolsets",
+        help="Comma-separated list of toolsets to enable (e.g., 'shell,project'). Available: djangopackages, project, shell. Default: all toolsets enabled.",
+    )
     args = parser.parse_args(argv)
 
     debug: bool = args.debug
@@ -56,6 +60,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     host: str = args.host
     port: int = args.port
     path: str = args.path
+
+    # Parse and validate toolsets
+    toolsets: list[str] | None = None
+    if args.toolsets:
+        toolsets = [t.strip() for t in args.toolsets.split(",")]
+        available_toolsets = ["djangopackages", "project", "shell"]
+        invalid_toolsets = [t for t in toolsets if t not in available_toolsets]
+        if invalid_toolsets:
+            logger.error(
+                "Invalid toolset(s): %s. Available toolsets: %s",
+                ", ".join(invalid_toolsets),
+                ", ".join(available_toolsets),
+            )
+            return 1
 
     if debug:
         logging.basicConfig(
@@ -101,6 +119,9 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         if transport == "http":
             kwargs["path"] = path
+
+        if toolsets:
+            kwargs["toolsets"] = toolsets
 
         mcp.run(**kwargs)
 

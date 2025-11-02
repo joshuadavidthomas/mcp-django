@@ -99,3 +99,81 @@ def test_cli_with_sse_transport(monkeypatch):
 
     mock_mcp.run.assert_called_once_with(transport="sse", host="0.0.0.0", port=9000)
     assert result == 0
+
+
+def test_cli_with_single_toolset(monkeypatch):
+    monkeypatch.setenv("DJANGO_SETTINGS_MODULE", "tests.settings")
+
+    mock_mcp = Mock()
+    monkeypatch.setattr("mcp_django.server.mcp", mock_mcp)
+
+    result = main(["--toolsets", "shell"])
+
+    mock_mcp.run.assert_called_once_with(transport="stdio", toolsets=["shell"])
+    assert result == 0
+
+
+def test_cli_with_multiple_toolsets(monkeypatch):
+    monkeypatch.setenv("DJANGO_SETTINGS_MODULE", "tests.settings")
+
+    mock_mcp = Mock()
+    monkeypatch.setattr("mcp_django.server.mcp", mock_mcp)
+
+    result = main(["--toolsets", "shell,project"])
+
+    mock_mcp.run.assert_called_once_with(transport="stdio", toolsets=["shell", "project"])
+    assert result == 0
+
+
+def test_cli_with_all_toolsets(monkeypatch):
+    monkeypatch.setenv("DJANGO_SETTINGS_MODULE", "tests.settings")
+
+    mock_mcp = Mock()
+    monkeypatch.setattr("mcp_django.server.mcp", mock_mcp)
+
+    result = main(["--toolsets", "shell,project,djangopackages"])
+
+    mock_mcp.run.assert_called_once_with(
+        transport="stdio", toolsets=["shell", "project", "djangopackages"]
+    )
+    assert result == 0
+
+
+def test_cli_with_invalid_toolset(monkeypatch, caplog):
+    monkeypatch.setenv("DJANGO_SETTINGS_MODULE", "tests.settings")
+
+    mock_mcp = Mock()
+    monkeypatch.setattr("mcp_django.server.mcp", mock_mcp)
+
+    result = main(["--toolsets", "invalid"])
+
+    assert result == 1
+    assert "Invalid toolset(s): invalid" in caplog.text
+    mock_mcp.run.assert_not_called()
+
+
+def test_cli_with_mixed_valid_invalid_toolsets(monkeypatch, caplog):
+    monkeypatch.setenv("DJANGO_SETTINGS_MODULE", "tests.settings")
+
+    mock_mcp = Mock()
+    monkeypatch.setattr("mcp_django.server.mcp", mock_mcp)
+
+    result = main(["--toolsets", "shell,invalid,project"])
+
+    assert result == 1
+    assert "Invalid toolset(s): invalid" in caplog.text
+    mock_mcp.run.assert_not_called()
+
+
+def test_cli_with_toolsets_and_whitespace(monkeypatch):
+    monkeypatch.setenv("DJANGO_SETTINGS_MODULE", "tests.settings")
+
+    mock_mcp = Mock()
+    monkeypatch.setattr("mcp_django.server.mcp", mock_mcp)
+
+    result = main(["--toolsets", "shell, project, djangopackages"])
+
+    mock_mcp.run.assert_called_once_with(
+        transport="stdio", toolsets=["shell", "project", "djangopackages"]
+    )
+    assert result == 0
