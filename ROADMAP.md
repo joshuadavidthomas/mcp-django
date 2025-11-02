@@ -1,6 +1,6 @@
 # MCP Django Server Roadmap
 
-**Version:** Draft 1.0
+**Version:** Draft 1.1
 **Last Updated:** 2025-11-02
 **Current Version:** v0.12.0
 
@@ -14,47 +14,68 @@ Build the premier MCP server for Django development, achieving feature parity wi
 **Goal:** Match core Laravel Boost functionality
 **Target:** v0.13.0 - v0.15.0
 
-### 1.1 Database Toolset (v0.13.0) 🎯 HIGH PRIORITY
-**Motivation:** Laravel Boost's most powerful features are database-related
+### 1.1 Database Introspection Toolset (v0.13.0) 🎯 HIGH PRIORITY
+**Motivation:** Expose database metadata that Django's ORM doesn't surface
+
+**Key Insight:** While the shell's `execute` tool + ORM handles most queries, there's valuable database metadata that models don't expose: actual column types, indexes, constraints, table statistics, and query performance analysis.
 
 #### Tools
-- `database_query` - Execute read-only SQL queries against database
-  - Support for all Django-configured databases
-  - Query result formatting (table, JSON, CSV)
-  - Query explain/analyze support
-  - Safety: Read-only by default, explicit flag for writes
-  - Parameter binding support (prevent SQL injection)
-
 - `get_database_schema` - Full database schema inspection
-  - Tables, columns, types, constraints
-  - Indexes and their definitions
-  - Foreign key relationships
-  - View definitions
-  - Database-specific features (PostgreSQL schemas, etc.)
+  - **All tables** (including non-model tables, migrations table, etc.)
+  - **Actual database types** (e.g., PostgreSQL `jsonb` vs `json`, not just Django field types)
+  - **Indexes** with types (btree, gin, gist, etc.) and definitions
+  - **Constraints** (check, unique, foreign key) with full details
+  - **Views and materialized views**
+  - **Database-specific features** (PostgreSQL schemas, tablespaces, etc.)
 
-- `list_database_connections` - Inspect database configuration
+- `get_table_info` - Detailed table metadata
+  - Table size (disk usage)
+  - Row count and statistics
+  - Last vacuum/analyze (PostgreSQL)
+  - Index usage statistics
+  - Table bloat estimates
+
+- `analyze_query` - Query performance analysis
+  - EXPLAIN output for ORM queries or raw SQL
+  - EXPLAIN ANALYZE with actual execution times
+  - Index usage detection
+  - Slow query identification
+  - Suggested optimizations
+
+- `list_database_connections` - Database configuration
   - All configured databases from settings.DATABASES
   - Connection status (can connect?)
-  - Database engine, name, host, port
-  - Hide sensitive credentials
+  - Database engine, version, name, host, port
+  - Connection pool status (if applicable)
+  - Sanitized display (hide credentials)
 
 #### Resources
-- `django://database/{alias}/schema` - Schema for specific database
-- `django://database/{alias}/tables` - List tables
-- `django://database/{alias}/table/{table_name}` - Table details
+- `django://database/{alias}/schema` - Full schema for specific database
+- `django://database/{alias}/tables` - All tables (not just models)
+- `django://database/{alias}/table/{table_name}` - Table details including non-Django metadata
 - `django://databases` - All database connections
 
 **Implementation Notes:**
-- Use Django's connection.introspection module
-- Leverage Django's cursor context managers
-- Consider django-read-only integration for safety
+- Use Django's `connection.introspection` module as foundation
+- Query information_schema directly for detailed metadata
+- Database-specific queries for engine-specific features (PostgreSQL pg_stat tables, etc.)
 - Support multiple database backends (PostgreSQL, MySQL, SQLite, Oracle)
+- Handle differences in introspection capabilities across backends
+
+**Why Not Raw SQL Queries?**
+- General querying is already handled by `shell_execute` + ORM
+- 90% of query needs are met by ORM in shell
+- Focus on metadata that ORM doesn't expose
+- Consider adding raw SQL later (v0.13.1+) for edge cases:
+  - Legacy tables not in models
+  - Complex analytical queries
+  - Database maintenance operations
 
 **Security Considerations:**
-- Default to read-only queries
+- Read-only operations (no data modification)
 - Sanitize credential display
-- Add optional `allow_writes` configuration flag (default: false)
 - Log all database operations with request/client tracking
+- No SQL injection risk (only introspection queries)
 
 ---
 
@@ -385,8 +406,8 @@ Build the premier MCP server for Django development, achieving feature parity wi
 ## Feature Prioritization Matrix
 
 ### Must Have (Feature Parity)
-1. ✅ Database Query (v0.13.0)
-2. ✅ Database Schema (v0.13.0)
+1. ✅ Database Schema Introspection (v0.13.0)
+2. ✅ Query Performance Analysis (v0.13.0)
 3. ✅ Logging (v0.14.0)
 4. ✅ Management Commands (v0.15.0)
 5. ✅ Settings Keys (v0.15.0)
@@ -481,10 +502,10 @@ Build the premier MCP server for Django development, achieving feature parity wi
 
 ## Open Questions
 
-1. **Database writes:** Should we support write queries? How to make it safe?
-   - Option A: Never allow writes (strictest)
-   - Option B: Allow with explicit flag + confirmation
-   - Option C: Separate tool with warnings
+1. **Raw SQL queries:** Should we add a general SQL execution tool (beyond schema introspection)?
+   - Use case: Legacy tables, complex analytics, database maintenance
+   - Concern: Redundant with ORM in shell for most cases
+   - Decision: Defer to v0.13.1+ based on user feedback
 
 2. **Logging strategy:** How to handle large log files?
    - Streaming vs pagination
@@ -506,6 +527,12 @@ Build the premier MCP server for Django development, achieving feature parity wi
    - Survey community
    - Check Django package usage stats
 
+6. **Query analysis format:** How to present EXPLAIN output to LLMs?
+   - Raw text (preserves formatting)
+   - Structured JSON (easier parsing)
+   - Hybrid with visual representation
+   - Include optimization suggestions
+
 ---
 
 ## Version History
@@ -520,8 +547,8 @@ Build the premier MCP server for Django development, achieving feature parity wi
 ## Next Steps
 
 1. **Community Feedback** - Share roadmap for input
-2. **v0.13.0 Planning** - Detailed database toolset design
-3. **Security Review** - Database query safety architecture
+2. **v0.13.0 Planning** - Detailed database introspection toolset design
+3. **Implementation Research** - Study Django's introspection APIs and database-specific features
 4. **Documentation** - Update contributing guide with roadmap
 5. **Milestones** - Create GitHub milestones for each version
 
