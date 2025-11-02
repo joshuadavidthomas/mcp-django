@@ -26,7 +26,7 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
-[0.12.0]
+## [0.12.0]
 
 ### Added
 
