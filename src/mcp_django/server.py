@@ -53,7 +53,9 @@ class DjangoMCP:
                 await self._server.import_server(toolset_server, prefix=toolset_prefix)
 
     def run(self, toolsets: list[str] | None = None, **kwargs: Any) -> None:  # pragma: no cover
-        instance = DjangoMCP(toolsets=toolsets) if toolsets else self
+        # Always create a fresh instance with the requested toolsets
+        # This ensures proper initialization regardless of how this method is called
+        instance = DjangoMCP(toolsets=toolsets)
         asyncio.run(instance.initialize())
         instance._server.run(**kwargs)
 
