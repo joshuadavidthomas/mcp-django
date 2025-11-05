@@ -210,7 +210,7 @@ Read-only resources for project exploration without executing code (note that re
 
 | Tool | Description |
 |------|-------------|
-| `command` | Execute Django management commands with arguments and options |
+| `execute_command` | Execute Django management commands with arguments and options |
 | `list_commands` | List all available Django management commands with their source apps |
 
 #### Shell

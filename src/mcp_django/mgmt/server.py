@@ -23,15 +23,15 @@ MANAGEMENT_TOOLSET = "management"
 
 
 @mcp.tool(
-    name="command",
+    name="execute_command",
     annotations=ToolAnnotations(
-        title="Run Django Management Command",
+        title="Execute Django Management Command",
         destructiveHint=True,
         openWorldHint=True,
     ),
     tags={MANAGEMENT_TOOLSET},
 )
-async def command(
+async def execute_command(
     ctx: Context,
     command: Annotated[
         str,
@@ -114,7 +114,7 @@ def list_commands(ctx: Context) -> list[CommandInfo]:
     installed apps. Each command includes its name and the app that provides it.
 
     Useful for discovering what commands are available before executing them
-    with the command tool.
+    with the execute_command tool.
     """
     logger.info(
         "list_management_commands called - request_id: %s, client_id: %s",

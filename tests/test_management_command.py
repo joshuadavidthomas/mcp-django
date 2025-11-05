@@ -19,7 +19,7 @@ async def test_management_command_check():
     """Test running the 'check' command (safe, read-only)."""
     async with Client(mcp.server) as client:
         result = await client.call_tool(
-            "management_command",
+            "management_execute_command",
             {
                 "command": "check",
             },
@@ -40,7 +40,7 @@ async def test_management_command_with_args():
     """Test running a command with positional arguments."""
     async with Client(mcp.server) as client:
         result = await client.call_tool(
-            "management_command",
+            "management_execute_command",
             {
                 "command": "showmigrations",
                 "args": ["tests"],
@@ -58,7 +58,7 @@ async def test_management_command_with_options():
     """Test running a command with keyword options."""
     async with Client(mcp.server) as client:
         result = await client.call_tool(
-            "management_command",
+            "management_execute_command",
             {
                 "command": "check",
                 "options": {"verbosity": 2},
@@ -75,7 +75,7 @@ async def test_management_command_with_args_and_options():
     """Test running a command with both args and options."""
     async with Client(mcp.server) as client:
         result = await client.call_tool(
-            "management_command",
+            "management_execute_command",
             {
                 "command": "showmigrations",
                 "args": ["tests"],
@@ -94,7 +94,7 @@ async def test_management_command_invalid_command():
     """Test running an invalid/non-existent command."""
     async with Client(mcp.server) as client:
         result = await client.call_tool(
-            "management_command",
+            "management_execute_command",
             {
                 "command": "this_command_does_not_exist",
             },
@@ -115,7 +115,7 @@ async def test_management_command_makemigrations_dry_run():
     """Test running makemigrations with --dry-run (safe, read-only)."""
     async with Client(mcp.server) as client:
         result = await client.call_tool(
-            "management_command",
+            "management_execute_command",
             {
                 "command": "makemigrations",
                 "options": {"dry_run": True, "verbosity": 0},
@@ -133,7 +133,7 @@ async def test_management_command_diffsettings():
     """Test running diffsettings command (read-only introspection)."""
     async with Client(mcp.server) as client:
         result = await client.call_tool(
-            "management_command",
+            "management_execute_command",
             {
                 "command": "diffsettings",
                 "options": {"all": True},
@@ -151,7 +151,7 @@ async def test_management_command_stdout_capture():
     """Test that stdout is properly captured from commands."""
     async with Client(mcp.server) as client:
         result = await client.call_tool(
-            "management_command",
+            "management_execute_command",
             {
                 "command": "check",
                 "options": {"verbosity": 2},
@@ -171,11 +171,11 @@ async def test_management_command_list_in_main_server():
         tools = await client.list_tools()
         tool_names = [tool.name for tool in tools]
 
-        assert "management_command" in tool_names
+        assert "management_execute_command" in tool_names
 
         # Find the tool and check its metadata
         mgmt_tool = next(
-            tool for tool in tools if tool.name == "management_command"
+            tool for tool in tools if tool.name == "management_execute_command"
         )
         assert mgmt_tool.description is not None
         assert "management command" in mgmt_tool.description.lower()
