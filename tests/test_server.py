@@ -45,6 +45,8 @@ async def test_tool_listing():
             "djangopackages_get_grid",
             "djangopackages_get_package",
             "djangopackages_search",
+            "management_execute_command",
+            "management_list_commands",
             "project_get_project_info",
             "project_list_apps",
             "project_list_models",
