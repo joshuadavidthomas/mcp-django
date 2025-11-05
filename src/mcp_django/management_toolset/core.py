@@ -13,15 +13,12 @@ from django.core.management import call_command
 from django.core.management import get_commands
 from pydantic import BaseModel
 from pydantic import ConfigDict
-from pydantic import field_serializer
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class CommandResult:
-    """Result from successfully executing a management command."""
-
     command: str
     args: tuple[str, ...]
     options: dict[str, str | int | bool]
@@ -41,8 +38,6 @@ class CommandResult:
 
 @dataclass
 class CommandErrorResult:
-    """Result from a management command that raised an exception."""
-
     command: str
     args: tuple[str, ...]
     options: dict[str, str | int | bool]
@@ -69,8 +64,6 @@ Result = CommandResult | CommandErrorResult
 
 
 class ManagementCommandOutput(BaseModel):
-    """Output from executing a Django management command."""
-
     status: str  # "success" or "error"
     command: str
     args: list[str]
@@ -81,7 +74,6 @@ class ManagementCommandOutput(BaseModel):
 
     @classmethod
     def from_result(cls, result: Result) -> ManagementCommandOutput:
-        """Create output from a command result."""
         match result:
             case CommandResult():
                 return cls(
@@ -109,8 +101,6 @@ class ManagementCommandOutput(BaseModel):
 
 
 class ExceptionInfo(BaseModel):
-    """Information about an exception that occurred during command execution."""
-
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     type: str
@@ -118,8 +108,6 @@ class ExceptionInfo(BaseModel):
 
 
 class ManagementCommandExecutor:
-    """Executor for Django management commands with output capture."""
-
     async def execute(
         self,
         command: str,
@@ -208,8 +196,6 @@ management_command_executor = ManagementCommandExecutor()
 
 
 class CommandInfo(BaseModel):
-    """Information about a management command."""
-
     name: str
     app_name: str
 
