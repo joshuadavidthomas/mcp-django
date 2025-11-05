@@ -10,6 +10,7 @@ from io import StringIO
 
 from asgiref.sync import sync_to_async
 from django.core.management import call_command
+from django.core.management import get_commands
 from pydantic import BaseModel
 from pydantic import ConfigDict
 from pydantic import field_serializer
@@ -204,3 +205,32 @@ class ManagementCommandExecutor:
 
 
 management_command_executor = ManagementCommandExecutor()
+
+
+class CommandInfo(BaseModel):
+    """Information about a management command."""
+
+    name: str
+    app_name: str
+
+
+def get_management_commands() -> list[CommandInfo]:
+    """Get list of all available Django management commands.
+
+    Returns a list of management commands with their app origins,
+    sorted alphabetically by command name.
+
+    Returns:
+        List of CommandInfo objects containing command name and source app.
+    """
+    logger.info("Fetching available management commands")
+
+    commands = get_commands()
+    command_list = [
+        CommandInfo(name=name, app_name=app_name)
+        for name, app_name in sorted(commands.items())
+    ]
+
+    logger.debug("Found %d management commands", len(command_list))
+
+    return command_list

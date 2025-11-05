@@ -10,8 +10,6 @@ from fastmcp import Context
 from fastmcp import FastMCP
 from mcp.types import ToolAnnotations
 
-from .management import ManagementCommandOutput
-from .management import management_command_executor
 from .resources import AppResource
 from .resources import ModelResource
 from .resources import ProjectResource
@@ -312,78 +310,3 @@ mcp.tool(
     ),
     tags={PROJECT_TOOLSET},
 )(get_setting)
-
-
-@mcp.tool(
-    name="management_command",
-    annotations=ToolAnnotations(
-        title="Run Django Management Command",
-        destructiveHint=True,
-        openWorldHint=True,
-    ),
-    tags={PROJECT_TOOLSET},
-)
-async def management_command(
-    ctx: Context,
-    command: Annotated[
-        str,
-        "Management command name (e.g., 'migrate', 'check', 'collectstatic')",
-    ],
-    args: Annotated[
-        list[str] | None,
-        "Positional arguments for the command",
-    ] = None,
-    options: Annotated[
-        dict[str, str | int | bool] | None,
-        "Keyword options for the command (use underscores for dashes, e.g., 'run_syncdb' for '--run-syncdb')",
-    ] = None,
-) -> ManagementCommandOutput:
-    """Execute a Django management command.
-
-    Calls Django's call_command() to run management commands. Arguments and options
-    are passed directly to the command. Command output (stdout/stderr) is captured
-    and returned.
-
-    Examples:
-    - Check for issues: command="check"
-    - Show migrations: command="showmigrations", args=["myapp"]
-    - Migrate with options: command="migrate", options={"verbosity": 2}
-    - Check with tag: command="check", options={"tag": "security"}
-
-    Note: Management commands can modify your database and project state. Use with
-    caution, especially commands like migrate, flush, loaddata, etc.
-    """
-    logger.info(
-        "management_command called - request_id: %s, client_id: %s, command: %s, args: %s, options: %s",
-        ctx.request_id,
-        ctx.client_id or "unknown",
-        command,
-        args,
-        options,
-    )
-
-    try:
-        result = await management_command_executor.execute(command, args, options)
-        output = ManagementCommandOutput.from_result(result)
-
-        logger.debug(
-            "management_command completed - request_id: %s, status: %s",
-            ctx.request_id,
-            output.status,
-        )
-
-        if output.status == "error":
-            await ctx.debug(
-                f"Command failed: {output.exception.type}: {output.exception.message}"
-            )
-
-        return output
-
-    except Exception as e:
-        logger.error(
-            "Unexpected error in management_command tool - request_id: %s: %s",
-            ctx.request_id,
-            e,
-            exc_info=True,
-        )
-        raise

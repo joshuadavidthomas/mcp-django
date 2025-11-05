@@ -28,7 +28,7 @@ For multi-package releases, use package names as subsections:
 
 ### Added
 
-- Added `management_command` tool for executing Django management commands with arguments and options
+- Added Management toolset with `command` and `list_commands` tools for executing and discovering Django management commands
 
 ## [0.12.0]
 
