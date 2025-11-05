@@ -205,6 +205,7 @@ Read-only resources for project exploration without executing code (note that re
 | `list_apps` | List all installed Django applications with their models |
 | `list_models` | Get detailed information about Django models with optional filtering by app or scope |
 | `list_routes` | Introspect Django URL routes with filtering support for HTTP method, route name, or URL pattern |
+| `management_command` | Execute Django management commands with arguments and options |
 
 #### Shell
 

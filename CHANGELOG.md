@@ -26,6 +26,10 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
+### Added
+
+- Added `management_command` tool for executing Django management commands with arguments and options
+
 ## [0.12.0]
 
 ### Added

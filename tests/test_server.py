@@ -50,6 +50,7 @@ async def test_tool_listing():
             "project_list_models",
             "project_list_routes",
             "project_get_setting",
+            "project_management_command",
             "shell_execute",
             "shell_clear_history",
             "shell_export_history",
