@@ -4,6 +4,8 @@ import pytest
 import pytest_asyncio
 from fastmcp import Client
 
+from mcp_django.mgmt import core
+from mcp_django.mgmt.core import CommandErrorResult
 from mcp_django.server import mcp
 
 pytestmark = [pytest.mark.asyncio, pytest.mark.django_db]
@@ -226,3 +228,43 @@ async def test_list_management_commands_sorted():
 
         # Verify the list is sorted
         assert command_names == sorted(command_names)
+
+
+async def test_management_command_unexpected_exception(monkeypatch):
+    """Test handling of unexpected exceptions in execute_command tool."""
+
+    # Mock the executor to raise an unexpected exception
+    async def mock_execute(*args, **kwargs):
+        raise RuntimeError("Unexpected error in executor")
+
+    monkeypatch.setattr(core.management_command_executor, "execute", mock_execute)
+
+    async with Client(mcp.server) as client:
+        # The tool should re-raise unexpected exceptions
+        with pytest.raises(Exception):  # Will be wrapped by FastMCP
+            await client.call_tool(
+                "management_execute_command",
+                {
+                    "command": "check",
+                },
+            )
+
+
+async def test_command_error_result_with_stdout_stderr():
+    """Test CommandErrorResult __post_init__ with stdout and stderr for coverage."""
+    # Create a CommandErrorResult with both stdout and stderr
+    # This triggers lines 58 and 60 in mgmt/core.py
+    result = CommandErrorResult(
+        command="test_command",
+        args=("arg1",),
+        options={"opt": "value"},
+        exception=Exception("Test exception"),
+        stdout="Some stdout output",
+        stderr="Some stderr output",
+    )
+
+    # Verify the result was created correctly
+    assert result.command == "test_command"
+    assert result.stdout == "Some stdout output"
+    assert result.stderr == "Some stderr output"
+    assert str(result.exception) == "Test exception"
