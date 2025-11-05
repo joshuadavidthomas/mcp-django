@@ -6,8 +6,8 @@ from typing import Any
 
 from fastmcp import FastMCP
 
-from mcp_django.management_toolset import MANAGEMENT_TOOLSET
-from mcp_django.management_toolset import mcp as management_mcp
+from mcp_django.mgmt import MANAGEMENT_TOOLSET
+from mcp_django.mgmt import mcp as management_mcp
 from mcp_django.packages import DJANGOPACKAGES_TOOLSET
 from mcp_django.packages import mcp as packages_mcp
 from mcp_django.project import PROJECT_TOOLSET
