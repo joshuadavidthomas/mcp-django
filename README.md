@@ -86,7 +86,9 @@ The server automatically detects `DJANGO_SETTINGS_MODULE` from your environment.
 python -m mcp_django --settings myproject.settings --debug
 ```
 
-**Using the management command** (requires adding `mcp_django` to `INSTALLED_APPS`):
+### Management Command
+
+If you add `mcp_django` to `INSTALLED_APPS`, you can run it as a Django management command. This ensures the server runs within your Django project's environment and uses your project's settings:
 
 ```bash
 python manage.py mcp
