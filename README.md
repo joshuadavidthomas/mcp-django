@@ -76,66 +76,67 @@ Run the MCP server directly from your Django project directory:
 ```bash
 python -m mcp_django
 
-# With explicit settings module
-python -m mcp_django --settings myproject.settings
-
-# With debug logging
-python -m mcp_django --debug
-```
-
-Or using uv:
-
-```bash
+# Or with uv
 uv run -m mcp_django
 ```
 
-The server automatically detects `DJANGO_SETTINGS_MODULE` from your environment. You can override it with `--settings` or add to your Python path with `--pythonpath`.
+The server automatically detects `DJANGO_SETTINGS_MODULE` from your environment. You can override it with `--settings` or add to your Python path with `--pythonpath`:
 
-There's also a Django management command if you prefer, but that requires adding mcp-django to `INSTALLED_APPS`:
+```bash
+python -m mcp_django --settings myproject.settings --debug
+```
+
+**Using the management command** (requires adding `mcp_django` to `INSTALLED_APPS`):
 
 ```bash
 python manage.py mcp
 ```
 
-### Transport
+### Docker
+
+If you're using Docker and Docker Compose, you can run mcp-django as a separate compose service using HTTP transport. This makes it easier to connect your MCP client (running on your host) to the Django project (running in a container):
+
+```yaml
+# compose.yml
+services:
+  app:
+    # your existing Django app service
+    
+  mcp:
+    build: .
+    command: python -m mcp_django --transport http --host 0.0.0.0 --port 8000
+    environment:
+      DJANGO_SETTINGS_MODULE: myproject.settings
+    ports:
+      - "8001:8000"
+```
+
+Then configure your MCP client to connect to `http://localhost:8001/mcp` (see [Client Configuration](#client-configuration) below).
+
+### Transport Options
 
 The server supports multiple transport protocols:
 
 ```bash
-# Default: STDIO
+# STDIO (default, for local development)
 python -m mcp_django
 
-# HTTP
+# HTTP (for Docker or remote access)
 python -m mcp_django --transport http --host 127.0.0.1 --port 8000
 
-# SSE
+# SSE (for Docker or remote access)
 python -m mcp_django --transport sse --host 127.0.0.1 --port 8000
 ```
 
 ### Client Configuration
 
-Configure your MCP client using one of the examples below. The command is the same for all clients, just expressed in annoyingly different JSON soup.
+Configure your MCP client to connect to the server.
 
 Don't see your client? [Submit a PR](CONTRIBUTING.md) with setup instructions.
 
-### Claude Code
+#### Opencode
 
-```json
-{
-  "mcpServers": {
-    "django": {
-      "command": "python",
-      "args": ["-m", "mcp_django"],
-      "cwd": "/path/to/your/django/project",
-      "env": {
-        "DJANGO_SETTINGS_MODULE": "myproject.settings"
-      }
-    }
-  }
-}
-```
-
-### Opencode
+For **local development**, use `type: local` with the command:
 
 ```json
 {
@@ -152,6 +153,42 @@ Don't see your client? [Submit a PR](CONTRIBUTING.md) with setup instructions.
   }
 }
 ```
+
+For **Docker development**, use `type: remote` with the URL:
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "django": {
+      "type": "remote",
+      "url": "http://localhost:8001/mcp",
+      "enabled": true
+    }
+  }
+}
+```
+
+#### Claude Code
+
+For **local development**, use the command configuration:
+
+```json
+{
+  "mcpServers": {
+    "django": {
+      "command": "python",
+      "args": ["-m", "mcp_django"],
+      "cwd": "/path/to/your/django/project",
+      "env": {
+        "DJANGO_SETTINGS_MODULE": "myproject.settings"
+      }
+    }
+  }
+}
+```
+
+For **Docker development** with HTTP/SSE transport, configuration varies by Claude Code version - consult the MCP client documentation for remote server setup.
 
 ## Features
 
