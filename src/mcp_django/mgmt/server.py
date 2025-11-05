@@ -80,7 +80,7 @@ async def execute_command(
             output.status,
         )
 
-        if output.status == "error":
+        if output.status == "error" and output.exception:
             await ctx.debug(
                 f"Command failed: {output.exception.type}: {output.exception.message}"
             )
