@@ -5,7 +5,24 @@ updates:
     schedule:
       interval: weekly
       timezone: America/Chicago
+    cooldown:
+      default-days: 7
+    labels:
+      - dependabot 🤖
     groups:
       gha:
+        patterns:
+          - "*"
+  - package-ecosystem: uv
+    directory: "/"
+    schedule:
+      interval: weekly
+      timezone: America/Chicago
+    cooldown:
+      default-days: 7
+    labels:
+      - dependabot 🤖
+    groups:
+      uv:
         patterns:
           - "*"

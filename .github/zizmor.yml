@@ -1,0 +1,5 @@
+rules:
+  cache-poisoning:
+    ignore:
+      # test workflow does not produce artifacts to poison
+      - test.yml
