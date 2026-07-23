@@ -2,13 +2,21 @@ from __future__ import annotations
 
 import pytest
 import pytest_asyncio
+from django.conf import settings
+from django.test import override_settings
 from fastmcp import Client
+from fastmcp.exceptions import ToolError
 
 from mcp_django.mgmt import core
 from mcp_django.mgmt.core import CommandErrorResult
 from mcp_django.server import mcp
 
 pytestmark = [pytest.mark.asyncio, pytest.mark.django_db]
+
+INSTALLED_APPS_WITH_AUTH = settings.INSTALLED_APPS + [
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+]
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -17,6 +25,7 @@ async def initialize_server():
     await mcp.initialize()
 
 
+@override_settings(INSTALLED_APPS=INSTALLED_APPS_WITH_AUTH)
 async def test_management_command_check():
     """Test running the 'check' command (safe, read-only)."""
     async with Client(mcp.server) as client:
@@ -56,6 +65,7 @@ async def test_management_command_with_args():
         assert result.data.exception is None
 
 
+@override_settings(INSTALLED_APPS=INSTALLED_APPS_WITH_AUTH)
 async def test_management_command_with_options():
     """Test running a command with keyword options."""
     async with Client(mcp.server) as client:
@@ -149,6 +159,7 @@ async def test_management_command_diffsettings():
         assert len(result.data.stdout) > 0
 
 
+@override_settings(INSTALLED_APPS=INSTALLED_APPS_WITH_AUTH)
 async def test_management_command_stdout_capture():
     """Test that stdout is properly captured from commands."""
     async with Client(mcp.server) as client:
@@ -193,17 +204,15 @@ async def test_list_management_commands():
         assert len(result.data) > 0
 
         # Check that we have some standard Django commands
-        command_names = [cmd["name"] for cmd in result.data]
+        command_names = [cmd.name for cmd in result.data]
         assert "check" in command_names
         assert "migrate" in command_names
         assert "showmigrations" in command_names
 
         # Verify structure of command info
         first_cmd = result.data[0]
-        assert "name" in first_cmd
-        assert "app_name" in first_cmd
-        assert isinstance(first_cmd["name"], str)
-        assert isinstance(first_cmd["app_name"], str)
+        assert isinstance(first_cmd.name, str)
+        assert isinstance(first_cmd.app_name, str)
 
 
 async def test_list_management_commands_includes_custom_commands():
@@ -212,7 +221,7 @@ async def test_list_management_commands_includes_custom_commands():
         result = await client.call_tool("management_list_commands", {})
 
         assert result.data is not None
-        command_names = [cmd["name"] for cmd in result.data]
+        command_names = [cmd.name for cmd in result.data]
 
         # The mcp command from this project should be in the list
         assert "mcp" in command_names
@@ -224,7 +233,7 @@ async def test_list_management_commands_sorted():
         result = await client.call_tool("management_list_commands", {})
 
         assert result.data is not None
-        command_names = [cmd["name"] for cmd in result.data]
+        command_names = [cmd.name for cmd in result.data]
 
         # Verify the list is sorted
         assert command_names == sorted(command_names)
@@ -241,7 +250,7 @@ async def test_management_command_unexpected_exception(monkeypatch):
 
     async with Client(mcp.server) as client:
         # The tool should re-raise unexpected exceptions
-        with pytest.raises(Exception):  # Will be wrapped by FastMCP
+        with pytest.raises(ToolError, match="Unexpected error in executor"):
             await client.call_tool(
                 "management_execute_command",
                 {

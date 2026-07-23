@@ -5,6 +5,7 @@ from typing import Annotated
 
 from fastmcp import Context
 from fastmcp import FastMCP
+from fastmcp.resources import ResourceContent
 from mcp.types import ToolAnnotations
 
 from .client import DjangoPackagesClient
@@ -38,12 +39,21 @@ async def get_grid(
         return await client.get_grid(slug)
 
 
-mcp.resource(
+@mcp.resource(
     "django://grid/{slug}",
     name="Django Grid Details",
+    mime_type="application/json",
     annotations={"readOnlyHint": True, "idempotentHint": True},
     tags={DJANGOPACKAGES_TOOLSET},
-)(get_grid)
+)
+async def get_grid_resource(
+    slug: Annotated[
+        str,
+        "The grid slug (e.g., 'rest-frameworks', 'admin-interfaces')",
+    ],
+) -> list[ResourceContent]:
+    return [ResourceContent(await get_grid(slug))]
+
 
 mcp.tool(
     name="get_grid",
@@ -71,12 +81,21 @@ async def get_package(
         return await client.get_package(slug)
 
 
-mcp.resource(
+@mcp.resource(
     "django://package/{slug}",
     name="Django Package Details",
+    mime_type="application/json",
     annotations={"readOnlyHint": True, "idempotentHint": True},
     tags={DJANGOPACKAGES_TOOLSET},
-)(get_package)
+)
+async def get_package_resource(
+    slug: Annotated[
+        str,
+        "The package slug (e.g., 'django-debug-toolbar', 'django-rest-framework')",
+    ],
+) -> list[ResourceContent]:
+    return [ResourceContent(await get_package(slug))]
+
 
 mcp.tool(
     name="get_package",

@@ -1,25 +1,24 @@
 [build-system]
-requires = ["uv_build>=0.7.21,<0.8"]
+requires = ["uv_build>=0.11.31,<0.12"]
 build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
-  "coverage[toml]>=7.6.4",
-  "django-coverage-plugin>=3.1.0",
-  "nox[uv]>=2024.10.9",
-  "pytest>=8.4.1",
-  "pytest-asyncio>=1.1.0",
-  "pytest-cov>=6.2.1",
-  "pytest-django>=4.10.0",
-  "pytest-randomly>=3.16.0",
+  "coverage[toml]>=7.15.2",
+  "django-coverage-plugin>=3.2.2",
+  "nox[uv]>=2026.7.11",
+  "pytest>=9.1.1",
+  "pytest-asyncio>=1.4.0",
+  "pytest-cov>=7.1.0",
+  "pytest-django>=4.12.0",
+  "pytest-randomly>=4.1.0",
   "pytest-xdist>=3.8.0",
-  "respx>=0.21.1",
-  "ruff>=0.12.9",
+  "respx>=0.23.1",
+  "ruff>=0.15.22",
 ]
 types = [
-  "django-stubs>=5.1.1",
-  "django-stubs-ext>=5.1.1",
-  "mypy>=1.13.0",
+  "django-stubs>=6.0.7",
+  "mypy>=2.3.0",
 ]
 
 [project]
@@ -41,8 +40,6 @@ classifiers = [
   #         continue
   #     cog.outl(f'  "Framework :: Django :: {display_version(version)}",')
   # ]]] -->
-  "Framework :: Django :: 4.2",
-  "Framework :: Django :: 5.1",
   "Framework :: Django :: 5.2",
   "Framework :: Django :: 6.0",
   # [[[end]]]
@@ -69,10 +66,9 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython"
 ]
 dependencies = [
-  "django>4.2",
-  "fastmcp>=2.11.3",
+  "django>=5.2",
+  "fastmcp>=3.4.4",
   "httpx>=0.28.1",
-  "platformdirs>=4.5.0",
   "pydantic[email]>=2.11.7",
 ]
 description = "A Model Context Protocol (MCP) server for Django integration with LLM assistants."
@@ -94,40 +90,6 @@ version = "0.13.0"
 Documentation = "https://github.com/joshuadavidthomas/mcp-django#README"
 Issues = "https://github.com/joshuadavidthomas/mcp-django/issues"
 Source = "https://github.com/joshuadavidthomas/mcp-django"
-
-[[tool.basedpyright.executionEnvironments]]
-reportAny = "none"
-reportArgumentType = "none"
-reportAssignmentType = "none"
-reportAttributeAccessIssue = "none"
-reportCallIssue = "none"
-reportExplicitAny = "none"
-reportGeneralTypeIssues = "none"
-reportIncompatibleMethodOverride = "none"
-reportIncompatibleVariableOverride = "none"
-reportIndexIssue = "none"
-reportInvalidTypeArguments = "none"
-reportMissingParameterType = "none"
-reportMissingTypeArgument = "none"
-reportOperatorIssue = "none"
-reportOptionalCall = "none"
-reportOptionalContextManager = "none"
-reportOptionalIterable = "none"
-reportOptionalMemberAccess = "none"
-reportOptionalOperand = "none"
-reportOptionalSubscript = "none"
-reportPropertyTypeMismatch = "none"
-reportReturnType = "none"
-reportUnknownArgumentType = "none"
-reportUnknownLambdaType = "none"
-reportUnknownMemberType = "none"
-reportUnknownParameterType = "none"
-reportUnknownVariableType = "none"
-reportUntypedBaseClass = "none"
-reportUntypedClassDecorator = "none"
-reportUntypedFunctionDecorator = "none"
-reportUnusedCallResult = "none"
-root = "tests"
 
 [tool.coverage.paths]
 source = [
@@ -274,4 +236,4 @@ required-imports = ["from __future__ import annotations"]
 keep-runtime-typing = true
 
 [tool.uv]
-required-version = ">=0.7"
+required-version = ">=0.11.31"

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from enum import Enum
 
 import pytest
@@ -16,6 +17,12 @@ pytestmark = pytest.mark.asyncio
 class Tool(str, Enum):
     SHELL = "shell"
     LIST_ROUTES = "project_list_routes"
+
+
+def load_json_resource(contents):
+    assert len(contents) == 1
+    assert contents[0].mimeType == "application/json"
+    return json.loads(contents[0].text)
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -61,16 +68,18 @@ async def test_tool_listing():
 
 async def test_get_apps_resource():
     async with Client(mcp.server) as client:
-        result = await client.read_resource("django://project/apps")
-        assert result is not None
-        assert len(result) > 0
+        contents = await client.read_resource("django://project/apps")
+        apps = load_json_resource(contents)
+
+        assert any(app["label"] == "tests" for app in apps)
 
 
 async def test_get_models_resource():
     async with Client(mcp.server) as client:
-        result = await client.read_resource("django://project/models")
-        assert result is not None
-        assert len(result) > 0
+        contents = await client.read_resource("django://project/models")
+        models = load_json_resource(contents)
+
+        assert any(model["model_class"] == "AModel" for model in models)
 
 
 async def test_get_project_info_tool():
@@ -118,7 +127,7 @@ async def test_list_routes_tool_with_filters():
 
         if all_routes.data:
             pattern_routes = await client.call_tool(
-                "project_list_routes", {"pattern": all_routes.data[0]["pattern"][:3]}
+                "project_list_routes", {"pattern": all_routes.data[0].pattern[:3]}
             )
             assert isinstance(pattern_routes.data, list)
 
@@ -130,7 +139,7 @@ async def test_list_apps_tool():
         assert isinstance(result.data, list)
         assert len(result.data) > 0
         # Should have at least the 'tests' app
-        app_labels = [app["label"] for app in result.data]
+        app_labels = [app.label for app in result.data]
         assert "tests" in app_labels
 
 
@@ -141,7 +150,7 @@ async def test_list_models_tool():
         assert isinstance(result.data, list)
         assert len(result.data) > 0
         # Should have at least AModel from tests
-        model_names = [model["model_class"] for model in result.data]
+        model_names = [model.model_class for model in result.data]
         assert "AModel" in model_names
 
 
@@ -153,7 +162,7 @@ async def test_list_models_with_scope_project():
         assert len(result.data) > 0
 
         # Should have project models, e.g. our test models
-        model_names = [model["model_class"] for model in result.data]
+        model_names = [model.model_class for model in result.data]
         assert "AModel" in model_names
 
         # Should NOT have Django models (they're in site-packages)
@@ -176,7 +185,7 @@ async def test_list_models_with_scope_all():
         assert isinstance(result.data, list)
         assert len(result.data) > 0
 
-        model_names = [model["model_class"] for model in result.data]
+        model_names = [model.model_class for model in result.data]
 
         assert "AModel" in model_names
         assert "User" in model_names
@@ -200,8 +209,8 @@ async def test_list_models_with_include():
         assert isinstance(result.data, list)
         assert len(result.data) > 0
 
-        model_names = [model["model_class"] for model in result.data]
-        app_labels = [model["import_path"].split(".")[0] for model in result.data]
+        model_names = [model.model_class for model in result.data]
+        app_labels = [model.import_path.split(".")[0] for model in result.data]
 
         # should include auth and tests models
         assert "AModel" in model_names
@@ -231,7 +240,7 @@ async def test_list_models_include_overrides_scope():
         assert isinstance(result.data, list)
         assert len(result.data) > 0
 
-        model_names = [model["model_class"] for model in result.data]
+        model_names = [model.model_class for model in result.data]
 
         # Should ONLY have auth models (include overrides scope)
         assert "User" in model_names
@@ -253,39 +262,39 @@ async def test_get_setting_tool():
 
 async def test_get_app_resource():
     async with Client(mcp.server) as client:
-        result = await client.read_resource("django://project/app/tests")
+        contents = await client.read_resource("django://project/app/tests")
+        app = load_json_resource(contents)
 
-        assert result is not None
-        assert len(result) > 0
+        assert app["label"] == "tests"
 
 
 async def test_get_app_models_resource():
     async with Client(mcp.server) as client:
-        result = await client.read_resource("django://project/app/tests/models")
+        contents = await client.read_resource("django://project/app/tests/models")
+        models = load_json_resource(contents)
 
-        assert result is not None
-        assert len(result) > 0
+        assert any(model["model_class"] == "AModel" for model in models)
 
 
 async def test_get_model_resource():
     async with Client(mcp.server) as client:
-        result = await client.read_resource("django://project/model/tests/AModel")
+        contents = await client.read_resource("django://project/model/tests/AModel")
+        model = load_json_resource(contents)
 
-        assert result is not None
-        assert len(result) > 0
+        assert model["model_class"] == "AModel"
 
 
 async def test_get_route_by_pattern_resource():
     async with Client(mcp.server) as client:
-        result = await client.read_resource("django://project/route/home")
+        contents = await client.read_resource("django://project/route/get-only")
+        routes = load_json_resource(contents)
 
-        assert result is not None
-        assert len(result) > 0
+        assert routes[0]["pattern"] == "get-only/"
 
 
 async def test_get_setting_resource():
     async with Client(mcp.server) as client:
-        result = await client.read_resource("django://project/setting/DEBUG")
+        contents = await client.read_resource("django://project/setting/DEBUG")
+        setting = load_json_resource(contents)
 
-        assert result is not None
-        assert len(result) > 0
+        assert setting == {"key": "DEBUG", "value": False, "value_type": "bool"}

@@ -8,6 +8,7 @@ from django.apps import apps
 from django.conf import settings
 from fastmcp import Context
 from fastmcp import FastMCP
+from fastmcp.resources import ResourceContent
 from mcp.types import ToolAnnotations
 
 from .resources import AppResource
@@ -51,6 +52,7 @@ def get_project_info() -> ProjectResource:
 @mcp.resource(
     "django://app/{app_label}",
     name="Django App Details",
+    mime_type="application/json",
     annotations={"readOnlyHint": True, "idempotentHint": True},
     tags={PROJECT_TOOLSET},
 )
@@ -58,14 +60,16 @@ def get_app(
     app_label: Annotated[
         str, "Django app label (e.g., 'auth', 'contenttypes', 'myapp')"
     ],
-) -> AppResource:
+) -> list[ResourceContent]:
     """Get details for a specific Django app."""
-    return AppResource.from_app(apps.get_app_config(app_label))
+    app = AppResource.from_app(apps.get_app_config(app_label))
+    return [ResourceContent(app)]
 
 
 @mcp.resource(
     "django://app/{app_label}/models",
     name="Django App Models",
+    mime_type="application/json",
     annotations={"readOnlyHint": True, "idempotentHint": True},
     tags={PROJECT_TOOLSET},
 )
@@ -73,14 +77,15 @@ def get_app_models(
     app_label: Annotated[
         str, "Django app label (e.g., 'auth', 'contenttypes', 'myapp')"
     ],
-) -> list[ModelResource]:
+) -> list[ResourceContent]:
     """Get all models for a specific Django app."""
     app_config = apps.get_app_config(app_label)
-    return [
+    models = [
         ModelResource.from_model(model)
         for model in app_config.get_models()
         if not model._meta.auto_created
     ]
+    return [ResourceContent(models)]
 
 
 def list_apps() -> list[AppResource]:
@@ -91,12 +96,16 @@ def list_apps() -> list[AppResource]:
     return [AppResource.from_app(app) for app in apps.get_app_configs()]
 
 
-mcp.resource(
+@mcp.resource(
     "django://apps",
     name="Installed Django Apps",
+    mime_type="application/json",
     annotations={"readOnlyHint": True, "idempotentHint": True},
     tags={PROJECT_TOOLSET},
-)(list_apps)
+)
+def list_apps_resource() -> list[ResourceContent]:
+    return [ResourceContent(list_apps())]
+
 
 mcp.tool(
     name="list_apps",
@@ -112,6 +121,7 @@ mcp.tool(
 @mcp.resource(
     "django://model/{app_label}/{model_name}",
     name="Model Details",
+    mime_type="application/json",
     annotations={"readOnlyHint": True, "idempotentHint": True},
     tags={PROJECT_TOOLSET},
 )
@@ -120,10 +130,10 @@ def get_model(
         str, "Django app label (e.g., 'auth', 'contenttypes', 'myapp')"
     ],
     model_name: Annotated[str, "Model name (e.g., 'User', 'Group', 'Permission')"],
-) -> ModelResource:
+) -> list[ResourceContent]:
     """Get details for a specific Django model."""
     model = apps.get_model(app_label, model_name)
-    return ModelResource.from_model(model)
+    return [ResourceContent(ModelResource.from_model(model))]
 
 
 def list_models(
@@ -195,10 +205,11 @@ mcp.tool(
 @mcp.resource(
     "django://models",
     name="Django Models",
+    mime_type="application/json",
     annotations={"readOnlyHint": True, "idempotentHint": True},
     tags={PROJECT_TOOLSET},
 )
-def list_models_resource() -> list[ModelResource]:
+def list_models_resource() -> list[ResourceContent]:
     """Resource endpoint without query parameters - uses default filtering (project scope)."""
 
     # TODO: Replace with query-param template once upstream bug is fixed.
@@ -208,7 +219,8 @@ def list_models_resource() -> list[ModelResource]:
 
     all_models = list(apps.get_models())
     filtered_models = filter_models(all_models, include=None, scope="project")
-    return [ModelResource.from_model(model) for model in filtered_models]
+    models = [ModelResource.from_model(model) for model in filtered_models]
+    return [ResourceContent(models)]
 
 
 @mcp.tool(
@@ -267,6 +279,7 @@ async def list_routes(
 @mcp.resource(
     "django://route/{pattern*}",
     name="Route by Pattern",
+    mime_type="application/json",
     annotations={"readOnlyHint": True, "idempotentHint": True},
     tags={PROJECT_TOOLSET},
 )
@@ -274,10 +287,11 @@ async def get_route_by_pattern(
     pattern: Annotated[
         str, "URL pattern to search for (e.g., 'admin', 'api', 'users')"
     ],
-) -> list[RouteSchema]:
+) -> list[ResourceContent]:
     """Get routes matching a specific URL pattern."""
     all_routes = get_all_routes()
-    return filter_routes(all_routes, pattern=pattern)
+    routes = filter_routes(all_routes, pattern=pattern)
+    return [ResourceContent(routes)]
 
 
 def get_setting(
@@ -294,12 +308,20 @@ def get_setting(
     return SettingResource(key=key, value=value, value_type=type(value).__name__)
 
 
-mcp.resource(
+@mcp.resource(
     "django://setting/{key}",
     name="Django Setting",
+    mime_type="application/json",
     annotations={"readOnlyHint": True, "idempotentHint": True},
     tags={PROJECT_TOOLSET},
-)(get_setting)
+)
+def get_setting_resource(
+    key: Annotated[
+        str, "Django setting key (e.g., 'DEBUG', 'DATABASES', 'INSTALLED_APPS')"
+    ],
+) -> list[ResourceContent]:
+    return [ResourceContent(get_setting(key))]
+
 
 mcp.tool(
     name="get_setting",

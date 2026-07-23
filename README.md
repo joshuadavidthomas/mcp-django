@@ -16,7 +16,7 @@ cog.outl(f"![Django Version](https://img.shields.io/badge/django-{'%20%7C%20'.jo
 ]]] -->
 [![PyPI - mcp-django](https://img.shields.io/pypi/v/mcp-django?label=mcp-django)](https://pypi.org/project/mcp-django/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/mcp-django)
-![Django Version](https://img.shields.io/badge/django-4.2%20%7C%205.1%20%7C%205.2%20%7C%206.0%20%7C%20main-%2344B78B?labelColor=%23092E20)
+![Django Version](https://img.shields.io/badge/django-5.2%20%7C%206.0%20%7C%20main-%2344B78B?labelColor=%23092E20)
 <!-- [[[end]]] -->
 
 A Model Context Protocol (MCP) server providing Django project exploration resources and optional stateful shell access for LLM assistants to interact with Django projects.
@@ -39,7 +39,7 @@ cog.outl(f"- Python {', '.join(PY_VERSIONS)}")
 cog.outl(f"- Django {', '.join(django_versions)}")
 ]]] -->
 - Python 3.10, 3.11, 3.12, 3.13, 3.14
-- Django 4.2, 5.1, 5.2, 6.0
+- Django 5.2, 6.0
 <!-- [[[end]]] -->
 
 ## Installation
@@ -103,7 +103,7 @@ If you're using Docker and Docker Compose, you can run mcp-django as a separate 
 services:
   app:
     # your existing Django app service
-    
+
   mcp:
     build: .
     command: python -m mcp_django --transport http --host 0.0.0.0 --port 8000

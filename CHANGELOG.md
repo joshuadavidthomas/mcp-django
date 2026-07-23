@@ -26,6 +26,16 @@ For multi-package releases, use package names as subsections:
 
 ## [Unreleased]
 
+### Changed
+
+- Updated the supported Django versions to 5.2, 6.0, and main
+- Updated the minimum FastMCP version to 3.4.4 and refreshed development tooling
+
+### Fixed
+
+- Updated JSON resources and structured-result tests for the FastMCP 3 API
+- Made clean development and CI dependency resolution work without a committed `uv.lock`
+
 ## [0.13.0]
 
 ### Added

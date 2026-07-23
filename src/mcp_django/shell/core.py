@@ -78,7 +78,9 @@ class DjangoShell:
         steps = []
 
         successful_codes = [
-            result.code for result in self.history if not isinstance(result, ErrorResult)
+            result.code
+            for result in self.history
+            if not isinstance(result, ErrorResult)
         ]
 
         for step_num, code in enumerate(successful_codes, start=1):

@@ -14,7 +14,7 @@ We adhere to Django's Code of Conduct in all interactions and expect all contrib
   - Python version management and installation
   - Virtual environment creation and management
   - Fast, reliable dependency resolution and installation
-  - Reproducible builds via lockfile
+  - Local dependency locking and environment synchronization
 - [direnv](https://github.com/direnv/direnv) (Optional) - Automatic environment variable loading
 - [just](https://github.com/casey/just) (Optional) - Command runner for development tasks
 
@@ -79,11 +79,15 @@ Alternatively, any Python package manager that supports installing from `pyproje
 
    ```bash
    uv python install
-   uv sync --locked
+   uv sync --all-groups
    # just bootstrap
    ```
 
    This will install the correct Python version, create and configure a virtual environment, and install all dependencies.
+
+   Because this is a library, `uv.lock` is intentionally ignored: applications choose
+   the final versions of transitive dependencies. Development and CI therefore resolve
+   from the constraints in `pyproject.toml` rather than requiring a committed lockfile.
 
 ## Tests
 

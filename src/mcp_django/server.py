@@ -39,14 +39,20 @@ class DjangoMCP:
                 instructions.append(toolset_server.instructions)
 
         self._server = FastMCP(name=self.NAME, instructions="\n\n".join(instructions))
+        self._initialized = False
 
     @property
     def server(self) -> FastMCP:
         return self._server
 
     async def initialize(self) -> None:
+        if self._initialized:
+            return
+
         for toolset_prefix, toolset_server in TOOLSETS.items():
-            await self._server.import_server(toolset_server, prefix=toolset_prefix)
+            self._server.mount(toolset_server, namespace=toolset_prefix)
+
+        self._initialized = True
 
     def run(self, **kwargs: Any) -> None:  # pragma: no cover
         asyncio.run(self.initialize())

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 import pytest_asyncio
@@ -9,6 +11,12 @@ from mcp_django.packages.client import extract_slug_from_url
 from mcp_django.packages.client import extract_slugs_from_urls
 from mcp_django.packages.client import parse_participant_list
 from mcp_django.server import mcp
+
+
+def load_json_resource(contents):
+    assert len(contents) == 1
+    assert contents[0].mimeType == "application/json"
+    return json.loads(contents[0].text)
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -55,8 +63,9 @@ async def test_get_grid_resource(mock_packages_grid_detail_api):
         contents = await client.read_resource(
             "django://djangopackages/grid/rest-frameworks"
         )
-        assert isinstance(contents, list)
-        assert len(contents) > 0
+        grid = load_json_resource(contents)
+
+        assert grid["slug"] == "rest-frameworks"
 
 
 @pytest.mark.asyncio
@@ -102,8 +111,9 @@ async def test_get_package_resource(mock_packages_package_detail_api):
         contents = await client.read_resource(
             "django://djangopackages/package/django-debug-toolbar"
         )
-        assert isinstance(contents, list)
-        assert len(contents) > 0
+        package = load_json_resource(contents)
+
+        assert package["slug"] == "django-debug-toolbar"
 
 
 @pytest.mark.asyncio
