@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$repo_root"
+
+uv_bin_dir="$HOME/.local/bin"
+profile_marker="# mcp-django toolchain"
+
+echo "==> Configuring tool paths for login shells"
+mkdir -p "$uv_bin_dir"
+if [[ -f "$HOME/.bash_profile" ]]; then
+    sed -i 's/^# mcp-django orb tools$/# mcp-django toolchain/' "$HOME/.bash_profile"
+fi
+if ! grep -Fqx "$profile_marker" "$HOME/.bash_profile" 2>/dev/null; then
+    cat >> "$HOME/.bash_profile" <<'EOF'
+
+# mcp-django toolchain
+if [[ -d "$HOME/.local/bin" ]]; then
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+EOF
+fi
+export PATH="$uv_bin_dir:$PATH"
+
+if ! command -v uv >/dev/null 2>&1; then
+    echo "==> Installing uv"
+    curl -LsSf https://astral.sh/uv/install.sh \
+        | env UV_INSTALL_DIR="$uv_bin_dir" UV_NO_MODIFY_PATH=1 sh
+fi
+
+if [[ ! -x "$HOME/.local/bin/just" ]]; then
+    echo "==> Installing just"
+    curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh |
+        bash -s -- --tag 1.57.0 --to "$HOME/.local/bin"
+fi
+
+echo "==> Installing supported Python toolchains"
+uv python install 3.10 3.11 3.12 3.13 3.14
+
+echo "==> Installing project dependencies"
+uv sync --all-groups --python 3.10
+
+if ! command -v prek >/dev/null 2>&1; then
+    echo "==> Installing prek"
+    uv tool install prek
+fi
+
+echo "==> Installing pre-commit hooks"
+hooks_path="$(git config --path core.hooksPath || true)"
+if [[ -n "$hooks_path" && "$hooks_path" == /* && "$(basename "$hooks_path")" == hooks ]]; then
+    # Amp uses a global hooks directory for its prepare-commit-msg hook. Install
+    # prek alongside it instead of replacing the directory at repository scope.
+    prek install --git-dir "$(dirname "$hooks_path")" --prepare-hooks
+else
+    prek install --prepare-hooks
+fi
+
+echo "==> Setup complete"
