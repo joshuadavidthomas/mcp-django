@@ -1124,7 +1124,7 @@ wheels = [
 
 [[package]]
 name = "mcp-django"
-version = "0.13.0"
+version = "0.14.0"
 source = { editable = "." }
 dependencies = [
     { name = "django", version = "5.2.16", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
