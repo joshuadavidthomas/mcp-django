@@ -6,6 +6,8 @@ cd "$repo_root"
 
 uv_bin_dir="$HOME/.local/bin"
 profile_marker="# mcp-django toolchain"
+uv_required_version="0.11.31"
+just_required_version="1.57.0"
 
 echo "==> Configuring tool paths for login shells"
 mkdir -p "$uv_bin_dir"
@@ -23,16 +25,18 @@ EOF
 fi
 export PATH="$uv_bin_dir:$PATH"
 
-if ! command -v uv >/dev/null 2>&1; then
-    echo "==> Installing uv"
-    curl -LsSf https://astral.sh/uv/install.sh \
+installed_uv_version="$(uv --version 2>/dev/null | awk '{print $2}' || true)"
+if [[ "$(printf '%s\n' "$uv_required_version" "$installed_uv_version" | sort -V | head -n1)" != "$uv_required_version" ]]; then
+    echo "==> Installing uv $uv_required_version"
+    curl -LsSf "https://astral.sh/uv/$uv_required_version/install.sh" \
         | env UV_INSTALL_DIR="$uv_bin_dir" UV_NO_MODIFY_PATH=1 sh
 fi
 
-if [[ ! -x "$HOME/.local/bin/just" ]]; then
-    echo "==> Installing just"
+installed_just_version="$(just --version 2>/dev/null | awk '{print $2}' || true)"
+if [[ "$installed_just_version" != "$just_required_version" ]]; then
+    echo "==> Installing just $just_required_version"
     curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh |
-        bash -s -- --tag 1.57.0 --to "$HOME/.local/bin"
+        bash -s -- --tag "$just_required_version" --to "$HOME/.local/bin"
 fi
 
 echo "==> Installing supported Python toolchains"

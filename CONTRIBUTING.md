@@ -85,9 +85,9 @@ Alternatively, any Python package manager that supports installing from `pyproje
 
    This will install the correct Python version, create and configure a virtual environment, and install all dependencies.
 
-   Because this is a library, `uv.lock` is intentionally ignored: applications choose
-   the final versions of transitive dependencies. Development and CI therefore resolve
-   from the constraints in `pyproject.toml` rather than requiring a committed lockfile.
+   The committed `uv.lock` keeps development and CI environments reproducible. It does
+   not constrain applications that install this library; they resolve dependencies from
+   the constraints in `pyproject.toml`.
 
 ## Tests
 
