@@ -4,51 +4,26 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$repo_root"
 
-uv_bin_dir="$HOME/.local/bin"
-profile_marker="# mcp-django toolchain"
-uv_required_version="0.11.31"
-just_required_version="1.57.0"
-
-echo "==> Configuring tool paths for login shells"
-mkdir -p "$uv_bin_dir"
-if [[ -f "$HOME/.bash_profile" ]]; then
-    sed -i 's/^# mcp-django orb tools$/# mcp-django toolchain/' "$HOME/.bash_profile"
-fi
-if ! grep -Fqx "$profile_marker" "$HOME/.bash_profile" 2>/dev/null; then
-    cat >> "$HOME/.bash_profile" <<'EOF'
-
-# mcp-django toolchain
-if [[ -d "$HOME/.local/bin" ]]; then
-    export PATH="$HOME/.local/bin:$PATH"
-fi
-EOF
-fi
-export PATH="$uv_bin_dir:$PATH"
-
-installed_uv_version="$(uv --version 2>/dev/null | awk '{print $2}' || true)"
-if [[ "$(printf '%s\n' "$uv_required_version" "$installed_uv_version" | sort -V | head -n1)" != "$uv_required_version" ]]; then
-    echo "==> Installing uv $uv_required_version"
-    curl -LsSf "https://astral.sh/uv/$uv_required_version/install.sh" \
-        | env UV_INSTALL_DIR="$uv_bin_dir" UV_NO_MODIFY_PATH=1 sh
+if ! command -v mise >/dev/null 2>&1; then
+    echo "==> Installing mise"
+    curl --proto '=https' --tlsv1.2 -LsSf https://mise.run | sh
 fi
 
-installed_just_version="$(just --version 2>/dev/null | awk '{print $2}' || true)"
-if [[ "$installed_just_version" != "$just_required_version" ]]; then
-    echo "==> Installing just $just_required_version"
-    curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh |
-        bash -s -- --tag "$just_required_version" --to "$HOME/.local/bin"
-fi
+echo "==> Installing development tools"
+mise trust "$repo_root/mise.toml"
+mise install
+
+echo "==> Linking project tools"
+mkdir -p "$HOME/.local/bin"
+for tool in just prek uv zizmor; do
+    ln -sf "$(mise which "$tool")" "$HOME/.local/bin/$tool"
+done
 
 echo "==> Installing supported Python toolchains"
 uv python install 3.10 3.11 3.12 3.13 3.14
 
 echo "==> Installing project dependencies"
-uv sync --all-groups --python 3.10
-
-if ! command -v prek >/dev/null 2>&1; then
-    echo "==> Installing prek"
-    uv tool install prek
-fi
+uv sync --locked --all-groups --python 3.10
 
 echo "==> Installing pre-commit hooks"
 hooks_path="$(git config --path core.hooksPath || true)"

@@ -6,10 +6,12 @@ on:
     paths:
       - .github/workflows/**
       - .github/zizmor.yml
+      - mise.toml
   pull_request:
     paths:
       - .github/workflows/**
       - .github/zizmor.yml
+      - mise.toml
 
 jobs:
   zizmor:
@@ -23,13 +25,13 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+      - name: Install zizmor
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
         with:
-          enable-cache: true
+          install_args: zizmor
 
       - name: Run zizmor 🌈
-        run: uvx zizmor --format=sarif . > results.sarif
+        run: zizmor --format=sarif . > results.sarif
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

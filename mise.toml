@@ -1,0 +1,5 @@
+[tools]
+just = "1"
+prek = "0.5"
+uv = "0.12"
+zizmor = "1"

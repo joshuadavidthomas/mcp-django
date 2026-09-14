@@ -177,3 +177,6 @@ pyrightconfig.json
 
 # Worktrees
 .worktrees/
+
+# Amp Orb-generated portal state
+.amp/portals/

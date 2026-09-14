@@ -10,13 +10,16 @@ We adhere to Django's Code of Conduct in all interactions and expect all contrib
 
 ## Requirements
 
-- [uv](https://github.com/astral-sh/uv) - Modern Python toolchain that handles:
-  - Python version management and installation
-  - Virtual environment creation and management
-  - Fast, reliable dependency resolution and installation
-  - Local dependency locking and environment synchronization
+- [mise](https://mise.jdx.dev/) - Development tool version manager that installs
+  the project-standard versions of uv, just, prek, and zizmor from `mise.toml`
 - [direnv](https://github.com/direnv/direnv) (Optional) - Automatic environment variable loading
-- [just](https://github.com/casey/just) (Optional) - Command runner for development tasks
+
+The managed tools are:
+
+- [uv](https://github.com/astral-sh/uv) - Python toolchain and package manager
+- [just](https://github.com/casey/just) - Command runner for development tasks
+- [prek](https://prek.j178.dev/) - Git hook manager and pre-commit runner
+- [zizmor](https://woodruffw.github.io/zizmor/) - GitHub Actions security analysis
 
 ### `Justfile`
 
@@ -67,7 +70,7 @@ All commands below will contain the full command as well as its `just` counterpa
 
 ## Setup
 
-The following instructions will use `uv` and assume a Unix-like operating system (Linux or macOS).
+The following instructions use `mise` and `uv` and assume a Unix-like operating system (Linux or macOS).
 
 Windows users will need to adjust commands accordingly, though the core workflow remains the same.
 
@@ -75,15 +78,20 @@ Alternatively, any Python package manager that supports installing from `pyproje
 
 1. Fork the repository and clone it locally.
 
-2. Use `uv` to bootstrap your development environment.
+2. Install the project tools and bootstrap your development environment.
 
    ```bash
+   mise trust
+   mise install
    uv python install
-   uv sync --all-groups
-   # just bootstrap
+   uv sync --locked --all-groups
+   prek install
    ```
 
-   This will install the correct Python version, create and configure a virtual environment, and install all dependencies.
+   This installs the project-standard tool versions and Git hooks, installs the
+   correct Python version, creates the virtual environment, and installs all
+   dependencies. Add mise's shims to `PATH` for noninteractive shells and
+   editors, or prefix commands with `mise exec --`.
 
    The committed `uv.lock` keeps development and CI environments reproducible. It does
    not constrain applications that install this library; they resolve dependencies from
@@ -151,7 +159,7 @@ The following checks are run:
 To enable pre-commit hooks after cloning:
 
 ```bash
-uv run --with pre-commit pre-commit install
+prek install
 ```
 
 Configuration for these tools can be found in:

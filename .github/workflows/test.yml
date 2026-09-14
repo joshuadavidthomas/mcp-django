@@ -15,6 +15,7 @@ concurrency:
 env:
   PYTHONUNBUFFERED: "1"
   FORCE_COLOR: "1"
+  UV_CACHE_DIR: ${{ github.workspace }}/.cache/uv
 
 jobs:
   generate-matrix:
@@ -27,9 +28,15 @@ jobs:
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
         with:
-          enable-cache: true
+          install_args: uv
+
+      - name: Cache uv dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: ${{ runner.os }}-${{ runner.arch }}-uv-matrix-${{ hashFiles('uv.lock', 'mise.toml', 'noxfile.py') }}
 
       - id: set-matrix
         run: |
@@ -48,9 +55,15 @@ jobs:
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
         with:
-          enable-cache: true
+          install_args: uv
+
+      - name: Cache uv dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: ${{ runner.os }}-${{ runner.arch }}-uv-test-${{ matrix.python-version }}-${{ matrix.django-version }}-${{ hashFiles('uv.lock', 'mise.toml', 'noxfile.py') }}
 
       - name: Run tests
         env:
@@ -79,9 +92,15 @@ jobs:
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
         with:
-          enable-cache: true
+          install_args: uv
+
+      - name: Cache uv dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: ${{ runner.os }}-${{ runner.arch }}-uv-types-${{ hashFiles('uv.lock', 'mise.toml', 'noxfile.py') }}
 
       - name: Run type checks
         run: |
@@ -95,9 +114,15 @@ jobs:
           persist-credentials: false
 
       - name: Install uv
-        uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
+        uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
         with:
-          enable-cache: true
+          install_args: uv
+
+      - name: Cache uv dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ env.UV_CACHE_DIR }}
+          key: ${{ runner.os }}-${{ runner.arch }}-uv-coverage-${{ hashFiles('uv.lock', 'mise.toml', 'noxfile.py') }}
 
       - name: Generate code coverage
         run: |
